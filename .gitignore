@@ -130,3 +130,4 @@ dmypy.json
 
 notes.txt
 app/config.py
+*.db

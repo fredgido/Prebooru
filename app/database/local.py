@@ -3,12 +3,13 @@
 
 # ##PYTHON IMPORTS
 import time
-
+import datetime
 
 # ##LOCAL IMPORTS
 from . import base
+from ..logical.utility import GetCurrentTime
 from ..config import workingdirectory, jsonfilepath
-
+from . import models
 
 # ##GLOBAL VARIABLES
 
@@ -66,6 +67,17 @@ def CreateUpload(type, uploader_id, request_url=None, subscription_id=None):
     base.CommitData(DATABASE, 'uploads', ID_INDEXES, OTHER_INDEXES, data)
     return data
 
+def CreateUploadFromRequest(type, request_url, uploader_id):
+    data = {
+        'uploader_id': uploader_id,
+        'request_url': request_url,
+        'type': type,
+        'successes': 0,
+        'failures': 0,
+        'subscription_id': None,
+        'created': GetCurrentTime(),
+    }
+    upload = DB
 
 def CreatePost(illust_id, image_id, artist_id, site_id, file_url, md5, size, order):
     data = {
@@ -97,6 +109,16 @@ def CreateSubscription(artist_id, site_id, user_id):
     base.CommitData(DATABASE, 'subscriptions', ID_INDEXES, OTHER_INDEXES, data)
     return data
 
+def CreateError(module_name, message):
+    data = {
+        'module': module_name,
+        'message': message,
+        'created': GetCurrentTime(),
+    }
+    error = models.Error(**data)
+    SESSION.add(artist)
+    SESSION.commit()
+    return error
 
 #   Misc
 
@@ -111,3 +133,11 @@ def FindBy(table, key, value):
 
 def GetCurrentIndex(type):
     return base.GetCurrentIndex(DATABASE, type)
+
+########################
+
+def Initialize(db):
+    global DB, SESSION
+    DB = db
+    SESSION = db.session
+

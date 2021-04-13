@@ -6,11 +6,14 @@ import time
 import urllib
 import requests
 import threading
+import datetime
 
 # ##LOCAL IMPORTS
+from ..logical.utility import GetCurrentTime
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from .. import database as DB
 from ..config import PIXIV_PHPSESSID, SYSTEM_USER_ID
+from ..sites import Site, GetSiteId
 
 # ###GLOBAL VARIABLES
 
@@ -69,6 +72,7 @@ p(\d+)                                  # Order
 ONE_DAY = 60 * 60 * 24
 
 SITE_ID = 0
+IMAGE_SITE_ID = 1
 
 # ##FUNCTIONS
 
@@ -86,16 +90,19 @@ def GetDataIllustIDs(pixiv_data, type):
 
 
 def UploadCheck(request_url):
-    pixiv_id = type = None
+    return ARTWORKS_RG.match(request_url) or IMAGE_RG.match(request_url)
+
+
+def GetUploadInfo(request_url):
     artwork_match = ARTWORKS_RG.match(request_url)
     if artwork_match:
-        pixiv_id = int(artwork_match.group(1))
+        illust_id = int(artwork_match.group(1))
         type = 'post'
     image_match = IMAGE_RG.match(request_url) if artwork_match is None else None
     if image_match:
-        pixiv_id = int(image_match.group(1))
+        illust_id = int(image_match.group(1))
         type = 'image'
-    return type, pixiv_id
+    return type, illust_id
 
 
 def SubscriptionCheck(request_url):
@@ -122,21 +129,36 @@ def GetImageID(filename):
 #   Database
 
 
-def GetDBIllust(pixiv_data):
-    illust_id = int(pixiv_data['illustId'])
-    illust = DB.pixiv.FindBy('illusts', 'illust_id', illust_id)
-    if illust is None:
-        illust = DB.pixiv.CreateIllustFromIllust(pixiv_data)
+def GetDBIllust(pixiv_id):
+    illust = DB.models.Illust.query.filter_by(site_id=Site.PIXIV.value, site_illust_id=pixiv_id).first()
+    if illust is None or illust.requery is None or illust.requery < GetCurrentTime():
+        pixiv_data = GetPixivIllust(pixiv_id)
+        if pixiv_data is None:
+            return DB.pixiv.UpdateRequery(illust) if illust is not None else None
+        illust_id = int(pixiv_data['illustId'])
+        if illust is None:
+            illust = DB.pixiv.ProcessIllustData(pixiv_data)
+        else:
+            DB.pixiv.UpdateIllustFromIllust(illust, pixiv_data)
+        if illust.pages > 1:
+            UpdateWithPixivPageData(illust)
     else:
-        DB.pixiv.UpdateIllustFromIllust(illust, pixiv_data)
+        print("Found illust #", illust.id)
     return illust
 
 
-def GetDBArtist(pixiv_data):
-    artist_id = int(pixiv_data['userId'])
-    artist = DB.pixiv.FindBy('artists', 'artist_id', artist_id)
+def GetDBArtist(illust):
+    artist = DB.models.Artist.query.filter_by(id=illust.artist_id).first()
     if artist is None:
-        artist = DB.pixiv.CreateArtistFromIllust(pixiv_data)
+        raise
+    if artist.requery is None or artist.requery < GetCurrentTime():
+        pixiv_data = GetPixivArtist(artist.site_artist_id)
+        if pixiv_data is not None:
+            DB.pixiv.UpdateArtistFromUser(artist, pixiv_data)
+        else:
+            DB.pixiv.UpdateRequery(artist)
+    else:
+        print("Found artist #", artist.id)
     return artist
 
 
@@ -169,24 +191,20 @@ def CheckPixivResponse(url, response):
     return True
 
 
-def GetPixivIllust(illust_id, upload):
+def GetPixivIllust(illust_id):
     print("Getting pixiv #%d" % illust_id)
     data = PixivRequest("https://www.pixiv.net/ajax/illust/%d" % illust_id)
     if data['error']:
-        upload.errors.append(data['message'])
-        DB.pixiv.SaveDatabase()
+        DB.local.CreateError('app.sources.pixiv.GetPixivIllust', data['message'])
         return
     return data['body']
 
 
-def GetPixivArtist(artist_id, artist={}):
+def GetPixivArtist(artist_id):
     print("Getting Pixiv user data...")
-    data = PixivRequest("https://www.pixiv.net/ajax/user/%d?full=1" % artist['artist_id'])
+    data = PixivRequest("https://www.pixiv.net/ajax/user/%d?full=1" % artist_id)
     if data['error']:
-        artist['errors'] = {
-            'message': data['message'],
-            'time': round(time.time())
-        }
+        DB.local.CreateError('app.sources.pixiv.GetPixivArtist', data['message'])
         return
     return data['body']
 
@@ -194,47 +212,50 @@ def GetPixivArtist(artist_id, artist={}):
 def GetAllPixivArtistIllusts(artist_id):
     data = PixivRequest('https://www.pixiv.net/ajax/user/%d/profile/all' % artist_id)
     if data['error']:
-        return data['message']
+        DB.local.CreateError('app.sources.pixiv.GetAllPixivArtistIllusts', data['message'])
+        return
     ids = GetDataIllustIDs(data['body'], 'illusts')
     ids += GetDataIllustIDs(data['body'], 'manga')
     return ids
 
 
-def UpdateWithPixivPageData(illust):
-    print("Downloading pages for pixiv #%s" % illust['illust_id'])
-    data = PixivRequest("https://www.pixiv.net/ajax/illust/%s/pages" % illust['illust_id'])
+def GetPixivPageData(illust_id):
+    print("Downloading pages for pixiv #%s" % illust_id)
+    data = PixivRequest("https://www.pixiv.net/ajax/illust/%s/pages" % illust_id)
     if data['error']:
-        illust['errors'] = {
-            'message': data['message'],
-            'time': round(time.time())
-        }
+        DB.local.CreateError('app.sources.pixiv.GetPixivPageData', data['message'])
         return
-    DB.pixiv.UpdateIllustFromPages(illust, data['body'])
-    illust['requery'] = round(time.time()) + ONE_DAY
+    return data['body']
+
+
+def UpdateWithPixivPageData(illust):
+    pixiv_data = GetPixivPageData(illust.site_illust_id)
+    if pixiv_data is not None:
+        DB.pixiv.UpdateIllustUrlsFromPages(pixiv_data, illust)
+    else:
+        DB.pixiv.UpdateRequery(illust)
 
 
 def UpdateArtistDataFromArtist(artist):
-    pixiv_data = GetPixivArtist(artist['artist_id'], artist)
+    pixiv_data = GetPixivArtist(artist.site_artist_id)
     if pixiv_data is not None:
         DB.pixiv.UpdateArtistFromUser(artist, pixiv_data)
-    artist['requery'] = round(time.time() + (ONE_DAY * 7))
-    DB.pixiv.SaveDatabase()
-
+    else:
+        DB.pixiv.UpdateRequery(artist)
 
 #   Download
 
 
 def DownloadIllust(pixiv_id, upload, type, module):
-    pixiv_data = GetPixivIllust(pixiv_id, upload)
-    if pixiv_data is None:
+    illust = GetDBIllust(pixiv_id)
+    if illust is None:
+        print("Modify upload for bad illust!")
         return
-
-    illust = GetDBIllust(pixiv_data)
-    if illust['pages'] > 1 and illust['requery'] < time.time():
-        UpdateWithPixivPageData(illust)
-
-    artist = GetDBArtist(pixiv_data)
-    RequeryOrSaveArtist(artist)
+    artist = GetDBArtist(illust)
+    if artist is None:
+        print("Modify upload for bad artist!")
+        return
+    return illust, artist
 
     if type == 'post' or type == 'subscription':
         DownloadMultipleImages(illust, upload, type, module)

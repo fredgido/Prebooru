@@ -4,6 +4,7 @@
 import json
 import iso8601
 import hashlib
+import datetime
 
 # ##FUNCTIONS
 
@@ -50,3 +51,10 @@ def DecodeJSON(string):
         print("Invalid data!")
         return
     return data
+
+
+def GetCurrentTime():
+    t = datetime.datetime.utcnow()
+    return t - datetime.timedelta(microseconds=t.microsecond)
+
+

@@ -6,7 +6,9 @@ import time
 import atexit
 import threading
 from flask import Flask, request, jsonify, abort
+from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
+import argparse
 
 # ## LOCAL IMPORTS
 try:
@@ -17,7 +19,7 @@ except ImportError:
 
 from app.logical.file import TouchFile
 import app.database as DB
-from app.sources import SOURCES
+from app.source.base import UploadCheck
 
 # ## GLOBAL VARIABLES
 
@@ -27,10 +29,21 @@ sched = None
 # ### INITIALIZATION
 
 app = Flask(__name__)  # See if I can rename this
+app.config.from_mapping(
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///test14.db',
+    SQLALCHEMY_ECHO = False,
+    SECRET_KEY = '\xfb\x12\xdf\xa1@i\xd6>V\xc0\xbb\x8fp\x16#Z\x0b\x81\xeb\x16',
+    DEBUG = True,
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+)
+db = SQLAlchemy(app)
 SUBSCRIPTION_SEMAPHORE = threading.Semaphore()
 
-DB.local.LoadDatabase()
-DB.pixiv.LoadDatabase()
+#DB.local.LoadDatabase()
+#DB.pixiv.LoadDatabase()
+DB.models.InitializeModels(db)
+DB.pixiv.Initialize(db)
+DB.local.Initialize(db)
 
 # ## FUNCTIONS
 
@@ -103,7 +116,8 @@ def subscription(id):
 
 @app.route('/illusts', methods=['GET'])
 def illusts():
-    return jsonify(DB.pixiv.DATABASE['illusts'][::-1])
+    #return jsonify(DB.pixiv.DATABASE['illusts'][::-1])
+    return jsonify(DB.models.Illust.query.all())
 
 
 @app.route('/illusts/<int:id>')
@@ -113,7 +127,7 @@ def illust(id):
 
 @app.route('/artists', methods=['GET'])
 def artists():
-    return jsonify(DB.pixiv.DATABASE['artists'][::-1])
+    return jsonify(DB.models.Artist.query.all())
 
 
 @app.route('/artists/<int:id>')
@@ -126,9 +140,11 @@ def create_upload():
     user_id = CheckParams(request)
     if isinstance(user_id, str):
         return user_id
-    upload_source, type, illust_id = UploadCheck(request.args['url'])
-    if type is None:
-        return upload_source
+    ProcessUpload
+    source = UploadCheck(request.args['url'])
+    if isinstance(source, str):
+        return ret
+    source
     upload = DB.local.CreateUpload(type, user_id, request_url=request.args['url'])
     threading.Thread(target=upload_source.DownloadIllust, args=(illust_id, upload, type, upload_source)).start()
     return upload
@@ -173,10 +189,22 @@ def Cleanup():
 # ##EXECUTION START
 
 if __name__ == 'prebooru' and not os.path.exists(LOCK_FILE):
-    sched = BackgroundScheduler(daemon=True)
-    sched.add_job(CheckSubscriptions, 'interval', seconds=15)
-    sched.start()
-    TouchFile(LOCK_FILE)
+    #sched = BackgroundScheduler(daemon=True)
+    #sched.add_job(CheckSubscriptions, 'interval', seconds=15)
+    #sched.start()
+    #TouchFile(LOCK_FILE)
+    pass
+
+def init_db():
+    print("Creating tables")
+    db.drop_all()
+    db.create_all()
 
 if __name__ == '__main__':
-    app.run(threaded=True)
+    parser = argparse.ArgumentParser(description="Stuff")
+    parser.add_argument('operation', choices=['run','init-db'],default='run')
+    args = parser.parse_args()
+    if args.operation == 'init-db':
+        init_db()
+    else:
+        app.run(threaded=True)
