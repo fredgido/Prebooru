@@ -1,5 +1,7 @@
 import datetime
+from typing import List, _GenericAlias
 from dataclasses import dataclass
+from dataclasses_json import dataclass_json
 
 def DateTimeOrNull(value):
     return value if value is None else datetime.datetime.isoformat(value)
@@ -13,13 +15,33 @@ def StrOrNone(data):
 def InitializeModels(db):
     global IllustUrl, Illust, IllustTag, Artist, ArtistUrl, Tag, IllustTags, Error, Upload, Post, Subscription
     
+    class JsonModel(db.Model):
+        __abstract__ = True
+        def to_json(self):
+            fields = self.__dataclass_fields__
+            data = {}
+            for key in fields:
+                value = getattr(self, key)
+                type_func = fields[key].type
+                #print(key, value, type_func)
+                if type_func is None:
+                    data[key] = None
+                elif type_func == List:
+                    data[key] = [t.to_json() for t in value]
+                elif isinstance(type_func, _GenericAlias):
+                    subtype_func = type_func.__args__[0]
+                    data[key] = [subtype_func(t.to_json()) for t in value]
+                else:
+                    data[key] = type_func(value)
+            return data
+    
     IllustTags = db.Table('illust_tags',
         db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True),
         db.Column('illust_id', db.Integer, db.ForeignKey('illust.id'), primary_key=True),
     )
 
     @dataclass
-    class Tag(db.Model):
+    class Tag(JsonModel):
         id: int
         name: str
         id = db.Column(db.Integer, primary_key=True)
@@ -37,7 +59,7 @@ def InitializeModels(db):
         active = db.Column(db.Boolean, nullable=False)
     
     @dataclass
-    class IllustUrl(db.Model):
+    class IllustUrl(JsonModel):
         id: int
         site_id: int
         url: str
@@ -62,8 +84,11 @@ def InitializeModels(db):
         tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), nullable=False)
     """
     
+    def RemoveIdAndForeignKeys(data, foreign_key):
+        return {k:data[k] for k in data if k not in ['id', foreign_key]}
+    
     @dataclass
-    class Illust(db.Model):
+    class Illust(JsonModel):
         id: int
         site_id: int
         site_illust_id: int
@@ -72,15 +97,15 @@ def InitializeModels(db):
         site_updated: DateTimeOrNull
         title: str
         description: str
-        tags: Tag
-        urls: IllustUrl
+        tags: List[lambda x: x['name']]
+        urls: List[lambda x: RemoveIdAndForeignKeys(x, 'illust_id')]
         artist_id: int
         pages: int
         bookmarks: int
         likes: int
         replies: int
         views: int
-        requery: DateTimeOrNull
+        requery: datetime.datetime.isoformat
         created: datetime.datetime.isoformat
         updated: datetime.datetime.isoformat
         id = db.Column(db.Integer, primary_key=True)
@@ -91,9 +116,8 @@ def InitializeModels(db):
         site_updated = db.Column(db.DateTime(timezone=False), nullable=True)
         title = db.Column(db.UnicodeText, nullable=True)
         description = db.Column(db.UnicodeText, nullable=True)
-        #tags = db.relationship('IllustTag', backref='illust', lazy=True)
         tags = db.relationship('Tag', secondary=IllustTags, lazy='subquery', backref=db.backref('illusts', lazy=True))
-        urls = db.relationship('IllustUrl', backref='illust', lazy=True)
+        urls = db.relationship('IllustUrl', backref='illust', lazy=True, cascade="all, delete")
         artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
         pages = db.Column(db.Integer, nullable=True)
         bookmarks = db.Column(db.Integer, nullable=False)
@@ -113,7 +137,7 @@ def InitializeModels(db):
         site_account: StrOrNone
         name: str
         profile: str
-        webpages: ArtistUrl
+        webpages: List[ArtistUrl]
         requery: DateTimeOrNull
         created: datetime.datetime.isoformat
         updated: datetime.datetime.isoformat
@@ -162,10 +186,14 @@ def InitializeModels(db):
         artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
         created = db.Column(db.DateTime(timezone=False), nullable=False)
     
-    class PostId(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        post_id = db.Column(db.Integer, nullable=False)
-        upload_id = db.Column(db.Integer, db.ForeignKey('upload.id'), nullable=False)
+    UploadErrors = db.Table('upload_errors',
+        db.Column('upload_id', db.Integer, db.ForeignKey('upload.id'), primary_key=True),
+        db.Column('error_id', db.Integer, db.ForeignKey('error.id'), primary_key=True),
+    )
+    UploadPosts = db.Table('upload_posts',
+        db.Column('upload_id', db.Integer, db.ForeignKey('upload.id'), primary_key=True),
+        db.Column('post_id', db.Integer, db.ForeignKey('post.id'), primary_key=True),
+    )
     
     @dataclass
     class Upload(db.Model):
@@ -176,7 +204,7 @@ def InitializeModels(db):
         type: str
         successes: int
         failures: int
-        post_ids: PostId
+        posts: lambda x: Post(x).id
         created: datetime.datetime.isoformat
         id = db.Column(db.Integer, primary_key=True)
         uploader_id = db.Column(db.Integer, nullable=False)
@@ -185,7 +213,8 @@ def InitializeModels(db):
         failures = db.Column(db.Integer, nullable=False)
         type = db.Column(db.String(255), nullable=False)
         subscription_id = db.Column(db.Integer, db.ForeignKey('subscription.id'), nullable=True)
-        post_ids = db.relationship('PostId', lazy=True)
+        posts = db.relationship('Post', secondary=UploadPosts, lazy=True)
+        errors = db.relationship('Error', secondary=UploadErrors, lazy=True)
         created = db.Column(db.DateTime(timezone=False), nullable=False)
     
     @dataclass

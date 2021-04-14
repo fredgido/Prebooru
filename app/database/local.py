@@ -77,7 +77,10 @@ def CreateUploadFromRequest(type, request_url, uploader_id):
         'subscription_id': None,
         'created': GetCurrentTime(),
     }
-    upload = DB
+    upload = models.Upload(**data)
+    SESSION.add(upload)
+    SESSION.commit()
+    return upload
 
 def CreatePost(illust_id, image_id, artist_id, site_id, file_url, md5, size, order):
     data = {
@@ -116,7 +119,7 @@ def CreateError(module_name, message):
         'created': GetCurrentTime(),
     }
     error = models.Error(**data)
-    SESSION.add(artist)
+    SESSION.add(error)
     SESSION.commit()
     return error
 

@@ -15,3 +15,6 @@ def ProcessUpload(request_url, uploader_id):
         return source
     type = source.GetUploadType(request_url)
     upload = DB.local.CreateUploadFromRequest(type, request_url, uploader_id)
+    source.DownloadIllust(type, upload)
+    
+

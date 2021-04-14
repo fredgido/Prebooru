@@ -3,10 +3,8 @@
 # ## PYTHON IMPORTS
 import os
 import time
-import json
 import atexit
 import threading
-from dataclasses import dataclass, asdict
 from flask import Flask, request, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -118,8 +116,8 @@ def subscription(id):
 
 @app.route('/illusts', methods=['GET'])
 def illusts():
-    #return jsonify(DB.models.Illust.query.all())
-    return jsonify([x.to_json() for x in DB.models.Illust.query.all()])
+    #return jsonify(DB.pixiv.DATABASE['illusts'][::-1])
+    return jsonify(DB.models.Illust.query.all())
 
 
 @app.route('/illusts/<int:id>')
@@ -189,14 +187,51 @@ def Cleanup():
 
 
 # ##EXECUTION START
-
-if __name__ == 'prebooru' and not os.path.exists(LOCK_FILE):
-    #sched = BackgroundScheduler(daemon=True)
-    #sched.add_job(CheckSubscriptions, 'interval', seconds=15)
-    #sched.start()
-    #TouchFile(LOCK_FILE)
+"""
+if __name__ == '__main__' and not os.path.exists(LOCK_FILE):
+    sched = BackgroundScheduler(daemon=True)
+    sched.add_job(CheckSubscriptions, 'interval', seconds=15)
+    sched.start()
+    TouchFile(LOCK_FILE)
+    app.run(threaded=True)
     pass
+"""
+"""
+from threading import Event
 
+exit = Event()
+
+def main():
+    while not exit.is_set():
+      print("Check")
+      exit.wait(1)
+
+    print("All done!")
+    # perform any cleanup here
+
+def quit(signo, _frame):
+    print("Interrupted by %d, shutting down" % signo)
+    exit.set()
+"""
+
+def CheckUploads():
+    print("CheckUploads")
+    print(DB.models.Upload.query.all())
+
+def CheckSubscriptions():
+    print("CheckSubscriptions")
+    pending_subscriptions
+    print(DB.models.Subscription.query.all())
+
+if __name__ == '__main__':
+    sched = BackgroundScheduler(daemon=True)
+    sched.add_job(CheckUploads, 'interval', seconds=5)
+    sched.add_job(CheckSubscriptions, 'interval', seconds=15)
+    sched.start()
+    while True:
+        time.sleep(1)
+
+"""
 def init_db():
     print("Creating tables")
     db.drop_all()
@@ -210,3 +245,4 @@ if __name__ == '__main__':
         init_db()
     else:
         app.run(threaded=True)
+"""
