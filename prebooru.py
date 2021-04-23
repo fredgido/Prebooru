@@ -2,6 +2,7 @@
 
 # ## PYTHON IMPORTS
 import os
+import re
 import time
 import json
 import atexit
@@ -12,6 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 from apscheduler.schedulers.background import BackgroundScheduler
 import argparse
 
+
 # ## LOCAL IMPORTS
 try:
     from app.config import workingdirectory
@@ -20,8 +22,9 @@ except ImportError:
     exit(-1)
 
 from app.logical.file import TouchFile
+from app.logical.utility import EvalBoolString
 import app.database as DB
-from app.sources.base import UploadCheck
+import app.sources.base as BASE_SOURCE
 
 # ## GLOBAL VARIABLES
 
@@ -32,7 +35,7 @@ sched = None
 
 app = Flask(__name__)  # See if I can rename this
 app.config.from_mapping(
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///test14.db',
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///prebooru.db',
     SQLALCHEMY_ECHO = False,
     SECRET_KEY = '\xfb\x12\xdf\xa1@i\xd6>V\xc0\xbb\x8fp\x16#Z\x0b\x81\xeb\x16',
     DEBUG = True,
@@ -53,12 +56,27 @@ DB.local.Initialize(db)
 
 
 def CheckParams(request):
-    if 'user_id' not in request.args or not request.args['user_id'].isdigit():
+    user_id = request.values.get('user_id')
+    if user_id is None or not user_id.isdigit():
         return "No user ID present!"
-    if 'url' not in request.args:
+    if request.values.get('url') is None:
         return "No URL present!"
-    return int(request.args['user_id'])
 
+def GetPage(request):
+    return int(request.args['page']) if 'page' in request.args else 1
+
+def GetLimit(request):
+    return int(request.args['limit']) if 'limit' in request.args else 20
+
+def GetSearch(request):
+    data = {}
+    for arg in request.args:
+        match = re.match(r'^search\[([^\]]+)\]', arg)
+        if not match:
+            continue
+        key = match.group(1)
+        data[key] = request.args[arg]
+    return data
 
 def UploadCheck(request_url):
     for source in SOURCES:
@@ -88,7 +106,17 @@ def ShowIDCheck(database, table, id):
 
 @app.route('/uploads', methods=['GET'])
 def uploads():
-    return jsonify(DB.local.DATABASE['uploads'][::-1])
+    search = GetSearch(request)
+    print(search)
+    q = DB.models.Upload.query
+    if 'id' in search:
+        upload_ids = [int(id) for id in search['id'].split(',') if id.isdigit()]
+        if len(upload_ids) == 1:
+            q = q.filter_by(id=upload_ids[0])
+        else:
+            q = q.filter(DB.models.Upload.id.in_(upload_ids))
+    uploads = q.paginate(page=GetPage(request), per_page=GetLimit(request)).items
+    return jsonify([x.to_json() for x in uploads])
 
 
 @app.route('/uploads/<int:id>')
@@ -96,9 +124,20 @@ def upload(id):
     return ShowIDCheck(DB.local, 'uploads', id)
 
 
-@app.route('/posts', methods=['GET'])
+@app.route('/posts.json', methods=['GET'])
 def posts():
-    return jsonify(DB.local.DATABASE['posts'][::-1])
+    search = GetSearch(request)
+    print(search)
+    #breakpoint()
+    q = DB.models.Post.query
+    if 'id' in search:
+        post_ids = [int(id) for id in search['id'].split(',') if id.isdigit()]
+        if len(post_ids) == 1:
+            q = q.filter_by(id=post_ids[0])
+        else:
+            q = q.filter(DB.models.Upload.id.in_(post_ids))
+    posts = q.paginate(page=GetPage(request), per_page=GetLimit(request)).items
+    return jsonify([x.to_json() for x in posts])
 
 
 @app.route('/posts/<int:id>')
@@ -137,26 +176,31 @@ def artist(id):
     return ShowIDCheck(DB.pixiv, 'artists', id)
 
 
+
 @app.route('/create_upload', methods=['POST', 'GET'])
 def create_upload():
-    user_id = CheckParams(request)
-    if isinstance(user_id, str):
-        return user_id
-    ProcessUpload
-    source = UploadCheck(request.args['url'])
-    if isinstance(source, str):
-        return ret
-    source
-    upload = DB.local.CreateUpload(type, user_id, request_url=request.args['url'])
-    threading.Thread(target=upload_source.DownloadIllust, args=(illust_id, upload, type, upload_source)).start()
-    return upload
+    #breakpoint()
+    #print(request.json)
+    error = CheckParams(request)
+    if error is not None:
+        return {'error': error}
+    user_id = int(request.values['user_id'])
+    request_url = request.values['url']
+    referrer_url = request.values.get('ref')
+    image_urls = request.values.getlist('image_urls[]')
+    force = request.values.get('force',type=EvalBoolString)
+    print(force, request.values)
+    #print(force)
+    #breakpoint()
+    return BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
 
 
 @app.route('/create_subscription', methods=['POST', 'GET'])
 def create_subscription():
-    user_id = CheckParams(request)
-    if isinstance(user_id, str):
-        return user_id
+    error = CheckParams(request)
+    if error:
+        return error
+    return
     subscription_source, artist_id = SubscriptionCheck(request.args['url'])
     if artist_id is None:
         return subscription_source
@@ -198,6 +242,9 @@ if __name__ == 'prebooru' and not os.path.exists(LOCK_FILE):
     pass
 
 def init_db():
+    class AlembicVersion(db.Model):
+        version_num = db.Column(db.String(32), nullable=False, primary_key=True)
+    
     print("Creating tables")
     db.drop_all()
     db.create_all()
@@ -210,3 +257,6 @@ if __name__ == '__main__':
         init_db()
     else:
         app.run(threaded=True)
+
+
+# Have videos have thumbnail, gif thumbnail, and webm for sample

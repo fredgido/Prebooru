@@ -30,3 +30,6 @@ def GetSiteId(domain):
         s = DOMAINS[domain]
         return Site[s].value
     return 0
+
+def GetSiteDomain(site_id):
+    return SITES[Site(site_id).name]

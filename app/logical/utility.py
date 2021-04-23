@@ -1,6 +1,7 @@
 # APP/LOGICAL/UTILITY.PY
 
 # ##PYTHON IMPORTS
+import re
 import json
 import iso8601
 import hashlib
@@ -57,4 +58,25 @@ def GetCurrentTime():
     t = datetime.datetime.utcnow()
     return t - datetime.timedelta(microseconds=t.microsecond)
 
+def SafeGet(input_dict, *keys):
+    for key in keys:
+        try:
+            input_dict = input_dict[key]
+        except (KeyError, TypeError):
+            return None
+    return input_dict
+
+def IsTruthy(string):
+    truth_match = re.match(r'^(?:t(?:rue)?|y(?:es)|1)$', string, re.IGNORECASE)
+    return truth_match is not None
+
+def IsFalsey(string):
+    false_match = re.match(r'^(?:f(?:alse)?|n(?:o)|0)$', string, re.IGNORECASE)
+    return false_match is not None
+
+def EvalBoolString(string):
+    if IsTruthy(string):
+        return True
+    if IsFalsey(string):
+        return False
 

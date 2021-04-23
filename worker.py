@@ -19,7 +19,7 @@ except ImportError:
 
 from app.logical.file import TouchFile
 import app.database as DB
-from app.sources.base import UploadCheck
+import app.sources.base as BASE_SOURCE
 
 # ## GLOBAL VARIABLES
 
@@ -30,7 +30,7 @@ sched = None
 
 app = Flask(__name__)  # See if I can rename this
 app.config.from_mapping(
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///test14.db',
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///prebooru.db',
     SQLALCHEMY_ECHO = False,
     SECRET_KEY = '\xfb\x12\xdf\xa1@i\xd6>V\xc0\xbb\x8fp\x16#Z\x0b\x81\xeb\x16',
     DEBUG = True,
@@ -43,6 +43,7 @@ SUBSCRIPTION_SEMAPHORE = threading.Semaphore()
 #DB.pixiv.LoadDatabase()
 DB.models.InitializeModels(db)
 DB.pixiv.Initialize(db)
+DB.twitter.Initialize(db)
 DB.local.Initialize(db)
 
 # ## FUNCTIONS
@@ -216,11 +217,13 @@ def quit(signo, _frame):
 
 def CheckUploads():
     print("CheckUploads")
-    print(DB.models.Upload.query.all())
+    upload = DB.models.Upload.query.filter_by(status="pending").first()
+    print(upload)
+    if upload is not None:
+        BASE_SOURCE.ProcessUpload(upload)
 
 def CheckSubscriptions():
     print("CheckSubscriptions")
-    pending_subscriptions
     print(DB.models.Subscription.query.all())
 
 if __name__ == '__main__':

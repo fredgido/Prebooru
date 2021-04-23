@@ -9,7 +9,7 @@ import threading
 import datetime
 
 # ##LOCAL IMPORTS
-from ..logical.utility import GetCurrentTime
+from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from .. import database as DB
 from ..config import PIXIV_PHPSESSID, SYSTEM_USER_ID
@@ -88,10 +88,28 @@ def GetDataIllustIDs(pixiv_data, type):
 
 #   URL
 
+def GetImageExtension(image_url):
+    filename = GetHTTPFilename(image_url)
+    return GetFileExtension(filename)
 
-def UploadCheck(request_url):
+
+def UploadCheck(request_url, referrer_url):
     return ARTWORKS_RG.match(request_url) or IMAGE_RG.match(request_url)
 
+
+def GetUploadType(request_url, referrer_url):
+    artwork_match = ARTWORKS_RG.match(request_url)
+    if artwork_match:
+        return 'post'
+    if image_match:
+        return 'image'
+
+def GetIllustId(request_url, referrer_url):
+    artwork_match = ARTWORKS_RG.match(request_url)
+    if artwork_match:
+        return int(artwork_match.group(1))
+    if image_match:
+        return int(image_match.group(1))
 
 def GetUploadInfo(request_url):
     artwork_match = ARTWORKS_RG.match(request_url)
@@ -120,7 +138,7 @@ def NormalizeImageURL(image_url):
     return image_url
 
 
-def GetImageID(filename):
+def GetImageKey(filename):
     match = PIXIV_FILE_REGEX.match(filename)
     image_id = int(match.group(2))
     return image_id
@@ -130,36 +148,39 @@ def GetImageID(filename):
 
 
 def GetDBIllust(pixiv_id):
+    error = None
     illust = DB.models.Illust.query.filter_by(site_id=Site.PIXIV.value, site_illust_id=pixiv_id).first()
     if illust is None or illust.requery is None or illust.requery < GetCurrentTime():
         pixiv_data = GetPixivIllust(pixiv_id)
-        if pixiv_data is None:
-            return DB.pixiv.UpdateRequery(illust) if illust is not None else None
+        if isinstance(pixiv_data, DB.models.Error):
+            if illust is not None:
+                DB.pixiv.UpdateRequery(illust)
+            return illust, pixiv_data
         illust_id = int(pixiv_data['illustId'])
         if illust is None:
             illust = DB.pixiv.ProcessIllustData(pixiv_data)
         else:
             DB.pixiv.UpdateIllustFromIllust(illust, pixiv_data)
         if illust.pages > 1:
-            UpdateWithPixivPageData(illust)
+            error = UpdateWithPixivPageData(illust)
     else:
         print("Found illust #", illust.id)
-    return illust
+    return illust, error
 
 
 def GetDBArtist(illust):
+    error = None
     artist = DB.models.Artist.query.filter_by(id=illust.artist_id).first()
-    if artist is None:
-        raise
     if artist.requery is None or artist.requery < GetCurrentTime():
         pixiv_data = GetPixivArtist(artist.site_artist_id)
-        if pixiv_data is not None:
-            DB.pixiv.UpdateArtistFromUser(artist, pixiv_data)
-        else:
+        if isinstance(pixiv_data, DB.models.Error):
             DB.pixiv.UpdateRequery(artist)
+            error = pixiv_data
+        else:
+            DB.pixiv.UpdateArtistFromUser(artist, pixiv_data)
     else:
         print("Found artist #", artist.id)
-    return artist
+    return artist, error
 
 
 def RequeryOrSaveArtist(artist):
@@ -174,29 +195,30 @@ def RequeryOrSaveArtist(artist):
 
 def PixivRequest(url):
     for i in range(3):
-        response = requests.get(url, headers=API_HEADERS, cookies=API_JAR, timeout=10)
-        if CheckPixivResponse(url, response):
-            data = response.json()
-            return data
+        try:
+            response = requests.get(url, headers=API_HEADERS, cookies=API_JAR, timeout=10)
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
+            if i ==2:
+                print("Connection errors exceeded!")
+                return {'error': True, 'message': repr(e)}
+            print("Pausing for network timeout...")
+            time.sleep(5)
+            continue
+        if response.status_code == 200:
+            break
+        print("\n%s\nHTTP %d: %s (%s)" % (url, response.status_code, response.reason, response.text))
+        return {'error': True, 'message': "HTTP %d - %s" % (response.status_code, response.reason)}
     try:
         return response.json()
     except Exception:
-        return {'error': True, 'message': "HTTP %d - %s" % (response.status_code, response.reason)}
-
-
-def CheckPixivResponse(url, response):
-    if response.status_code != 200:
-        print("\n%s\nHTTP %d: %s (%s)" % (url, response.status_code, response.reason, response.text))
-        return False
-    return True
+        return {'error': True, 'message': "Error decoding response into JSON."}
 
 
 def GetPixivIllust(illust_id):
     print("Getting pixiv #%d" % illust_id)
     data = PixivRequest("https://www.pixiv.net/ajax/illust/%d" % illust_id)
     if data['error']:
-        DB.local.CreateError('app.sources.pixiv.GetPixivIllust', data['message'])
-        return
+        return DB.local.CreateError('sources.pixiv.GetPixivIllust', data['message'])
     return data['body']
 
 
@@ -204,16 +226,14 @@ def GetPixivArtist(artist_id):
     print("Getting Pixiv user data...")
     data = PixivRequest("https://www.pixiv.net/ajax/user/%d?full=1" % artist_id)
     if data['error']:
-        DB.local.CreateError('app.sources.pixiv.GetPixivArtist', data['message'])
-        return
+        return DB.local.CreateError('sources.pixiv.GetPixivArtist', data['message'])
     return data['body']
 
 
 def GetAllPixivArtistIllusts(artist_id):
     data = PixivRequest('https://www.pixiv.net/ajax/user/%d/profile/all' % artist_id)
     if data['error']:
-        DB.local.CreateError('app.sources.pixiv.GetAllPixivArtistIllusts', data['message'])
-        return
+        return DB.local.CreateError('sources.pixiv.GetAllPixivArtistIllusts', data['message'])
     ids = GetDataIllustIDs(data['body'], 'illusts')
     ids += GetDataIllustIDs(data['body'], 'manga')
     return ids
@@ -223,25 +243,28 @@ def GetPixivPageData(illust_id):
     print("Downloading pages for pixiv #%s" % illust_id)
     data = PixivRequest("https://www.pixiv.net/ajax/illust/%s/pages" % illust_id)
     if data['error']:
-        DB.local.CreateError('app.sources.pixiv.GetPixivPageData', data['message'])
-        return
+        return DB.local.CreateError('sources.pixiv.GetPixivPageData', data['message'])
     return data['body']
 
 
 def UpdateWithPixivPageData(illust):
+    error = None
     pixiv_data = GetPixivPageData(illust.site_illust_id)
-    if pixiv_data is not None:
-        DB.pixiv.UpdateIllustUrlsFromPages(pixiv_data, illust)
-    else:
+    if isinstance(pixiv_data, DB.models.Error):
         DB.pixiv.UpdateRequery(illust)
+        error = pixiv_data
+    else:
+        DB.pixiv.UpdateIllustUrlsFromPages(pixiv_data, illust)
+    return error
 
-
+"""
 def UpdateArtistDataFromArtist(artist):
     pixiv_data = GetPixivArtist(artist.site_artist_id)
     if pixiv_data is not None:
         DB.pixiv.UpdateArtistFromUser(artist, pixiv_data)
     else:
         DB.pixiv.UpdateRequery(artist)
+"""
 
 #   Download
 
@@ -264,6 +287,8 @@ def DownloadIllust(pixiv_id, upload, type, module):
 
 
 def DownloadArtist(subscription, semaphore, module):
+    pass
+"""
     semaphore.acquire()
     print("Acquired semaphore for subscription:", subscription)
     #  Does this need a try/except/finally block to ensure semaphore release???
@@ -292,3 +317,4 @@ def DownloadArtist(subscription, semaphore, module):
     DB.local.SaveDatabase()
     print("Releasing semaphore for subscription:", subscription)
     semaphore.release()
+"""

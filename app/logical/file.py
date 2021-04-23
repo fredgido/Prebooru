@@ -9,7 +9,6 @@ from .utility import GetDirectory, DecodeUnicode, DecodeJSON
 
 # ##FUNCTIONS
 
-
 def CreateDirectory(filepath):
     """Create the directory path if it doesn't already exist"""
     directory = GetDirectory(filepath)
@@ -59,3 +58,10 @@ def PutGetJSON(filepath, optype, data=None, unicode=False):
         load = PutGetRaw(filepath, optype, None, unicode)
         if load is not None:
             return DecodeJSON(load)
+
+
+def LoadDefault(filepath, defaultvalue, binary=False, unicode=False):
+    optype = 'rb' if binary else 'r'
+    if os.path.exists(filepath):
+        return PutGetJSON(filepath, optype, unicode=unicode)
+    return defaultvalue

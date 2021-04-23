@@ -2,6 +2,7 @@
 
 
 # ##PYTHON IMPORTS
+import re
 import time
 import urllib
 import datetime
@@ -10,7 +11,7 @@ import datetime
 # ##LOCAL IMPORTS
 from . import base
 from . import models
-from ..logical.utility import ProcessTimestamp, GetCurrentTime
+from ..logical.utility import ProcessTimestamp, GetCurrentTime, SafeGet
 from ..sources.pixiv import SITE_ID,IMAGE_SITE_ID
 from ..config import workingdirectory, jsonfilepath
 from ..sites import Site, GetSiteId, GetSiteDomain
@@ -35,11 +36,15 @@ OTHER_INDEXES = {
     }
 }
 
+SHORT_URL_REPLACE_RG = re.compile(r"""
+https?://t\.co                         # Hostname
+/ [\w-]+                               # Account
+""", re.X | re.IGNORECASE)
+
 
 # ##FUNCTIONS
 
 #   I/O
-
 
 def LoadDatabase():
     global DATABASE
@@ -56,6 +61,9 @@ def SaveDatabase():
 
 def ProcessUTCTimestring(time_string):
     return datetime.datetime.utcfromtimestamp(ProcessTimestamp(time_string))
+
+def ProcessTwitterTimestring(time_string):
+    return datetime.datetime.strptime(time_string, '%a %b %d %H:%M:%S +0000 %Y')
 
 
 """
@@ -75,25 +83,30 @@ def UpdateRequery(instance, commit=True):
         SESSION.commit()
     return instance
 
-def ProcessIllustData(pixiv_data):
-    artist = models.Artist.query.filter_by(site_id=Site.PIXIV.value, site_artist_id=int(pixiv_data['userId'])).first()
+def ProcessIllustData(tweet, user):
+    print("ProcessIllustData")
+    artist = models.Artist.query.filter_by(site_id=Site.TWITTER.value, site_artist_id=int(tweet['user_id_str'])).first()
     if artist is None:
-        artist = CreateArtistFromIllust(pixiv_data)
-    illust = CreateIllustFromIllust(pixiv_data, artist.id)
+        artist = CreateArtistFromUser(user)
+    elif artist.requery is None or artist.requery < GetCurrentTime():
+        UpdateArtistFromUser(artist, user)
+    illust = CreateIllustFromIllust(tweet, artist.id)
     return illust
 
-def CreateIllustFromIllust(pixiv_data, artist_id, commit=True):
+def CreateIllustFromIllust(tweet, artist_id, commit=True):
+    print("CreateIllustFromIllust")
     current_time = GetCurrentTime()
-    sub_data = pixiv_data['userIllusts'][pixiv_data['illustId']]
     data = {
-        'site_id': Site.PIXIV.value,
-        'site_illust_id': int(pixiv_data['illustId']),
-        'site_created': ProcessUTCTimestring(pixiv_data['createDate']),
+        'site_id': Site.TWITTER.value,
+        'site_illust_id': int(tweet['id_str']),
+        'site_created': ProcessTwitterTimestring(tweet['created_at']),
         'artist_id': artist_id,
-        'description': pixiv_data['extraData']['meta']['twitter']['description'],
-        'pages': pixiv_data['pageCount'],
-        'score': pixiv_data['likeCount'],
-        'requery': None,
+        'description': GetTweetText(tweet),
+        'pages': len(tweet['extended_entities']['media']),
+        #'bookmarks': twitter_data['retweet_count'],
+        'score': tweet['favorite_count'],
+        #'replies': twitter_data['reply_count'],
+        'requery': GetCurrentTime() + datetime.timedelta(days=1),
         'created': current_time,
         'updated': current_time,
     }
@@ -101,84 +114,92 @@ def CreateIllustFromIllust(pixiv_data, artist_id, commit=True):
     if commit:
         SESSION.add(illust)
         SESSION.commit()
-        CreateIllustUrlFromIllust(pixiv_data, illust.id)
-        AddIllustTags(illust, pixiv_data)
+        AddSiteData(illust, tweet)
+        AddIllustTags(illust, tweet)
+        AddIllustUrls(illust, tweet)
     return illust
 
-def AddSiteData(illust, pixiv_data):
-    data = {
-        'illust_id': illust.id,
-        'site_uploaded': ProcessUTCTimestring(pixiv_data['uploadDate']),
-        'site_updated': ProcessUTCTimestring(sub_data['updateDate']),
-        'title': pixiv_data['title'],
-        'bookmarks': pixiv_data['bookmarkCount'],
-        'replies': pixiv_data['responseCount'],
-        'views': pixiv_data['viewCount'],
-    }
-    site_data = models.PixivData(**sub_data)
-    SESSION.add(site_data)
-    SESSION.commit()
-
-def AddIllustTags(illust, pixiv_data):
-    tags = GetDBTags(pixiv_data)
+def AddIllustTags(illust, tweet):
+    print("AddIllustTags")
+    tags = GetDBTags(tweet)
     if len(tags):
         illust.tags.extend(tags)
         SESSION.add(illust)
         SESSION.commit()
 
-def GetDBTags(pixiv_data):
+def AddSiteData(illust, tweet):
+    print("AddSiteData")
+    data = {
+        'illust_id': illust.id,
+        'retweets': tweet['retweet_count'],
+        'replies': tweet['reply_count'],
+        'quotes': tweet['quote_count'],
+    }
+    site_data = models.TwitterData(**data)
+    SESSION.add(site_data)
+    SESSION.commit()
+
+def GetDBTags(tweet):
+    print("GetDBTags")
     def FindOrCommitTag(name):
         tag = models.Tag.query.filter_by(name=name).first()
         if tag is None:
             tag = models.Tag(name=name)
             SESSION.add(tag)
+            SESSION.commit()
         return tag
+    tag_data = SafeGet(tweet, 'entities', 'hashtags') or []
     tags = []
-    for tag_data in pixiv_data['tags']['tags']:
-        tags.append(FindOrCommitTag(tag_data['tag']))
-    if pixiv_data['isOriginal']:
-        tags.append(FindOrCommitTag('original'))
+    for entry in tag_data:
+        tags.append(FindOrCommitTag(entry['text']))
     if len(tags):
         SESSION.commit()
     return tags
 
-def CreateIllustUrlFromIllust(pixiv_data, illust_id, commit=True):
-    parse = urllib.parse.urlparse(pixiv_data['urls']['original'])
-    site_id = GetSiteId(parse.netloc)
-    url = parse.path if site_id != 0 else url
-    data = {
-        'site_id': site_id,
-        'url': url,
-        'width': pixiv_data['width'],
-        'height': pixiv_data['height'],
-        'illust_id': illust_id,
-        'order': 0,
-        'active': True,
-    }
-    illust_url = models.IllustUrl(**data)
+def AddIllustUrls(illust, tweet, commit=True):
+    print("AddIllustUrls")
+    url_data = SafeGet(tweet, 'entities', 'media') or []
+    illust_urls = []
+    for i in range(0, len(url_data)):
+        entry = url_data[i]
+        parse = urllib.parse.urlparse(entry['media_url_https'])
+        site_id = GetSiteId(parse.netloc)
+        url = parse.path if site_id != 0 else url
+        data = {
+            'site_id': site_id,
+            'url': url,
+            'width': entry['original_info']['width'],
+            'height': entry['original_info']['height'],
+            'illust_id': illust.id,
+            'order': i,
+            'active': True,
+        }
+        illust_url = models.IllustUrl(**data)
+        illust_urls.append(illust_url)
     if commit:
-        SESSION.add(illust_url)
+        SESSION.add_all(illust_urls)
         SESSION.commit()
-    return illust_url
+    return illust_urls
 
 
-def GetFullUrl(illust_url):
-    return illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
-
-def CreateWebpagesFromUser(pixiv_data, artist_id, commit=True):
+def AddArtistWebpages(user, artist_id, commit=True):
+    print("AddArtistWebpages")
     artist_urls = []
     new_urls = []
     webpages = set()
-    if pixiv_data['webpage'] is not None:
-        webpages.add(pixiv_data['webpage'])
-    for site in pixiv_data['social']:
-        webpages.add(pixiv_data['social'][site]['url'])
+    url_entries = SafeGet(user, 'entities', 'url', 'urls') or []
+    for entry in url_entries:
+        webpages.add(entry['expanded_url'])
+    url_entries = SafeGet(user, 'entities', 'description', 'urls') or []
+    for entry in url_entries:
+        webpages.add(entry['expanded_url'])
     for page in webpages:
         artist_url = models.ArtistUrl.query.filter_by(artist_id=artist_id, url=page).first()
         if artist_url is None:
             data = {
                 'artist_id': artist_id,
                 'url': page,
+                'active': True,
             }
             artist_url = models.ArtistUrl(**data)
             new_urls.append(artist_url)
@@ -188,14 +209,32 @@ def CreateWebpagesFromUser(pixiv_data, artist_id, commit=True):
     return artist_urls
 
 
-def CreateArtistFromIllust(pixiv_data, commit=True):
+def ConvertText(twitter_data, key, *subkeys):
+    text = twitter_data[key]
+    url_entries = SafeGet(twitter_data, 'entities', *subkeys) or []
+    for url_entry in reversed(url_entries):
+        check_url = url_entry['url']
+        replace_url = url_entry['expanded_url']
+        start_index, end_index = url_entry['indices']
+        text = text[:start_index] + replace_url + text[end_index:]
+    return text
+
+def GetTweetText(twitter_data):
+    text = ConvertText(twitter_data, 'full_text', 'urls')
+    return SHORT_URL_REPLACE_RG.sub('', text).strip()
+
+def GetUserDescription(twitter_data):
+    return ConvertText(twitter_data, 'description', 'description', 'urls')
+
+
+def CreateArtistFromUser(twitter_data, commit=True):
     current_time = GetCurrentTime()
     data = {
-        'site_id': Site.PIXIV.value,
-        'site_artist_id': int(pixiv_data['userId']),
-        'site_account': pixiv_data['userAccount'],
-        'name': pixiv_data['userName'],
-        'profile': "",
+        'site_id': Site.TWITTER.value,
+        'site_artist_id': int(twitter_data['id_str']),
+        'site_account': twitter_data['screen_name'],
+        'name': twitter_data['name'],
+        'profile': GetUserDescription(twitter_data),
         'requery': None,
         'created': current_time,
         'updated': current_time,
@@ -204,90 +243,16 @@ def CreateArtistFromIllust(pixiv_data, commit=True):
     if commit:
         SESSION.add(artist)
         SESSION.commit()
-    return artist
-
-
-def CreateArtistFromUser(pixiv_data, commit=True):
-    current_time = GetCurrentTime()
-    data = {
-        'site_id': Site.PIXIV.value,
-        'site_artist_id': int(pixiv_data['userId']),
-        'site_account': None,
-        'name': pixiv_data['name'],
-        'profile': pixiv_data['name'],
-        'requery': None,
-        'created': current_time,
-        'updated': current_time,
-    }
-    artist = models.Artist(**data)
-    if commit:
-        SESSION.add(artist)
-        SESSION.commit()
-        CreateWebpagesFromUser(pixiv_data, artist.id)
+        AddArtistWebpages(twitter_data, artist.id)
     return artist
 
 
 #   Update
 
 
-def UpdateIllustFromIllust(illust, pixiv_data):
-    updated = False
-    temp_illust = CreateIllustFromIllust(pixiv_data, illust.artist_id, False)
-    for c in temp_illust.__table__.columns:
-        if c.key in ['id', 'artist_id', 'requery', 'created', 'updated']:
-            continue
-        value = getattr(temp_illust, c.key)
-        if value is None:
-            continue
-        setattr(illust, c.key, value)
-    if SESSION.is_modified(illust):
-        print("Found updated illust info:", illust.id)
-        updated = True
-    temp_url = CreateIllustUrlFromIllust(pixiv_data, illust.id, False)
-    first_url = models.IllustUrl.query.filter_by(illust_id=illust.id, order=0, active=True).first()
-    if temp_url.url != first_url.url:
-        first_url.active = False
-        SESSION.add(first_url)
-        SESSION.add(temp_url)
-        updated = True
-    if updated:
-        illust.updated = GetCurrentTime()
-        SESSION.add(illust)
-        SESSION.commit()
-    else:
-        print("Nothing modified.")
-
-
-def UpdateIllustUrlsFromPages(pixiv_data, illust):
-    for i in range(0, len(pixiv_data)):
-        image = pixiv_data[i]
-        parse = urllib.parse.urlparse(image['urls']['original'])
-        site_id = GetSiteId(parse.netloc)
-        url = parse.path if site_id != 0 else url
-        active_url = models.IllustUrl.query.filter_by(illust_id=illust.id, order=i, active=True).first()
-        if active_url is not None:
-            if active_url.url == url:
-                print("Found exisiting image URL:", active_url)
-                continue
-            active_url.active = False
-            SESSION.add(active_url)
-        data = {
-            'site_id': site_id,
-            'url': url,
-            'width': image['width'],
-            'height': image['height'],
-            'illust_id': illust.id,
-            'order': i,
-            'active': True,
-        }
-        image_url = models.IllustUrl(**data)
-        SESSION.add(image_url)
-    UpdateRequery(illust, False)
-    SESSION.add(illust)
-    SESSION.commit()
-
-def UpdateArtistFromUser(artist, pixiv_data):
-    temp_artist = CreateArtistFromUser(pixiv_data, False)
+def UpdateArtistFromUser(artist, twitter_data):
+    print("UpdateArtistFromUser")
+    temp_artist = CreateArtistFromUser(twitter_data, False)
     for c in temp_artist.__table__.columns:
         if c.key in ['id', 'artist_id', 'requery', 'created', 'updated']:
             continue
@@ -299,7 +264,7 @@ def UpdateArtistFromUser(artist, pixiv_data):
         print("Found updated artist info:", artist.id)
         artist.updated = GetCurrentTime()
     current_webpages = models.ArtistUrl.query.filter_by(artist_id=artist.id).all()
-    active_webpages = CreateWebpagesFromUser(pixiv_data, artist.id, False)
+    active_webpages = AddArtistWebpages(twitter_data, artist.id, False)
     active_urls = [webpage.url for webpage in active_webpages]
     update_webpages = []
     for webpage in active_webpages:
