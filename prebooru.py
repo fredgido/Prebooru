@@ -115,6 +115,8 @@ def uploads():
             q = q.filter_by(id=upload_ids[0])
         else:
             q = q.filter(DB.models.Upload.id.in_(upload_ids))
+    if 'request_url' in search:
+        q = q.filter_by(request_url=search['request_url'])
     uploads = q.paginate(page=GetPage(request), per_page=GetLimit(request)).items
     return jsonify([x.to_json() for x in uploads])
 
@@ -135,7 +137,11 @@ def posts():
         if len(post_ids) == 1:
             q = q.filter_by(id=post_ids[0])
         else:
-            q = q.filter(DB.models.Upload.id.in_(post_ids))
+            q = q.filter(DB.models.Post.id.in_(post_ids))
+    if 'illust_id' in search:
+        q = q.filter(DB.models.Post.illust_urls.any(DB.models.IllustUrl.illust.has(site_illust_id=search['illust_id'])))
+    if 'illust_site_id' in search:
+        q = q.filter(DB.models.Post.illust_urls.any(DB.models.IllustUrl.illust.has(site_id=search['illust_site_id'])))
     posts = q.paginate(page=GetPage(request), per_page=GetLimit(request)).items
     return jsonify([x.to_json() for x in posts])
 
