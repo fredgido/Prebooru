@@ -1,20 +1,50 @@
-# APP/SOURCES/PIXIV.PY
+# APP/SOURCES/TWITTER.PY
 
 # ##PYTHON IMPORTS
 import re
 import time
 import urllib
 import requests
-import threading
-import datetime
 
 # ##LOCAL IMPORTS
 from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.file import LoadDefault, PutGetJSON
 from .. import database as DB
-from ..config import PIXIV_PHPSESSID, SYSTEM_USER_ID, workingdirectory, datafilepath
-from ..sites import Site, GetSiteId, GetSiteDomain
+from ..config import workingdirectory, datafilepath
+from ..sites import GetSiteDomain
+
+
+# ##NOTES
+
+"""
+https://twitter.com/i/api/2/timeline/conversation/1381019619528347649.json
+include_profile_interstitial_type: 1
+include_blocking: 1
+include_blocked_by: 1
+include_followed_by: 1
+include_want_retweets: 1
+include_mute_edge: 1
+include_can_dm: 1
+include_can_media_tag: 1
+skip_status: 1
+cards_platform: Web-12
+include_cards: 1
+include_ext_alt_text: true
+include_quote_count: true
+include_reply_count: 1
+tweet_mode: extended
+include_entities: true
+include_user_entities: true
+include_ext_media_color: true
+include_ext_media_availability: true
+send_error_codes: true
+simple_quoted_tweet: true
+count: 20
+include_ext_has_birdwatch_notes: false
+ext: mediaStats,highlightedLabel
+"""
+
 
 # ###GLOBAL VARIABLES
 
@@ -121,38 +151,6 @@ IMAGE2_RG = re.compile(r"""
 (?:&name=(\w+))?$                              # Size
 """, re.X | re.IGNORECASE)
 
-# ##FUNCTIONS
-
-#   AUXILIARY
-
-"""
-https://twitter.com/i/api/2/timeline/conversation/1381019619528347649.json
-include_profile_interstitial_type: 1
-include_blocking: 1
-include_blocked_by: 1
-include_followed_by: 1
-include_want_retweets: 1
-include_mute_edge: 1
-include_can_dm: 1
-include_can_media_tag: 1
-skip_status: 1
-cards_platform: Web-12
-include_cards: 1
-include_ext_alt_text: true
-include_quote_count: true
-include_reply_count: 1
-tweet_mode: extended
-include_entities: true
-include_user_entities: true
-include_ext_media_color: true
-include_ext_media_availability: true
-send_error_codes: true
-simple_quoted_tweet: true
-count: 20
-include_ext_has_birdwatch_notes: false
-ext: mediaStats,highlightedLabel
-"""
-
 TWITTER_BASE_PARAMS = {
     "include_profile_interstitial_type": "1",
     "include_blocking": "1",
@@ -180,15 +178,22 @@ TWITTER_BASE_PARAMS = {
     "count": "20",
 }
 
+# ##FUNCTIONS
+
+#   AUXILIARY
+
+
 def LoadGuestToken():
     try:
-        data  = LoadDefault(TOKEN_FILE, {"token": None})
+        data = LoadDefault(TOKEN_FILE, {"token": None})
         return data['token']
     except Exception:
         return {"token": None}
 
+
 def SaveGuestToken(guest_token):
     PutGetJSON(TOKEN_FILE, 'w', {"token": guest_token})
+
 
 #   URL
 
@@ -203,18 +208,23 @@ def GetImageExtension(image_url):
 def IsPostUrl(url):
     return bool(TWEET_RG.match(url))
 
+
 def IsImageUrl(url):
     return bool(IMAGE1_RG.match(url) or IMAGE2_RG.match(url))
 
+
 def UploadCheck(request_url, referrer_url):
     return IsPostUrl(request_url) or (IsPostUrl(referrer_url) and IsImageUrl(request_url))
+
 
 def GetUploadType(request_url):
     # Have already validated urls with UploadCheck
     return 'post' if IsPostUrl(request_url) else 'image'
 
+
 def GetIllustId(request_url, referrer_url):
     return int((TWEET_RG.match(request_url) or TWEET_RG.match(referrer_url)).group(1))
+
 
 def GetFullUrl(illust_url):
     image_url = illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
@@ -223,8 +233,6 @@ def GetFullUrl(illust_url):
     if IMAGE2_RG.match(image_url):
         return image_url + '&name=orig'
     return image_url
-
-
 
 
 def SubscriptionCheck(request_url):
@@ -243,30 +251,31 @@ def NormalizeImageURL(image_url):
 def GetGlobalObjects(data, type_name):
     return SafeGet(data, 'globalObjects', type_name)
 
+
 def GetGlobalObject(data, type_name, key):
     return SafeGet(data, 'globalObjects', type_name, key)
 
+
 #   Database
 
-
-def GetDBIllust(illust_id):
+def GetDBIllust(site_illust_id):
     print("GetDBIllust")
     error = None
-    illust = DB.models.Illust.query.filter_by(site_id=Site.TWITTER.value, site_illust_id=illust_id).first()
+    illust = DB.twitter.GetIllust(site_illust_id)
     if illust is None or illust.requery is None or illust.requery < GetCurrentTime():
-        twitter_data = GetTwitterIllustTimeline(illust_id)
-        if isinstance(twitter_data, DB.models.Error):
+        twitter_data = GetTwitterIllustTimeline(site_illust_id)
+        if DB.local.IsError(twitter_data):
             print("Found error!")
             if illust is not None:
                 DB.twitter.UpdateRequery(illust)
             return illust, twitter_data
         print("Getting tweet,user!")
-        tweet = GetGlobalObject(twitter_data, 'tweets', str(illust_id))
+        tweet = GetGlobalObject(twitter_data, 'tweets', str(site_illust_id))
         user = GetGlobalObject(twitter_data, 'users', tweet['user_id_str'])
         if illust is None:
             illust = DB.twitter.ProcessIllustData(tweet, user)
         else:
-            artist = DB.models.Illust.query.filter_by(id=illust.artist_id).first()
+            artist = DB.twitter.GetArtist(illust.artist_id)
             DB.twitter.UpdateArtistFromUser(artist, user)
     else:
         print("Found illust #", illust.id)
@@ -276,14 +285,7 @@ def GetDBIllust(illust_id):
 def GetDBArtist(illust):
     print("GetDBArtist")
     # The full user record is always given when querying the illust, so no need to requery here
-    return DB.models.Artist.query.filter_by(id=illust.artist_id).first(), None
-
-
-def RequeryOrSaveArtist(artist):
-    if artist['requery'] < time.time():
-        threading.Thread(target=UpdateArtistDataFromArtist, args=(artist,)).start()
-    else:
-        threading.Thread(target=DB.pixiv.SaveDatabase).start()
+    return DB.twitter.GetArtist(illust.artist_id), None
 
 
 #   Network
@@ -312,9 +314,9 @@ def AuthenticateGuest(override=False):
         print("Loaded guest token from file.")
     twitter_headers['x-guest-token'] = guest_token
 
+
 @CheckGuestAuth
 def TwitterRequest(url, method='GET'):
-    #print("Getting url:", url)
     for i in range(3):
         try:
             response = REQUEST_METHODS[method](url, headers=twitter_headers, timeout=10)
@@ -341,6 +343,7 @@ def TwitterRequest(url, method='GET'):
         return {'error': True, 'message': "Error decoding response into JSON."}
     return {'error': False, 'body': data}
 
+
 def GetTwitterIllustTimeline(illust_id):
     print("Getting twitter #%d" % illust_id)
     params = TWITTER_BASE_PARAMS.copy()
@@ -364,6 +367,7 @@ def GetTwitterIllust(illust_id):
         return DB.local.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
     return data['body'][0]
 
+
 def GetTwitterArtist(artist_id):
     print("Getting user #%d" % artist_id)
     data = TwitterRequest('https://api.twitter.com/1.1/users/lookup.json?id=%s' % artist_id)
@@ -374,44 +378,7 @@ def GetTwitterArtist(artist_id):
     return data['body'][0]
 
 
-def GetAllPixivArtistIllusts(artist_id):
-    data = PixivRequest('https://www.pixiv.net/ajax/user/%d/profile/all' % artist_id)
-    if data['error']:
-        return DB.local.CreateError('sources.pixiv.GetAllPixivArtistIllusts', data['message'])
-    ids = GetDataIllustIDs(data['body'], 'illusts')
-    ids += GetDataIllustIDs(data['body'], 'manga')
-    return ids
-
-
-def GetPixivPageData(illust_id):
-    print("Downloading pages for pixiv #%s" % illust_id)
-    data = PixivRequest("https://www.pixiv.net/ajax/illust/%s/pages" % illust_id)
-    if data['error']:
-        return DB.local.CreateError('sources.pixiv.GetPixivPageData', data['message'])
-    return data['body']
-
-
-def UpdateWithPixivPageData(illust):
-    error = None
-    pixiv_data = GetPixivPageData(illust.site_illust_id)
-    if isinstance(pixiv_data, DB.models.Error):
-        DB.pixiv.UpdateRequery(illust)
-        error = pixiv_data
-    else:
-        DB.pixiv.UpdateIllustUrlsFromPages(pixiv_data, illust)
-    return error
-
-"""
-def UpdateArtistDataFromArtist(artist):
-    pixiv_data = GetPixivArtist(artist.site_artist_id)
-    if pixiv_data is not None:
-        DB.pixiv.UpdateArtistFromUser(artist, pixiv_data)
-    else:
-        DB.pixiv.UpdateRequery(artist)
-"""
-
 #   Download
-
 
 def DownloadIllust(pixiv_id, upload, type, module):
     illust = GetDBIllust(pixiv_id)

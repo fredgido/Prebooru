@@ -1,40 +1,20 @@
-# APP/DATABASE/PIXIV.PY
-
+# APP/DATABASE/TWITTER.PY
 
 # ##PYTHON IMPORTS
 import re
-import time
 import urllib
 import datetime
 
 
 # ##LOCAL IMPORTS
-from . import base
-from . import models
-from ..logical.utility import ProcessTimestamp, GetCurrentTime, SafeGet
-from ..sources.pixiv import SITE_ID,IMAGE_SITE_ID
-from ..config import workingdirectory, jsonfilepath
-from ..sites import Site, GetSiteId, GetSiteDomain
+from .. import session as SESSION
+from ..models import ArtistUrl, Artist, Tag, IllustUrl, TwitterData, Illust
+from ..logical.utility import GetCurrentTime, SafeGet
+from ..sites import Site, GetSiteId
 
 
 # ##GLOBAL VARIABLES
 
-ONE_DAY = 60 * 60 * 24
-
-DATABASE_FILE = workingdirectory + jsonfilepath + 'prebooru-pixiv-data.json'
-
-DATABASE_TABLES = ['artists', 'illusts']
-
-DATABASE = None
-ID_INDEXES = base.InitializeIDIndexes(DATABASE_TABLES)
-OTHER_INDEXES = {
-    'artists': {
-        'artist_id': {}
-    },
-    'illusts': {
-        'illust_id': {}
-    }
-}
 
 SHORT_URL_REPLACE_RG = re.compile(r"""
 https?://t\.co                         # Hostname
@@ -44,37 +24,10 @@ https?://t\.co                         # Hostname
 
 # ##FUNCTIONS
 
-#   I/O
-
-def LoadDatabase():
-    global DATABASE
-    DATABASE = base.LoadDatabaseFile("PIXIV", DATABASE_FILE, DATABASE_TABLES, True)
-    base.SetIndexes(ID_INDEXES, OTHER_INDEXES, DATABASE)
-
-
-def SaveDatabase():
-    base.SaveDatabaseFile("PIXIV", DATABASE, DATABASE_FILE, True)
-
-
-#   Create
-
-
-def ProcessUTCTimestring(time_string):
-    return datetime.datetime.utcfromtimestamp(ProcessTimestamp(time_string))
 
 def ProcessTwitterTimestring(time_string):
     return datetime.datetime.strptime(time_string, '%a %b %d %H:%M:%S +0000 %Y')
 
-
-"""
-    'images': [
-    {
-        'url': urllib.parse.urlparse(pixiv_data['urls']['original']).path,
-        'width': pixiv_data['width'],
-        'height': pixiv_data['height']
-    }],
-    'tags': [tag['tag'] for tag in pixiv_data['tags']['tags']],
-"""
 
 def UpdateRequery(instance, commit=True):
     instance.requery = GetCurrentTime() + datetime.timedelta(days=1)
@@ -83,15 +36,17 @@ def UpdateRequery(instance, commit=True):
         SESSION.commit()
     return instance
 
+
 def ProcessIllustData(tweet, user):
     print("ProcessIllustData")
-    artist = models.Artist.query.filter_by(site_id=Site.TWITTER.value, site_artist_id=int(tweet['user_id_str'])).first()
+    artist = Artist.query.filter_by(site_id=Site.TWITTER.value, site_artist_id=int(tweet['user_id_str'])).first()
     if artist is None:
         artist = CreateArtistFromUser(user)
     elif artist.requery is None or artist.requery < GetCurrentTime():
         UpdateArtistFromUser(artist, user)
     illust = CreateIllustFromIllust(tweet, artist.id)
     return illust
+
 
 def CreateIllustFromIllust(tweet, artist_id, commit=True):
     print("CreateIllustFromIllust")
@@ -103,14 +58,12 @@ def CreateIllustFromIllust(tweet, artist_id, commit=True):
         'artist_id': artist_id,
         'description': GetTweetText(tweet),
         'pages': len(tweet['extended_entities']['media']),
-        #'bookmarks': twitter_data['retweet_count'],
         'score': tweet['favorite_count'],
-        #'replies': twitter_data['reply_count'],
         'requery': GetCurrentTime() + datetime.timedelta(days=1),
         'created': current_time,
         'updated': current_time,
     }
-    illust = models.Illust(**data)
+    illust = Illust(**data)
     if commit:
         SESSION.add(illust)
         SESSION.commit()
@@ -118,6 +71,7 @@ def CreateIllustFromIllust(tweet, artist_id, commit=True):
         AddIllustTags(illust, tweet)
         AddIllustUrls(illust, tweet)
     return illust
+
 
 def AddIllustTags(illust, tweet):
     print("AddIllustTags")
@@ -127,6 +81,7 @@ def AddIllustTags(illust, tweet):
         SESSION.add(illust)
         SESSION.commit()
 
+
 def AddSiteData(illust, tweet):
     print("AddSiteData")
     data = {
@@ -135,26 +90,30 @@ def AddSiteData(illust, tweet):
         'replies': tweet['reply_count'],
         'quotes': tweet['quote_count'],
     }
-    site_data = models.TwitterData(**data)
+    site_data = TwitterData(**data)
     SESSION.add(site_data)
     SESSION.commit()
 
+
 def GetDBTags(tweet):
     print("GetDBTags")
+
     def FindOrCommitTag(name):
-        tag = models.Tag.query.filter_by(name=name).first()
+        tag = Tag.query.filter_by(name=name).first()
         if tag is None:
-            tag = models.Tag(name=name)
+            tag = Tag(name=name)
             SESSION.add(tag)
             SESSION.commit()
         return tag
     tag_data = SafeGet(tweet, 'entities', 'hashtags') or []
     tags = []
     for entry in tag_data:
-        tags.append(FindOrCommitTag(entry['text']))
+        tagname = entry['text'].lower()
+        tags.append(FindOrCommitTag(tagname))
     if len(tags):
         SESSION.commit()
     return tags
+
 
 def AddIllustUrls(illust, tweet, commit=True):
     print("AddIllustUrls")
@@ -164,7 +123,7 @@ def AddIllustUrls(illust, tweet, commit=True):
         entry = url_data[i]
         parse = urllib.parse.urlparse(entry['media_url_https'])
         site_id = GetSiteId(parse.netloc)
-        url = parse.path if site_id != 0 else url
+        url = parse.path if site_id != 0 else entry['media_url_https']
         data = {
             'site_id': site_id,
             'url': url,
@@ -174,7 +133,7 @@ def AddIllustUrls(illust, tweet, commit=True):
             'order': i,
             'active': True,
         }
-        illust_url = models.IllustUrl(**data)
+        illust_url = IllustUrl(**data)
         illust_urls.append(illust_url)
     if commit:
         SESSION.add_all(illust_urls)
@@ -194,14 +153,14 @@ def AddArtistWebpages(user, artist_id, commit=True):
     for entry in url_entries:
         webpages.add(entry['expanded_url'])
     for page in webpages:
-        artist_url = models.ArtistUrl.query.filter_by(artist_id=artist_id, url=page).first()
+        artist_url = ArtistUrl.query.filter_by(artist_id=artist_id, url=page).first()
         if artist_url is None:
             data = {
                 'artist_id': artist_id,
                 'url': page,
                 'active': True,
             }
-            artist_url = models.ArtistUrl(**data)
+            artist_url = ArtistUrl(**data)
             new_urls.append(artist_url)
         artist_urls.append(artist_url)
     if commit and len(new_urls):
@@ -213,15 +172,16 @@ def ConvertText(twitter_data, key, *subkeys):
     text = twitter_data[key]
     url_entries = SafeGet(twitter_data, 'entities', *subkeys) or []
     for url_entry in reversed(url_entries):
-        check_url = url_entry['url']
         replace_url = url_entry['expanded_url']
         start_index, end_index = url_entry['indices']
         text = text[:start_index] + replace_url + text[end_index:]
     return text
 
+
 def GetTweetText(twitter_data):
     text = ConvertText(twitter_data, 'full_text', 'urls')
     return SHORT_URL_REPLACE_RG.sub('', text).strip()
+
 
 def GetUserDescription(twitter_data):
     return ConvertText(twitter_data, 'description', 'description', 'urls')
@@ -239,7 +199,7 @@ def CreateArtistFromUser(twitter_data, commit=True):
         'created': current_time,
         'updated': current_time,
     }
-    artist = models.Artist(**data)
+    artist = Artist(**data)
     if commit:
         SESSION.add(artist)
         SESSION.commit()
@@ -263,10 +223,9 @@ def UpdateArtistFromUser(artist, twitter_data):
     if SESSION.is_modified(artist):
         print("Found updated artist info:", artist.id)
         artist.updated = GetCurrentTime()
-    current_webpages = models.ArtistUrl.query.filter_by(artist_id=artist.id).all()
+    current_webpages = ArtistUrl.query.filter_by(artist_id=artist.id).all()
     active_webpages = AddArtistWebpages(twitter_data, artist.id, False)
     active_urls = [webpage.url for webpage in active_webpages]
-    update_webpages = []
     for webpage in active_webpages:
         if webpage.id is not None or webpage.active:
             continue
@@ -286,82 +245,9 @@ def UpdateArtistFromUser(artist, twitter_data):
     SESSION.commit()
 
 
-#   Misc
+def GetIllust(site_illust_id):
+    return Illust.query.filter_by(site_id=Site.TWITTER.value, site_illust_id=site_illust_id).first()
 
 
-def FindByID(table, id):
-    return base.FindByID(ID_INDEXES, table, id)
-
-
-def FindBy(table, key, value):
-    return base.FindBy(OTHER_INDEXES, DATABASE, table, key, value)
-
-
-def GetCurrentIndex(type):
-    return base.GetCurrentIndex(DATABASE, type)
-
-
-
-########################
-
-def Initialize(db):
-    global DB, SESSION
-    DB = db
-    SESSION = db.session
-
-
-"""
-def InitializeModels(db):
-    global IllustUrl, Illust, IllustTag, Artist, ArtistUrl, Tag
-    class Tag(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        name = db.Column(db.Unicode(255), nullable=False)
-        illust_tags = db.relationship('IllustTag', backref='tag', lazy=True)
-    
-    class ArtistUrl(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
-        url = db.Column(db.String(255), nullable=False)
-    
-    class IllustUrl(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        illust_id = db.Column(db.Integer, db.ForeignKey('illust.id'), nullable=False)
-        url = db.Column(db.String(255), nullable=False)
-        width = db.Column(db.Integer, nullable=True)
-        height = db.Column(db.Integer, nullable=True)
-        order = db.Column(db.Integer, nullable=False)
-    
-    class IllustTag(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        illust_id = db.Column(db.Integer, db.ForeignKey('illust.id'), nullable=False)
-        tag_id = db.Column(db.Integer, db.ForeignKey('tag.id'), nullable=False)
-    
-    class Illust(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        site_id = db.Column(db.Integer, nullable=False)
-        illust_id = db.Column(db.Integer, nullable=False)
-        title = db.Column(db.UnicodeText, nullable=True)
-        description = db.Column(db.UnicodeText, nullable=True)
-        created = db.Column(db.DateTime(timezone=False), nullable=True)
-        uploaded = db.Column(db.DateTime(timezone=False), nullable=True)
-        tags = db.relationship('IllustTag', backref='illust', lazy=True)
-        urls = db.relationship('IllustUrl', backref='illust', lazy=True)
-        artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
-        pages = db.Column(db.Integer, nullable=True)
-        bookmarks = db.Column(db.Integer, nullable=False)
-        likes = db.Column(db.Integer, nullable=False)
-        replies = db.Column(db.Integer, nullable=False)
-        views = db.Column(db.Integer, nullable=True)
-        requery = db.Column(db.DateTime(timezone=False), nullable=False)
-    
-    class Artist(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        site_id = db.Column(db.Integer, nullable=False)
-        artist_id = db.Column(db.Integer, nullable=False)
-        site_account = db.Column(db.String, nullable=False)
-        illusts = db.relationship('Illust', backref='artist', lazy=True)
-        name = db.Column(db.Unicode(255), nullable=False)
-        profile = db.Column(db.UnicodeText, nullable=False)
-        webpages = db.relationship('ArtistUrl', backref='artist', lazy=True)
-        requery = db.Column(db.DateTime(timezone=False))
-"""
+def GetArtist(artist_id):
+    return Artist.query.filter_by(id=artist_id).first(), None

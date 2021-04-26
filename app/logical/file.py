@@ -7,7 +7,9 @@ import json
 # ###LOCAL IMPORTS
 from .utility import GetDirectory, DecodeUnicode, DecodeJSON
 
+
 # ##FUNCTIONS
+
 
 def CreateDirectory(filepath):
     """Create the directory path if it doesn't already exist"""

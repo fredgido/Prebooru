@@ -5,15 +5,14 @@ import re
 import time
 import urllib
 import requests
-import threading
-import datetime
 
 # ##LOCAL IMPORTS
 from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from .. import database as DB
-from ..config import PIXIV_PHPSESSID, SYSTEM_USER_ID
-from ..sites import Site, GetSiteId
+from ..config import PIXIV_PHPSESSID
+from ..sites import Site
+
 
 # ###GLOBAL VARIABLES
 
@@ -101,15 +100,19 @@ def GetUploadType(request_url, referrer_url):
     artwork_match = ARTWORKS_RG.match(request_url)
     if artwork_match:
         return 'post'
+    image_match = IMAGE_RG.match(request_url)
     if image_match:
         return 'image'
+
 
 def GetIllustId(request_url, referrer_url):
     artwork_match = ARTWORKS_RG.match(request_url)
     if artwork_match:
         return int(artwork_match.group(1))
+    image_match = IMAGE_RG.match(request_url)
     if image_match:
         return int(image_match.group(1))
+
 
 def GetUploadInfo(request_url):
     artwork_match = ARTWORKS_RG.match(request_url)
@@ -156,7 +159,6 @@ def GetDBIllust(pixiv_id):
             if illust is not None:
                 DB.pixiv.UpdateRequery(illust)
             return illust, pixiv_data
-        illust_id = int(pixiv_data['illustId'])
         if illust is None:
             illust = DB.pixiv.ProcessIllustData(pixiv_data)
         else:
@@ -183,13 +185,6 @@ def GetDBArtist(illust):
     return artist, error
 
 
-def RequeryOrSaveArtist(artist):
-    if artist['requery'] < time.time():
-        threading.Thread(target=UpdateArtistDataFromArtist, args=(artist,)).start()
-    else:
-        threading.Thread(target=DB.pixiv.SaveDatabase).start()
-
-
 #   Network
 
 
@@ -198,7 +193,7 @@ def PixivRequest(url):
         try:
             response = requests.get(url, headers=API_HEADERS, cookies=API_JAR, timeout=10)
         except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
-            if i ==2:
+            if i == 2:
                 print("Connection errors exceeded!")
                 return {'error': True, 'message': repr(e)}
             print("Pausing for network timeout...")
@@ -257,14 +252,6 @@ def UpdateWithPixivPageData(illust):
         DB.pixiv.UpdateIllustUrlsFromPages(pixiv_data, illust)
     return error
 
-"""
-def UpdateArtistDataFromArtist(artist):
-    pixiv_data = GetPixivArtist(artist.site_artist_id)
-    if pixiv_data is not None:
-        DB.pixiv.UpdateArtistFromUser(artist, pixiv_data)
-    else:
-        DB.pixiv.UpdateRequery(artist)
-"""
 
 #   Download
 
@@ -279,7 +266,6 @@ def DownloadIllust(pixiv_id, upload, type, module):
         print("Modify upload for bad artist!")
         return
     return illust, artist
-
     if type == 'post' or type == 'subscription':
         DownloadMultipleImages(illust, upload, type, module)
     elif type == 'image':
@@ -288,33 +274,3 @@ def DownloadIllust(pixiv_id, upload, type, module):
 
 def DownloadArtist(subscription, semaphore, module):
     pass
-"""
-    semaphore.acquire()
-    print("Acquired semaphore for subscription:", subscription)
-    #  Does this need a try/except/finally block to ensure semaphore release???
-    artist_id = subscription['artist_id']
-    illust_ids = GetAllPixivArtistIllusts(artist_id)
-    if isinstance(illust_ids, str):
-        subscription['errors'] = {
-            'message': illust_ids,
-            'time': round(time.time())
-        }
-        print("Releasing semaphore because of error:", illust_ids)
-        semaphore.release()
-        return
-    existing_ids = [post['illust_id'] for post in DB.local.DATABASE['posts'] if post['artist_id'] == artist_id and post['site_id'] == SITE_ID]
-    download_ids = list(set(illust_ids).difference(existing_ids))
-    print("All:", illust_ids, "Existing:", existing_ids, "Download:", download_ids)
-    for illust_id in download_ids:
-        upload = DB.local.CreateUpload('subscription', SYSTEM_USER_ID, subscription_id=subscription['id'])
-        DownloadIllust(illust_id, upload, 'subscription', module)
-    artist = DB.pixiv.FindBy('artists', 'artist_id', illust_id)
-    if artist is None and len(download_ids) == 0:
-        # This should only happen for artists with no artworks
-        pixiv_data = GetPixivArtist(artist_id)
-        DB.pixiv.CreateArtistFromArtist(pixiv_data)
-    subscription['requery'] = round(time.time()) + ONE_DAY
-    DB.local.SaveDatabase()
-    print("Releasing semaphore for subscription:", subscription)
-    semaphore.release()
-"""

@@ -1,6 +1,14 @@
+# APP/SOURCES/BASE.PY
+
+# ##PYTHON IMPORTS
 from ..sources import SOURCES
-from .. import database as DB
+from ..models import Upload
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
+from .. import database as DB
+
+
+# ##FUNCTIONS
+
 
 def GetSource(request_url, referrer_url):
     for source in SOURCES:
@@ -15,12 +23,13 @@ def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
     type = source.GetUploadType(request_url)
     upload = None
     valid_image_urls = [url for url in image_urls if source.IsImageUrl(url)]
-    print(image_urls, valid_image_urls)
+    print(force, image_urls, valid_image_urls)
     if not force:
-        upload = DB.models.Upload.query.filter_by(type=type, request_url=request_url, referrer_url=referrer_url).order_by(DB.models.Upload.id.desc()).first()
+        upload = Upload.query.filter_by(type=type, request_url=request_url, referrer_url=referrer_url).order_by(Upload.id.desc()).first()
     if upload is None:
         upload = DB.local.CreateUploadFromRequest(type, request_url, image_urls, uploader_id)
     return upload.to_json()
+
 
 def ProcessUpload(upload):
     upload.status = 'processing'
