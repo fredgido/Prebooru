@@ -83,7 +83,7 @@ def CreateError(module_name, message, commit=True):
 
 def AppendError(instance, error):
     instance.errors.append(error)
-    SESSION.add(error)
+    SESSION.add(instance)
     SESSION.commit()
 
 

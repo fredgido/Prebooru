@@ -11,6 +11,7 @@ SITES = {
     'PXIMG': 'i.pximg.net',
     'TWITTER': 'twitter.com',
     'TWIMG': 'pbs.twimg.com',
+    'TWVIDEO': 'video.twimg.com',
 }
 
 DOMAINS = {v: k for k, v in SITES.items()}
@@ -21,6 +22,7 @@ class Site(Enum):
     PXIMG = auto()
     TWITTER = auto()
     TWIMG = auto()
+    TWVIDEO = auto()
 
 
 # ##FUNCTIONS

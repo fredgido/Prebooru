@@ -58,5 +58,10 @@ def create():
     referrer_url = request.values.get('ref')
     image_urls = request.values.getlist('image_urls[]')
     force = request.values.get('force', type=EvalBoolString)
-    print(force, request.values)
-    return BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
+    print("Create upload:", force, request.values)
+    try:
+        return BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
+    except Exception as e:
+        print("Database exception!", e)
+        request.environ.get('werkzeug.server.shutdown')()
+        return "quitting"

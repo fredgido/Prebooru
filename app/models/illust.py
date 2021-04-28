@@ -53,7 +53,7 @@ class Illust(JsonModel):
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
     pages = db.Column(db.Integer, nullable=True)
     score = db.Column(db.Integer, nullable=True)
-    site_data = db.relationship(SiteData, backref='illust', lazy=True, uselist=False)
+    site_data = db.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
     requery = db.Column(db.DateTime(timezone=False), nullable=True)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
     updated = db.Column(db.DateTime(timezone=False), nullable=False)

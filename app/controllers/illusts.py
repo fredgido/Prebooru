@@ -28,4 +28,6 @@ def index():
     print(search)
     q = Illust.query
     q = IdFilter(q, search)
+    if 'url_site_id' in search:
+        Illust.query.filter(Illust.urls.any(site_id=search['site_id']))
     return IndexJson(q, request)

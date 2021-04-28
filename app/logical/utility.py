@@ -59,6 +59,8 @@ def GetCurrentTime():
     t = datetime.datetime.utcnow()
     return t - datetime.timedelta(microseconds=t.microsecond)
 
+def MinutesAgo(minutes):
+    return GetCurrentTime() - datetime.timedelta(minutes=minutes)
 
 def SafeGet(input_dict, *keys):
     for key in keys:

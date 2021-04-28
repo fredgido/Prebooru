@@ -70,6 +70,7 @@ def CreateIllustFromIllust(tweet, artist_id, commit=True):
         AddSiteData(illust, tweet)
         AddIllustTags(illust, tweet)
         AddIllustUrls(illust, tweet)
+        AddVideoUrls(illust, tweet)
     return illust
 
 
@@ -105,6 +106,7 @@ def GetDBTags(tweet):
             SESSION.add(tag)
             SESSION.commit()
         return tag
+
     tag_data = SafeGet(tweet, 'entities', 'hashtags') or []
     tags = []
     for entry in tag_data:
@@ -115,30 +117,78 @@ def GetDBTags(tweet):
     return tags
 
 
+def GetIllustUrlInfo(entry):
+    from ..sources.twitter import IMAGE2_RG
+    query_addon = ""
+    if entry['type'] == 'photo':
+        parse = urllib.parse.urlparse(entry['media_url_https'])
+        dimensions = (entry['original_info']['width'], entry['original_info']['height'])
+        match = IMAGE2_RG.match(entry['media_url_https'])
+        if match:
+            query_addon = '?format=%s' % match.group(3)
+    elif entry['type'] == 'video' or entry['type'] == 'animated_gif':
+        variants = entry['video_info']['variants']
+        valid_variants = [variant for variant in variants if 'bitrate' in variant]
+        max_bitrate = max(map(lambda x: x['bitrate'], valid_variants))
+        max_video = next(filter(lambda x: x['bitrate'] == max_bitrate, valid_variants))
+        parse = urllib.parse.urlparse(max_video['url'])
+        dimensions = (entry['sizes']['large']['w'], entry['sizes']['large']['h'])
+    else:
+        return None, None, None
+    site_id = GetSiteId(parse.netloc)
+    url = parse.path  + query_addon if site_id !=0 else parse.geturl()
+    return url, site_id, dimensions
+
+
 def AddIllustUrls(illust, tweet, commit=True):
     print("AddIllustUrls")
     url_data = SafeGet(tweet, 'entities', 'media') or []
     illust_urls = []
     for i in range(0, len(url_data)):
-        entry = url_data[i]
-        parse = urllib.parse.urlparse(entry['media_url_https'])
-        site_id = GetSiteId(parse.netloc)
-        url = parse.path if site_id != 0 else entry['media_url_https']
+        url, site_id, dimensions = GetIllustUrlInfo(url_data[i])
+        if url is None:
+            continue
         data = {
             'site_id': site_id,
             'url': url,
-            'width': entry['original_info']['width'],
-            'height': entry['original_info']['height'],
+            'width': dimensions[0],
+            'height': dimensions[1],
             'illust_id': illust.id,
             'order': i,
             'active': True,
         }
         illust_url = IllustUrl(**data)
         illust_urls.append(illust_url)
-    if commit:
+    if commit and len(illust_urls) > 0:
         SESSION.add_all(illust_urls)
         SESSION.commit()
     return illust_urls
+
+
+def AddVideoUrls(illust, tweet, commit=True):
+    print("AddVideoUrls")
+    url_data = SafeGet(tweet, 'extended_entities', 'media') or []
+    video_url_data = [url_entry for url_entry in url_data if url_entry['type'] in ['animated_gif', 'video']]
+    if len(video_url_data) == 0:
+        return []
+    url, site_id, dimensions = GetIllustUrlInfo(video_url_data[0])
+    print("Video url info", url, site_id, dimensions)
+    if url is None:
+        return []
+    data = {
+        'site_id': site_id,
+        'url': url,
+        'width': dimensions[0],
+        'height': dimensions[1],
+        'illust_id': illust.id,
+        'order': 0,
+        'active': True,
+    }
+    video_url = IllustUrl(**data)
+    if commit:
+        SESSION.add(video_url)
+        SESSION.commit()
+    return video_url
 
 
 def AddArtistWebpages(user, artist_id, commit=True):

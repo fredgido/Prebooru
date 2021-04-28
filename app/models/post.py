@@ -53,7 +53,7 @@ class Post(JsonModel):
 
     @property
     def sample_url(self):
-        return storage.NetworkDirectory('sample', self.md5) + self.md5 + '.jpg' if storage.HasSample(self.width, self.height) else self.file_url
+        return storage.NetworkDirectory('sample', self.md5) + self.md5 + '.jpg' if storage.HasSample(self.width, self.height) or self.file_ext not in ['jpg', 'png', 'gif'] else self.file_url
 
     @property
     def preview_url(self):
@@ -65,6 +65,6 @@ class Post(JsonModel):
     file_ext = db.Column(db.String(6), nullable=False)
     md5 = db.Column(db.String(255), nullable=False)
     size = db.Column(db.Integer, nullable=False)
-    illust_urls = db.relationship(IllustUrl, secondary=PostIllustUrls, lazy='subquery', backref=db.backref('post', uselist=False, lazy=True))
-    errors = db.relationship(Error, secondary=PostErrors, lazy=True)
+    illust_urls = db.relationship(IllustUrl, secondary=PostIllustUrls, lazy='subquery', backref=db.backref('post', uselist=False, lazy=True), cascade='all,delete')
+    errors = db.relationship(Error, secondary=PostErrors, lazy=True, cascade='all,delete')
     created = db.Column(db.DateTime(timezone=False), nullable=False)

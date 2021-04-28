@@ -135,21 +135,66 @@ USERS_RG = re.compile(r"""
 (\?|$)                                  # End
 """, re.X | re.IGNORECASE)
 
+"""https://pbs.twimg.com/media/Es5NR-YVgAQzpJP.jpg:orig"""
+"""http://pbs.twimg.com/tweet_video_thumb/EiWHH0HVgAAbEcF.jpg"""
+
 IMAGE1_RG = re.compile(r"""
 ^https?://pbs\.twimg\.com               # Hostname
-/media
+/(media|tweet_video_thumb)
 /([\w-]+)                               # Image key
 \.(jpg|png|gif)                         # Extension
-(:(orig|large|medium|small|thumb))?$    # Size
+(?::(orig|large|medium|small|thumb))?   # Size
 """, re.X | re.IGNORECASE)
+
+"""https://pbs.twimg.com/media/Es5NR-YVgAQzpJP?format=jpg&name=900x900"""
 
 IMAGE2_RG = re.compile(r"""
 ^https?://pbs\.twimg\.com               # Hostname
-/media
+/(media|tweet_video_thumb)
 /([\w-]+)                               # Image key
 \?format=(jpg|png|gif)                  # Extension
-(?:&name=(\w+))?$                              # Size
+(?:&name=(\w+))?$                       # Size
 """, re.X | re.IGNORECASE)
+
+
+"""http://pbs.twimg.com/ext_tw_video_thumb/1270031579470061568/pu/img/cLxRLtYjq_D10ome.jpg"""
+""""https://pbs.twimg.com/amplify_video_thumb/1096312943845593088/img/VE7v_9MVr3tqZMNH.jpg"""
+
+IMAGE3_RG = re.compile(r"""
+^https?://pbs\.twimg\.com                   # Hostname
+/(ext_tw_video_thumb|amplify_video_thumb)   # Type
+/(\d+)                                      # Twitter ID
+(?:/\w+)?
+/img
+/([^.?]+)                                   # Image key
+\.(jpg|png|gif)                             # Extension
+""", re.X | re.IGNORECASE)
+
+
+"""https://video.twimg.com/tweet_video/EiWHH0HVgAAbEcF.mp4"""
+
+VIDEO1_RG = re.compile(r"""
+https?://video\.twimg\.com              # Hostname
+/tweet_video
+/(\w+)                                  # Video key
+\.(mp4)                                 # Extension
+""", re.X | re.IGNORECASE)
+
+
+"""https://video.twimg.com/ext_tw_video/1270031579470061568/pu/vid/640x640/M54mOuT519Rb5eXs.mp4"""
+"""https://video.twimg.com/amplify_video/1296680886113456134/vid/1136x640/7_ps073yayavGQUe.mp4"""
+
+VIDEO2_RG = re.compile(r"""
+https?://video\.twimg\.com              # Hostname
+/(ext_tw_video|amplify_video)           # Type
+/(\d+)                                  # Twitter ID
+(?:/\w+)?
+/vid
+/(\d+)x(\d+)                            # Dimensions
+/([^.?]+)                               # Video key
+\.(mp4)                                 # Extension
+""", re.X | re.IGNORECASE)
+
 
 TWITTER_BASE_PARAMS = {
     "include_profile_interstitial_type": "1",
@@ -194,14 +239,38 @@ def LoadGuestToken():
 def SaveGuestToken(guest_token):
     PutGetJSON(TOKEN_FILE, 'w', {"token": guest_token})
 
+# Illust
+
+IMAGE_URL_MAPPER = lambda x: IsImageUrl(GetFullUrl(x))
+VIDEO_URL_MAPPER = lambda x: IsVideoUrl(GetFullUrl(x))
+
+def IllustHasImages(illust):
+    return any(map(IMAGE_URL_MAPPER, illust.urls))
+
+def IllustHasVideos(illust):
+    return any(map(VIDEO_URL_MAPPER, illust.urls))
+
+def ImageIllustDownloadUrls(illust):
+    return list(filter(lambda x: IMAGE_URL_MAPPER, illust.urls))
+
+def VideoIllustDownloadUrls(illust):
+    video_illust_url = next(filter(VIDEO_URL_MAPPER, illust.urls))
+    thumb_illust_url = next(filter(IMAGE_URL_MAPPER, illust.urls), None)
+    return video_illust_url, thumb_illust_url
 
 #   URL
 
-def GetImageExtension(image_url):
-    match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
+def GetMediaExtension(media_url):
+    match = IMAGE1_RG.match(media_url) or IMAGE2_RG.match(media_url)
+    if match:
+        return match.group(3)
+    match = VIDEO1_RG.match(media_url)
     if match:
         return match.group(2)
-    filename = GetHTTPFilename(image_url)
+    match = VIDEO2_RG.match(media_url)
+    if match:
+        return match.group(6)
+    filename = GetHTTPFilename(media_url)
     return GetFileExtension(filename)
 
 
@@ -209,12 +278,20 @@ def IsPostUrl(url):
     return bool(TWEET_RG.match(url))
 
 
+def IsMediaUrl(url):
+    return IsImageUrl(url) or IsVideoUrl(url)
+
+
 def IsImageUrl(url):
-    return bool(IMAGE1_RG.match(url) or IMAGE2_RG.match(url))
+    return bool(IMAGE1_RG.match(url) or IMAGE2_RG.match(url) or IMAGE3_RG.match(url))
+
+
+def IsVideoUrl(url):
+    return bool(VIDEO1_RG.match(url) or VIDEO2_RG.match(url))
 
 
 def UploadCheck(request_url, referrer_url):
-    return IsPostUrl(request_url) or (IsPostUrl(referrer_url) and IsImageUrl(request_url))
+    return IsPostUrl(request_url) or (IsPostUrl(referrer_url) and IsMediaUrl(request_url))
 
 
 def GetUploadType(request_url):
@@ -227,12 +304,12 @@ def GetIllustId(request_url, referrer_url):
 
 
 def GetFullUrl(illust_url):
-    image_url = illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
-    if IMAGE1_RG.match(image_url):
-        return image_url + ':orig'
-    if IMAGE2_RG.match(image_url):
-        return image_url + '&name=orig'
-    return image_url
+    media_url = illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
+    if IMAGE1_RG.match(media_url):
+        return media_url + ':orig'
+    if IMAGE2_RG.match(media_url):
+        return media_url + '&name=orig'
+    return media_url
 
 
 def SubscriptionCheck(request_url):
@@ -245,7 +322,7 @@ def SubscriptionCheck(request_url):
 
 def NormalizeImageURL(image_url):
     image_match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
-    return r'/media/%s.%s' % (image_match.group(1), image_match.group(2))
+    return r'/media/%s.%s' % (image_match.group(2), image_match.group(3))
 
 
 def GetGlobalObjects(data, type_name):
