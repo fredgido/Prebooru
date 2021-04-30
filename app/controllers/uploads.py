@@ -1,7 +1,7 @@
 # APP\CONTROLLERS\UPLOADS.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request
+from flask import Blueprint, request, render_template, abort
 
 
 # ## LOCAL IMPORTS
@@ -9,7 +9,7 @@ from flask import Blueprint, request
 from app.logical.utility import EvalBoolString
 from ..models import Upload
 from ..sources import base as BASE_SOURCE
-from .base import GetSearch, ShowJson, IndexJson, IdFilter
+from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder
 
 
 # ## GLOBAL VARIABLES
@@ -32,20 +32,27 @@ def CheckParams(request):
 #   Routes
 
 
-@bp.route('/uploads/<int:id>.json')
-def show(id):
-    return ShowJson(Upload, id)
+@bp.route('/uploads/<int:id><string:type>')
+def show(id,type):
+    if type == '.json':
+        return ShowJson(Upload, id)
+    abort(404)
 
 
-@bp.route('/uploads.json', methods=['GET'])
-def index():
+@bp.route('/uploads<string:type>', methods=['GET'])
+def index(type):
     search = GetSearch(request)
     print(search)
     q = Upload.query
     q = IdFilter(q, search)
+    q = DefaultOrder(q)
     if 'request_url' in search:
         q = q.filter_by(request_url=search['request_url'])
-    return IndexJson(q, request)
+    if type == '.json':
+        return IndexJson(q, request)
+    elif type == '' or type == '.html':
+        return render_template("uploads/index.html", uploads=Paginate(q, request))
+    abort(404)
 
 
 @bp.route('/uploads.json', methods=['POST'])

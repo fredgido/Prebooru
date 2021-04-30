@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Posts{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+    <div id="posts-container">
+        {% for post in posts %}
+            <article class="post" style="display: inline-block; width: 304px; height: 304px; margin: 0 10px 10px 0; vertical-align: top; text-align: center;">
+                <a href="{{ post.show_url }}">
+                    <img src="{{ post.preview_url }}">
+                </a>
+            </article>
+        {% endfor %}
+    </div>
+    {{ page_html | safe }}
+{% endblock %}

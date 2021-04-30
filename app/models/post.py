@@ -4,6 +4,7 @@
 import datetime
 from typing import List
 from dataclasses import dataclass
+from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import db, storage
@@ -58,6 +59,10 @@ class Post(JsonModel):
     @property
     def preview_url(self):
         return storage.NetworkDirectory('preview', self.md5) + self.md5 + '.jpg' if storage.HasPreview(self.width, self.height) else self.file_url
+
+    @property
+    def show_url(self):
+        return url_for("post.show_html", id=self.id)
 
     id = db.Column(db.Integer, primary_key=True)
     width = db.Column(db.Integer, nullable=False)

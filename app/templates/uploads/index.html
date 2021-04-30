@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block header %}
+  <h1>{% block title %}Uploads{% endblock %}</h1>
+{% endblock %}
+
+{% block content %}
+  {% for upload in uploads %}
+    <article class="upload">
+        <a href="{{ upload.show_url }}">upload #{{ upload.id }}</a>
+    </article>
+  {% endfor %}
+{% endblock %}

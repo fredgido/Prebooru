@@ -4,6 +4,7 @@
 import datetime
 from typing import List
 from dataclasses import dataclass
+from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import db
@@ -70,3 +71,8 @@ class Upload(JsonModel):
     @property
     def post_ids(self):
         return [post.id for post in self.posts]
+
+    @property
+    def show_url(self):
+        return url_for("upload.show", id=self.id, type="")
+
