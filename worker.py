@@ -16,6 +16,10 @@ from app.logical.utility import MinutesAgo
 
 # ### FUNCTIONS
 
+import logging
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
 @atexit.register
 def Cleanup():
     if sched is not None:

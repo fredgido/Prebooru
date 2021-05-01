@@ -37,7 +37,7 @@ def index_json():
 def index_html():
     q = index()
     posts = Paginate(q, request)
-    return render_template("posts/index.html", posts=posts.items, page_html=PageNavigation(posts,request))
+    return render_template("posts/index.html", posts=posts)#, page_html=PageNavigation(posts,request))
 
 
 def index():

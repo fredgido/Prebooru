@@ -11,6 +11,7 @@ from .base import JsonModel, DateTimeOrNull, RemoveKeys
 from .tag import Tag
 from .illust_url import IllustUrl
 from .site_data import SiteData
+from .description import Description
 
 
 # ##GLOBAL VARIABLES
@@ -20,6 +21,12 @@ from .site_data import SiteData
 IllustTags = db.Table(
     'illust_tags',
     db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True),
+    db.Column('illust_id', db.Integer, db.ForeignKey('illust.id'), primary_key=True),
+)
+
+IllustDescriptions = db.Table(
+    'illust_descriptions',
+    db.Column('description_id', db.Integer, db.ForeignKey('description.id'), primary_key=True),
     db.Column('illust_id', db.Integer, db.ForeignKey('illust.id'), primary_key=True),
 )
 
@@ -33,7 +40,7 @@ class Illust(JsonModel):
     site_id: int
     site_illust_id: int
     site_created: DateTimeOrNull
-    description: str
+    descriptions: List[lambda x: x['body']]
     tags: List[lambda x: x['name']]
     urls: List[lambda x: RemoveKeys(x, ['id', 'illust_id'])]
     artist_id: int
@@ -47,7 +54,7 @@ class Illust(JsonModel):
     site_id = db.Column(db.Integer, nullable=False)
     site_illust_id = db.Column(db.Integer, nullable=False)
     site_created = db.Column(db.DateTime(timezone=False), nullable=True)
-    description = db.Column(db.UnicodeText, nullable=True)
+    descriptions = db.relationship(Description, secondary=IllustDescriptions, lazy='subquery', backref=db.backref('illusts', lazy=True))
     tags = db.relationship(Tag, secondary=IllustTags, lazy='subquery', backref=db.backref('illusts', lazy=True))
     urls = db.relationship(IllustUrl, backref='illust', lazy=True, cascade="all, delete")
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)

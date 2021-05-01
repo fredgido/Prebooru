@@ -5,6 +5,8 @@
 # SITE DATA
 
 from .tag import Tag
+from .label import Label
+from .description import Description
 from .site_data import SiteData, PixivData, TwitterData
 from .illust_url import IllustUrl
 from .illust import Illust

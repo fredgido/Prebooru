@@ -26,6 +26,8 @@ def _fk_pragma_on_connect(dbapi_connection, connection_record):
 
 event.listen(db.engine, 'connect', _fk_pragma_on_connect)
 
+import app.helpers as helpers
+app.jinja_env.globals.update(helpers=helpers)
 
 '''
 @event.listens_for(Engine, "connect")

@@ -8,7 +8,7 @@ import datetime
 
 # ##LOCAL IMPORTS
 from .. import session as SESSION
-from ..models import ArtistUrl, Artist, Tag, IllustUrl, TwitterData, Illust
+from ..models import ArtistUrl, Artist, Tag, IllustUrl, TwitterData, Illust, Label, Description
 from ..logical.utility import GetCurrentTime, SafeGet
 from ..sites import Site, GetSiteId
 
@@ -56,7 +56,6 @@ def CreateIllustFromIllust(tweet, artist_id, commit=True):
         'site_illust_id': int(tweet['id_str']),
         'site_created': ProcessTwitterTimestring(tweet['created_at']),
         'artist_id': artist_id,
-        'description': GetTweetText(tweet),
         'pages': len(tweet['extended_entities']['media']),
         'score': tweet['favorite_count'],
         'requery': GetCurrentTime() + datetime.timedelta(days=1),
@@ -68,10 +67,24 @@ def CreateIllustFromIllust(tweet, artist_id, commit=True):
         SESSION.add(illust)
         SESSION.commit()
         AddSiteData(illust, tweet)
+        AddIllustDescription(illust, tweet)
         AddIllustTags(illust, tweet)
         AddIllustUrls(illust, tweet)
         AddVideoUrls(illust, tweet)
     return illust
+
+
+def AddIllustDescription(illust, tweet):
+    description_text = GetTweetText(tweet)
+    current_descriptions = [descr.body for descr in illust.descriptions]
+    if description_text in current_descriptions:
+        return
+    descr = Description.query.filter_by(body=description_text).first()
+    if descr is None:
+        descr = Description(body=description_text)
+    illust.descriptions.append(descr)
+    SESSION.add(illust)
+    SESSION.commit()
 
 
 def AddIllustTags(illust, tweet):
@@ -191,6 +204,45 @@ def AddVideoUrls(illust, tweet, commit=True):
     return video_url
 
 
+def AddArtistName(artist, twuser):
+    name_text = twuser['name']
+    current_names = [label.name for label in artist.names]
+    if name_text in current_names:
+        return
+    lbl = Label.query.filter_by(name=name_text).first()
+    if lbl is None:
+        lbl = Label(name=name_text)
+    artist.names.append(lbl)
+    SESSION.add(artist)
+    SESSION.commit()
+
+
+def AddArtistSiteAccount(artist, twuser):
+    site_account_text = twuser['screen_name']
+    current_site_accounts = [label.name for label in artist.site_accounts]
+    if site_account_text in current_site_accounts:
+        return
+    lbl = Label.query.filter_by(name=site_account_text).first()
+    if lbl is None:
+        lbl = Label(name=site_account_text)
+    artist.site_accounts.append(lbl)
+    SESSION.add(artist)
+    SESSION.commit()
+
+
+def AddArtistProfile(artist, twuser):
+    profile_text = GetUserDescription(twuser)
+    current_profiles = [descr.body for descr in artist.profiles]
+    if profile_text in current_profiles:
+        return
+    descr = Description.query.filter_by(body=profile_text).first()
+    if descr is None:
+        descr = Description(body=profile_text)
+    artist.profiles.append(descr)
+    SESSION.add(artist)
+    SESSION.commit()
+
+
 def AddArtistWebpages(user, artist_id, commit=True):
     print("AddArtistWebpages")
     artist_urls = []
@@ -237,14 +289,11 @@ def GetUserDescription(twitter_data):
     return ConvertText(twitter_data, 'description', 'description', 'urls')
 
 
-def CreateArtistFromUser(twitter_data, commit=True):
+def CreateArtistFromUser(twuser, commit=True):
     current_time = GetCurrentTime()
     data = {
         'site_id': Site.TWITTER.value,
-        'site_artist_id': int(twitter_data['id_str']),
-        'site_account': twitter_data['screen_name'],
-        'name': twitter_data['name'],
-        'profile': GetUserDescription(twitter_data),
+        'site_artist_id': int(twuser['id_str']),
         'requery': None,
         'created': current_time,
         'updated': current_time,
@@ -253,7 +302,10 @@ def CreateArtistFromUser(twitter_data, commit=True):
     if commit:
         SESSION.add(artist)
         SESSION.commit()
-        AddArtistWebpages(twitter_data, artist.id)
+        AddArtistName(artist, twuser)
+        AddArtistSiteAccount(artist, twuser)
+        AddArtistProfile(artist, twuser)
+        AddArtistWebpages(twuser, artist.id)
     return artist
 
 
@@ -261,7 +313,8 @@ def CreateArtistFromUser(twitter_data, commit=True):
 
 
 def UpdateArtistFromUser(artist, twitter_data):
-    print("UpdateArtistFromUser")
+    print("UpdateArtistFromUser (bypassed)")
+    return
     temp_artist = CreateArtistFromUser(twitter_data, False)
     for c in temp_artist.__table__.columns:
         if c.key in ['id', 'artist_id', 'requery', 'created', 'updated']:
