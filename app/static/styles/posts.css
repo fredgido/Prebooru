@@ -1,0 +1,8 @@
+article.post {
+    display: inline-block;
+    width: 304px;
+    height: 304px;
+    margin: 0 10px 10px 0;
+    vertical-align: top;
+    text-align: center;
+}

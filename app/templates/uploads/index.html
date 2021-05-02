@@ -1,13 +1,58 @@
-{% extends 'base.html' %}
-
-{% block header %}
-  <h1>{% block title %}Uploads{% endblock %}</h1>
-{% endblock %}
+{% extends 'layouts/base.html' %}
 
 {% block content %}
-  {% for upload in uploads %}
-    <article class="upload">
-        <a href="{{ upload.show_url }}">upload #{{ upload.id }}</a>
-    </article>
-  {% endfor %}
+    <table id="uploads-table" class="striped" width="100%">
+        <thead>
+            <tr>
+                <th>Info</th>
+                <th>Urls</th>
+                <th>Posts</th>
+                <th>Errors</th>
+                <th>Status</th>
+                <th>Uploaded</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for upload in uploads.items %}
+                {% set outer_loop = loop %}
+                <tr id="upload-{{ upload.id }}">
+                    <td>
+                        <span><strong>Type:</strong> {{ upload.type }}</span><br>
+                        <span><strong>Successes:</strong> {{ upload.successes }}</span><br>
+                        <span><strong>Failures:</strong> {{ upload.failures }}</span>
+                    </td>
+                    <td>
+                        <span><strong>Request:</strong> {{ upload.request_url }}</span><br>
+                        <span><strong>Referrer:</strong> {{ helpers.base.StrOrNone(upload.referrer_url) }}</span><br>
+                        <span><strong>Image urls:</strong></span>
+                        {% for image_url in upload.image_urls%}
+                            <br>&emsp;{{ image_url.url }}
+                        {% else %}
+                            <em>none</em>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for post in upload.posts %}
+                            <a href="{{ post.show_url }}">post #{{ post.id }}</a>&emsp;
+                        {% else %}
+                            <em>none</em>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% for error in upload.errors %}
+                            <span><strong>{{ error.module }}:</strong><br>&emsp;{{ error.message }}<br>&emsp;@ {{ helpers.base.FormatTimestamp(error.created) }}</span><br>
+                            {% if not loop.last %}
+                                <br>
+                            {% endif %}
+                        {% else %}
+                            <em>none</em>
+                        {% endfor %}
+                    </td>
+                    <td>{{ upload.status }}</td>
+                    <td>{{ helpers.base.FormatTimestamp(upload.created) }}<br>by user #{{ upload.uploader_id }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{ helpers.base.PageNavigation(uploads) | safe }}
 {% endblock %}

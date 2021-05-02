@@ -4,7 +4,7 @@ from sqlalchemy.engine import Engine
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
-app = Flask("prebooru", template_folder='app\\templates')  # See if I can rename this
+app = Flask("prebooru", template_folder='app\\templates', static_folder='app\\static')  # See if I can rename this
 app.config.from_mapping(
     SQLALCHEMY_DATABASE_URI='sqlite:///%s' % DB_PATH,
     SQLALCHEMY_ECHO=False,

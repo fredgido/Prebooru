@@ -1,0 +1,23 @@
+<!doctype html>
+<head>
+    <title>{% block title %}{% endblock %} - Prebooru</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/base.css') }}">
+    {% block css %}{% endblock %}
+</head>
+<body>
+    <header id="top">
+        <a id="app-name-header" class="heading" href="/">Prebooru</a>
+        <nav>
+            <menu id="main-menu" class="main">
+                {{ helpers.base.render_template("layouts/_main_links.html") | safe }}
+            </menu>
+        </nav>
+    </header>
+    <section class="content">
+      {% for message in get_flashed_messages() %}
+        <div class="flash">{{ message }}</div>
+      {% endfor %}
+      {% block content %}{% endblock %}
+      {% block pages %}{% endblock %}
+    </section>
+</body>

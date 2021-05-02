@@ -1,0 +1,69 @@
+h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, cite, code, del, dfn, em, img, q, s, samp, small, strike, strong, sub, sup, tt, var, dd, dl, dt, li, ol, ul, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    line-height: 1.25em;
+    font-family: inherit;
+}
+h1, h2, h3, h4, h5, h6, .heading {
+    font-family: Tahoma, Verdana, Helvetica, sans-serif;
+    font-weight: bold;
+    line-height: 1.5em;
+    color: #1e1e2c;
+}
+header#top #app-name-header {
+    font-size: 2em;
+    margin: 0 30px;
+}
+header#top menu li {
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+}
+menu>li {
+    margin: 0;
+    padding: 0 .2em;
+    display: inline;
+}
+header#top menu.main li.current a {
+    background: #EEE;
+}
+header#top menu.main li.current a {
+    background: #f4f6ff;
+    font-weight: bold;
+}
+header#top menu li a {
+    padding: 6px 10px;
+}
+a:link,
+a:visited {
+    color: #0075f8;
+    text-decoration: none;
+}
+section.content {
+    margin-left: 4em;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+table.striped thead tr {
+    border-bottom: 2px solid #5b5c79;
+}
+table.striped thead th {
+    text-align: left;
+}
+table.striped td,
+table.striped th {
+    padding: 4px 6px;
+}
+table.striped tbody tr {
+    border-bottom: 1px solid #d1d1da;
+}
+table.striped tr:nth-child(even) {
+    background: #f6f6f8;
+}
+table.striped tbody tr:hover {
+    background: #e1e8ff;
+}

@@ -1,12 +1,13 @@
 # APP\CONTROLLERS\UPLOADS.PY
 
 # ## PYTHON IMPORTS
+from sqlalchemy.orm import selectinload
 from flask import Blueprint, request, render_template, abort
 
 
 # ## LOCAL IMPORTS
 
-from app.logical.utility import EvalBoolString
+from app.logical.utility import EvalBoolString, IsTruthy, IsFalsey
 from ..models import Upload
 from ..sources import base as BASE_SOURCE
 from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder
@@ -39,20 +40,38 @@ def show(id,type):
     abort(404)
 
 
-@bp.route('/uploads<string:type>', methods=['GET'])
-def index(type):
+@bp.route('/uploads.json', methods=['GET'])
+def index_json():
+    q = index()
+    return IndexJson(q, request)
+
+
+@bp.route('/uploads', methods=['GET'])
+def index_html():
+    q = index()
+    uploads = Paginate(q, request)
+    return render_template("uploads/index.html", uploads=uploads)
+
+
+def index():
     search = GetSearch(request)
     print(search)
-    q = Upload.query
+    q = Upload.query.options(selectinload('*'))
     q = IdFilter(q, search)
     q = DefaultOrder(q)
     if 'request_url' in search:
         q = q.filter_by(request_url=search['request_url'])
-    if type == '.json':
-        return IndexJson(q, request)
-    elif type == '' or type == '.html':
-        return render_template("uploads/index.html", uploads=Paginate(q, request))
-    abort(404)
+    if 'has_image_urls' in search:
+        if IsTruthy(search['has_image_urls']):
+            q = q.filter(Upload.image_urls.any())
+        elif IsFalsey(search['has_image_urls']):
+            q = q.filter(sqlalchemy.not_(Upload.image_urls.any()))
+    if 'has_errors' in search:
+        if IsTruthy(search['has_errors']):
+            q = q.filter(Upload.errors.any())
+        elif IsFalsey(search['has_errors']):
+            q = q.filter(sqlalchemy.not_(Upload.errors.any()))
+    return q
 
 
 @bp.route('/uploads.json', methods=['POST'])

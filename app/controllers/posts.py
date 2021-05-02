@@ -33,11 +33,12 @@ def index_json():
     return IndexJson(q, request)
 
 
+@bp.route('/', methods=['GET'])
 @bp.route('/posts', methods=['GET'])
 def index_html():
     q = index()
     posts = Paginate(q, request)
-    return render_template("posts/index.html", posts=posts)#, page_html=PageNavigation(posts,request))
+    return render_template("posts/index.html", posts=posts)
 
 
 def index():
