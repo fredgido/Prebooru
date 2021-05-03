@@ -2,6 +2,7 @@
 
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, abort, url_for
+from sqlalchemy.orm import lazyload
 
 
 # ## LOCAL IMPORTS
@@ -45,6 +46,7 @@ def index():
     search = GetSearch(request)
     print(search)
     q = Post.query
+    q = q.options(lazyload('*'))
     q = IdFilter(q, search)
     q = DefaultOrder(q)
     if 'illust_id' in search:

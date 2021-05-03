@@ -8,7 +8,7 @@ from flask import Blueprint, request, render_template, abort
 # ## LOCAL IMPORTS
 
 from app.logical.utility import EvalBoolString, IsTruthy, IsFalsey
-from ..models import Upload
+from ..models import Upload, Post
 from ..sources import base as BASE_SOURCE
 from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder
 
@@ -56,7 +56,8 @@ def index_html():
 def index():
     search = GetSearch(request)
     print(search)
-    q = Upload.query.options(selectinload('*'))
+    q = Upload.query
+    q = q.options(selectinload(Upload.image_urls), selectinload(Upload.posts).lazyload(Post.illust_urls),selectinload(Upload.errors))
     q = IdFilter(q, search)
     q = DefaultOrder(q)
     if 'request_url' in search:
