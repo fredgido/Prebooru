@@ -4,6 +4,7 @@
     <table id="uploads-table" class="striped" width="100%">
         <thead>
             <tr>
+                <th>ID</th>
                 <th>Info</th>
                 <th>Urls</th>
                 <th>Posts</th>
@@ -16,6 +17,7 @@
             {% for upload in uploads.items %}
                 {% set outer_loop = loop %}
                 <tr id="upload-{{ upload.id }}">
+                    <td><a href="{{ upload.show_url }}">upload #{{ upload.id }}</a></td>
                     <td>
                         <span><strong>Type:</strong> {{ upload.type }}</span><br>
                         <span><strong>Successes:</strong> {{ upload.successes }}</span><br>

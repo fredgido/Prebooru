@@ -2,7 +2,7 @@
     {% if prev_page is none %}
         <span style="padding: 0.5em;">&lt;</span>
     {% else %}
-        <a style="padding: 0.5em;" href="{{ url_for(request.endpoint, page=prev_page) }}">&lt;</a>
+        <a style="padding: 0.5em;" href="{{ helpers.base.UrlForWithArgs(request.endpoint, page=prev_page) }}">&lt;</a>
     {% endif %}
 
     {% for page in pages %}
@@ -11,13 +11,13 @@
         {% elif page == current_page %}
             <span style="padding: 0.5em;">{{ current_page }}</span>
         {% else %}
-            <a style="padding: 0.5em;" href="{{ url_for(request.endpoint, page=page) }}">{{ page }}</a>
+            <a style="padding: 0.5em;" href="{{ helpers.base.UrlForWithArgs(request.endpoint, page=page) }}">{{ page }}</a>
         {% endif %}
     {% endfor %}
 
     {% if next_page is none %}
         <span style="padding: 0.5em;">&gt;</span>
     {% else %}
-        <a style="padding: 0.5em;" href="{{ url_for(request.endpoint, page=next_page) }}">&gt;</a>
+        <a style="padding: 0.5em;" href="{{ helpers.base.UrlForWithArgs(request.endpoint, page=next_page) }}">&gt;</a>
     {% endif %}
 </div>

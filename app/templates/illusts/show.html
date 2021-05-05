@@ -1,0 +1,85 @@
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+    <div id="illust-content">
+        <div class="heading" style="font-size: 32px">Illust #{{ illust.id }}</div>
+        <div style="display: flex; margin-top: 2em;">
+            <div style="width: 18%; margin-left: 1em;">
+                <h5><u>Site</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    <li><strong><a href="{{ helpers.illust.SiteIllustUrl(illust) }}">{{ helpers.illust.ShortLink(illust) }}</a></strong></li>
+                    <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
+                    <li><strong>Illust ID:</strong> {{ illust.site_illust_id }}</li>
+                    <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.site_created) }}</li>
+                    <li><strong>Pages:</strong> {{ illust.pages }}</li>
+                </ul>
+            </div>
+            <div style="width: 10%; margin-left: 1em;">
+                <h5><u>Metrics</u></h5>
+                <ul style="margin-left: 1.5em;">
+                        <li><strong>Score:</strong> {{ illust.score }}</li>
+                         {% for key,val in helpers.illust.SiteDataIterator(illust) %}
+                            <li><strong>{{ key.title() }}:</strong> {{ val }}</li>
+                        {% endfor %}
+                </ul>
+            </div>
+            <div style="width: 20%; margin-left: 1em;">
+                <h5><u>Tags</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    {% for tag in illust.tags %}
+                        <li>{{ tag.name }}</li>
+                    {% else %}
+                        <li><em>none</em></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div style="width: 15%; margin-left: 1em;">
+                <h5><u>Timestamps</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(illust.requery) }}</li>
+                    <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.created) }}</li>
+                    <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(illust.updated) }}</li>
+                </ul>
+            </div>
+            <div style="margin-left: 1em;">
+                <h5><u>Commentaries</u></h5>
+                <div style="border: 1px solid lightgrey; padding: 5px;">
+                    {% for description in illust.descriptions %}
+                        {{ helpers.base.ConvertStrToHTML(description.body) }}
+                        {% if not loop.last %}
+                            <br><hr><br>
+                        {% endif %}
+                    {% else %}
+                        There are no commentaries!
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 2em;">
+            <h5><u>Image URLs</u></h5>
+            <div style="display: flex;">
+                 {% for illust_url in illust.urls %}
+                    <div>
+                    <div>
+                        <ul style="margin-left: 1.5em; padding-right: 0.5em;">
+                            <li><strong>Order: {{ illust_url.order + 1 }}</strong></li>
+                            <li><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</li>
+                            <li><strong>Dimensions:</strong> {{ illust_url.width }} x {{ illust_url.height }}</li>
+                            <li><strong>Active:</strong> {{ illust_url.active | tojson }}</li>
+                        </ul>
+                    </div>
+                    <div>
+                        {% if illust_url.post != None %}
+                            {{ helpers.post.Preview(illust_url.post) | safe }}
+                        {% else %}
+                            <em>No post.</em>
+                        {% endif %}
+                    </div>
+                    </div>
+                {% else %}
+                    <em>none</em>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

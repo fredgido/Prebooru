@@ -27,8 +27,9 @@ def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
     if not force:
         upload = Upload.query.filter_by(type=type, request_url=request_url, referrer_url=referrer_url).order_by(Upload.id.desc()).first()
     if upload is None:
-        upload = DB.local.CreateUploadFromRequest(type, request_url, image_urls, uploader_id)
-    return upload.to_json()
+        return {'error': False, 'data': DB.local.CreateUploadFromRequest(type, request_url, image_urls, uploader_id).to_json()}
+    else:
+        return {'error': True, 'message': 'Already uploaded on upload #%d' % upload.id, 'data': upload.to_json()}
 
 
 def ProcessUpload(upload):

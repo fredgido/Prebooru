@@ -1,0 +1,64 @@
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+    <table id="artists-table" class="striped" width="100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Site</th>
+                <th>Names</th>
+                <th>Accounts</th>
+                <th>Webpages</th>
+                <th>Timestamps</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for artist in artists.items %}
+                {% set outer_loop = loop %}
+                <tr id="artist-{{ artist.id }}">
+                    <td><a href="{{ artist.show_url }}">artist #{{ artist.id }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</td>
+                    <td>
+                        <span><strong>Domain:</strong> {{ artist.site_domain }}</span><br>
+                        <span><strong>Artist ID:</strong> {{ artist.site_artist_id }}</span>
+                    </td>
+                    <td>
+                         {% for artist_name in artist.names %}
+                            {{ artist_name.name }}
+                            {% if not loop.last %}
+                                <br>
+                            {% endif %}
+                        {% else %}
+                            <em>none</em>
+                        {% endfor %}
+                    </td>
+                    <td>
+                         {% for site_account in artist.site_accounts %}
+                            {{ site_account.name }}
+                            {% if not loop.last %}
+                                <br>
+                            {% endif %}
+                        {% else %}
+                            <em>none</em>
+                        {% endfor %}
+                    </td>
+                    <td>
+                         {% for webpage in artist.webpages %}
+                            <code>[{{ 'Active' if webpage.active else 'Inactive' }}]</code> {{ webpage.url }}
+                            {% if not loop.last %}
+                                <br>
+                            {% endif %}
+                        {% else %}
+                            <em>none</em>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <strong>Requery:</strong> {{ helpers.base.FormatTimestamp(artist.requery) }}<br>
+                        <strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.created) }}<br>
+                        <strong>Updated:</strong> {{ helpers.base.FormatTimestamp(artist.updated) }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{ helpers.base.PageNavigation(artists) | safe }}
+{% endblock %}

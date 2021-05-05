@@ -1,6 +1,7 @@
 # APP\CONTROLLERS\UPLOADS.PY
 
 # ## PYTHON IMPORTS
+import requests
 from sqlalchemy.orm import selectinload
 from flask import Blueprint, request, render_template, abort
 
@@ -8,6 +9,7 @@ from flask import Blueprint, request, render_template, abort
 # ## LOCAL IMPORTS
 
 from app.logical.utility import EvalBoolString, IsTruthy, IsFalsey
+from app.logical.logger import LogError
 from ..models import Upload, Post
 from ..sources import base as BASE_SOURCE
 from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder
@@ -87,8 +89,15 @@ def create():
     force = request.values.get('force', type=EvalBoolString)
     print("Create upload:", force, request.values)
     try:
-        return BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
+        upload = BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
     except Exception as e:
         print("Database exception!", e)
+        LogError('controllers.uploads.create', "Unhandled exception occurred creating upload: %s" % (str(e)))
         request.environ.get('werkzeug.server.shutdown')()
-        return "quitting"
+        return {'error': True, 'message': 'Database exception! Check log file.'}
+    try:
+        requests.get('http://127.0.0.1:4000/check_uploads', timeout=2)
+    except Exception as e:
+        print("Unable to contact worker:", e)
+    finally:
+        return upload

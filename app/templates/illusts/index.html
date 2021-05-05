@@ -1,0 +1,67 @@
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+    <table id="illusts-table" class="striped" width="100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Site</th>
+                <th>Metrics</th>
+                <th>Tags</th>
+                <th>Illust urls</th>
+                <th>Timestamps</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for illust in illusts.items %}
+                {% set outer_loop = loop %}
+                <tr id="illust-{{ illust.id }}">
+                    <td><a href="{{ illust.show_url }}">illust #{{ illust.id }}</a> <a href="{{ helpers.illust.PostSearch(illust) }}">&raquo;</td>
+                    <td>
+                        <span><strong>Domain:</strong> {{ illust.site_domain }}</span><br>
+                        <span><strong>Illust ID:</strong> {{ illust.site_illust_id }}</span><br>
+                        <span><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.site_created) }}</span><br>
+                        <span><strong>Pages:</strong> {{ illust.pages }}</span>
+                    </td>
+                    <td>
+                        <span><strong>Score:</strong> {{ illust.score }}</span><br>
+                         {% for key,val in helpers.illust.SiteDataIterator(illust) %}
+                            <span><strong>{{ key.title() }}:</strong> {{ val }}</span>
+                            {% if not loop.last %}
+                                <br>
+                            {% endif %}
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <div style="max-width: 20vw;">
+                             {% for tag in illust.tags %}
+                                <span style="white-space: nowrap;">{{ tag.name }}</span>&emsp;
+                            {% else %}
+                                <em>none</em>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                         {% for illust_url in illust.urls %}
+                            <span><strong>#{{ illust_url.order + 1 }}</strong>
+                                <code>[{{ 'Active' if illust_url.active else 'Inactive' }}]</code>
+                                ({{ illust_url.width }} x {{ illust_url.height }})</span><br>
+                            <span><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</span>
+                            {% if not loop.last %}
+                                <br>
+                            {% endif %}
+                        {% else %}
+                            <em>none</em>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        <strong>Requery:</strong> {{ helpers.base.FormatTimestamp(illust.requery) }}<br>
+                        <strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.created) }}<br>
+                        <strong>Updated:</strong> {{ helpers.base.FormatTimestamp(illust.updated) }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{ helpers.base.PageNavigation(illusts) | safe }}
+{% endblock %}

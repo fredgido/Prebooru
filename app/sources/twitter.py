@@ -312,6 +312,9 @@ def GetFullUrl(illust_url):
     return media_url
 
 
+def GetIllustUrl(site_illust_id):
+    return "https://twitter.com/i/web/status/%d" % site_illust_id
+
 def SubscriptionCheck(request_url):
     artist_id = None
     artwork_match = USERS_RG.match(request_url)

@@ -37,3 +37,7 @@ def GetSiteId(domain):
 
 def GetSiteDomain(site_id):
     return SITES[Site(site_id).name]
+
+
+def GetSiteKey(site_id):
+    return Site(site_id).name

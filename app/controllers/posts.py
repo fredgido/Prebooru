@@ -7,7 +7,7 @@ from sqlalchemy.orm import lazyload
 
 # ## LOCAL IMPORTS
 
-from ..models import IllustUrl, Post
+from ..models import Illust, IllustUrl, Post
 from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation
 
 
@@ -25,7 +25,8 @@ def show_json(id):
 
 @bp.route('/posts/<int:id>')
 def show_html(id):
-    abort(404)
+    post = Post.query.filter_by(id=id).first()
+    return render_template("posts/show.html", post=post) if post is not None else abort(404)
 
 
 @bp.route('/posts.json', methods=['GET'])
@@ -49,8 +50,12 @@ def index():
     q = q.options(lazyload('*'))
     q = IdFilter(q, search)
     q = DefaultOrder(q)
-    if 'illust_id' in search:
-        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_illust_id=search['illust_id'])))
-    if 'illust_site_id' in search:
-        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_id=search['illust_site_id'])))
+    if 'site_illust_id' in search:
+        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_illust_id=search['site_illust_id'])))
+    if 'isite_id' in search:
+        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_id=search['isite_id'])))
+    if 'site_artist_id' in search:
+        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_artist_id=search['site_artist_id']))))
+    if 'asite_id' in search:
+        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_id=search['asite_id']))))
     return q

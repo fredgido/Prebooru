@@ -7,9 +7,18 @@ from flask import jsonify, render_template
 
 # ## FUNCTIONS
 
+def TemplatePath(model):
+    return model.__name__.lower() + 's/'
+
 
 def ShowJson(model, id):
     item = model.query.filter_by(id=id).first()
+    return item.to_json() if item is not None else {}
+
+
+def ShowHtml(model, id):
+    item = model.query.filter_by(id=id).first()
+    return render_template
     return item.to_json() if item is not None else {}
 
 
@@ -38,7 +47,6 @@ def GetSearch(request):
         key = match.group(1)
         data[key] = request.args[arg]
     return data
-
 
 def IdFilter(query, search):
     if 'id' in search:

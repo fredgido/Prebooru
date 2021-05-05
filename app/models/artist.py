@@ -4,9 +4,11 @@
 import datetime
 from typing import List
 from dataclasses import dataclass
+from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import db
+from ..sites import GetSiteDomain
 from .base import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
 from .artist_url import ArtistUrl
 from .illust import Illust
@@ -57,3 +59,11 @@ class Artist(JsonModel):
     requery = db.Column(db.DateTime(timezone=False), nullable=True)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
     updated = db.Column(db.DateTime(timezone=False), nullable=False)
+
+    @property
+    def site_domain(self):
+        return GetSiteDomain(self.site_id)
+
+    @property
+    def show_url(self):
+        return url_for("artist.show_html", id=self.id)

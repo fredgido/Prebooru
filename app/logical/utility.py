@@ -86,3 +86,22 @@ def EvalBoolString(string):
         return True
     if IsFalsey(string):
         return False
+
+
+def StaticVars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+
+def UniqueObjects(objs):
+    seen = set()
+    output = []
+    for obj in objs:
+        if obj.id not in seen:
+            seen.add(obj.id)
+            output.append(obj)
+    return output
+

@@ -8,6 +8,7 @@ from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import db, storage
+from ..logical.utility import UniqueObjects
 from .base import JsonModel, RemoveKeys
 from .illust_url import IllustUrl
 from .error import Error
@@ -63,6 +64,14 @@ class Post(JsonModel):
     @property
     def show_url(self):
         return url_for("post.show_html", id=self.id)
+
+    @property
+    def illusts(self):
+        return UniqueObjects([illust_url.illust for illust_url in self.illust_urls])
+
+    @property
+    def artists(self):
+        return UniqueObjects([illust.artist for illust in self.illusts])
 
     id = db.Column(db.Integer, primary_key=True)
     width = db.Column(db.Integer, nullable=False)

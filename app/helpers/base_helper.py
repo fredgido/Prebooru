@@ -1,16 +1,30 @@
+import re
+import html
 import datetime
-from flask import Markup, request, render_template
+from flask import Markup, request, render_template, url_for, Markup
+
+def SearchUrlFor(endpoint, **kwargs):
+    url_args = {}
+    for arg in kwargs:
+        key = 'search[' + arg + ']'
+        url_args[key] = kwargs[arg]
+    return url_for(endpoint, **url_args)
+
+def ConvertStrToHTML(text):
+    return Markup(re.sub('\r?\n', '<br>', html.escape(text)))
 
 
 def StrOrNone(val):
     return Markup('<em>none</em>') if val is None else val
 
 def FormatTimestamp(timeval):
-    return datetime.datetime.isoformat(timeval)
+    return datetime.datetime.isoformat(timeval) if timeval is not None else Markup('<em>none</em>')
 
 
 def NavLinkTo(text, endpoint):
-    klass = 'current' if request.endpoint == endpoint else None
+    link_blueprint = endpoint.split('.')[0]
+    request_blueprint = request.endpoint.split('.')[0]
+    klass = 'current' if link_blueprint == request_blueprint else None
     print("#0", repr(klass), repr(endpoint), repr(request.endpoint))
     html_text = text.lower().replace(" ", "-")
     return Markup(render_template("layouts/_nav_link.html", text=text, html_text=html_text, endpoint=endpoint, klass=klass))
@@ -31,3 +45,13 @@ def PageNavigation(paginate):
     pages += ['...'] if right != penultimate_page else []
     pages += [last_page] if last_page != 1 else []
     return render_template("layouts/_paginator.html", prev_page=previous_page, current_page=current_page, next_page=next_page, pages=pages)
+
+def UrlForWithArgs(endpoint, **kwargs):
+    url_args = {}
+    for arg in kwargs:
+        url_args[arg] = kwargs[arg]
+    for arg in request.args:
+        if arg not in kwargs:
+            url_args[arg] = request.args[arg]
+    return url_for(endpoint, **url_args)
+

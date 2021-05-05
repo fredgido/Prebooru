@@ -67,3 +67,7 @@ table.striped tr:nth-child(even) {
 table.striped tbody tr:hover {
     background: #e1e8ff;
 }
+code {
+    font-family: monospace;
+    background-color: lightgrey;
+}
