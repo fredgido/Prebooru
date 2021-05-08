@@ -9,7 +9,8 @@ import datetime
 # ##LOCAL IMPORTS
 from .. import session as SESSION
 from ..models import ArtistUrl, Artist, Tag, IllustUrl, TwitterData, Illust, Label, Description
-from ..logical.utility import GetCurrentTime, SafeGet
+from ..cache import ApiData
+from ..logical.utility import GetCurrentTime, DaysFromNow, SafeGet
 from ..sites import Site, GetSiteId
 
 
@@ -29,13 +30,18 @@ def ProcessTwitterTimestring(time_string):
     return datetime.datetime.strptime(time_string, '%a %b %d %H:%M:%S +0000 %Y')
 
 
+###MOVE TO LOCAL
 def UpdateRequery(instance, commit=True):
     instance.requery = GetCurrentTime() + datetime.timedelta(days=1)
     if commit:
-        SESSION.add(instance)
         SESSION.commit()
     return instance
 
+def UpdateTimestamps(instance, dirty):
+    if dirty:
+        instance.updated = GetCurrentTime()
+    instance.requery = GetCurrentTime() + datetime.timedelta(days=1)
+###ENDMOVE
 
 def ProcessIllustData(tweet, user):
     print("ProcessIllustData")
@@ -43,13 +49,14 @@ def ProcessIllustData(tweet, user):
     if artist is None:
         artist = CreateArtistFromUser(user)
     elif artist.requery is None or artist.requery < GetCurrentTime():
-        UpdateArtistFromUser(artist, user)
-    illust = CreateIllustFromIllust(tweet, artist.id)
+        #UpdateArtistFromUser(artist, user)
+        pass
+    illust = CreateIllustFromTweet(tweet, artist.id)
     return illust
 
 
-def CreateIllustFromIllust(tweet, artist_id, commit=True):
-    print("CreateIllustFromIllust")
+def CreateIllustFromTweet(tweet, artist_id, commit=True):
+    print("CreateIllustFromTweet")
     current_time = GetCurrentTime()
     data = {
         'site_id': Site.TWITTER.value,
@@ -101,8 +108,8 @@ def AddSiteData(illust, tweet):
     data = {
         'illust_id': illust.id,
         'retweets': tweet['retweet_count'],
-        'replies': tweet['reply_count'],
-        'quotes': tweet['quote_count'],
+        'replies': tweet['reply_count'] if 'reply_count' in tweet else None,
+        'quotes': tweet['quote_count'] if 'quote_count' in tweet else None,
     }
     site_data = TwitterData(**data)
     SESSION.add(site_data)
@@ -122,9 +129,13 @@ def GetDBTags(tweet):
 
     tag_data = SafeGet(tweet, 'entities', 'hashtags') or []
     tags = []
+    seen = set()
     for entry in tag_data:
         tagname = entry['text'].lower()
+        if tagname in seen:
+            continue
         tags.append(FindOrCommitTag(tagname))
+        seen.add(tagname)
     if len(tags):
         SESSION.commit()
     return tags
@@ -205,42 +216,48 @@ def AddVideoUrls(illust, tweet, commit=True):
 
 
 def AddArtistName(artist, twuser):
+    print("AddArtistName")
     name_text = twuser['name']
     current_names = [label.name for label in artist.names]
     if name_text in current_names:
-        return
+        return False
     lbl = Label.query.filter_by(name=name_text).first()
     if lbl is None:
         lbl = Label(name=name_text)
     artist.names.append(lbl)
-    SESSION.add(artist)
     SESSION.commit()
+    print("Added artist name:", name_text)
+    return True
 
 
 def AddArtistSiteAccount(artist, twuser):
+    print("AddArtistSiteAccount")
     site_account_text = twuser['screen_name']
     current_site_accounts = [label.name for label in artist.site_accounts]
     if site_account_text in current_site_accounts:
-        return
+        return False
     lbl = Label.query.filter_by(name=site_account_text).first()
     if lbl is None:
         lbl = Label(name=site_account_text)
     artist.site_accounts.append(lbl)
-    SESSION.add(artist)
     SESSION.commit()
+    print("Added artist account:", site_account_text)
+    return True
 
 
 def AddArtistProfile(artist, twuser):
+    print("AddArtistProfile")
     profile_text = GetUserDescription(twuser)
     current_profiles = [descr.body for descr in artist.profiles]
     if profile_text in current_profiles:
-        return
+        return False
     descr = Description.query.filter_by(body=profile_text).first()
     if descr is None:
         descr = Description(body=profile_text)
     artist.profiles.append(descr)
-    SESSION.add(artist)
     SESSION.commit()
+    print("Added artist profile.")
+    return True
 
 
 def AddArtistWebpages(user, artist_id, commit=True):
@@ -267,6 +284,8 @@ def AddArtistWebpages(user, artist_id, commit=True):
         artist_urls.append(artist_url)
     if commit and len(new_urls):
         SESSION.add_all(new_urls)
+        SESSION.commit()
+        print("Added artist webpages:", [webpage.url for webpage in new_urls])
     return artist_urls
 
 
@@ -294,7 +313,8 @@ def CreateArtistFromUser(twuser, commit=True):
     data = {
         'site_id': Site.TWITTER.value,
         'site_artist_id': int(twuser['id_str']),
-        'requery': None,
+        'site_created': ProcessTwitterTimestring(twuser['created_at']),
+        'requery': GetCurrentTime() + datetime.timedelta(days=1),
         'created': current_time,
         'updated': current_time,
     }
@@ -312,45 +332,116 @@ def CreateArtistFromUser(twuser, commit=True):
 #   Update
 
 
-def UpdateArtistFromUser(artist, twitter_data):
-    print("UpdateArtistFromUser (bypassed)")
-    return
-    temp_artist = CreateArtistFromUser(twitter_data, False)
-    for c in temp_artist.__table__.columns:
-        if c.key in ['id', 'artist_id', 'requery', 'created', 'updated']:
-            continue
-        value = getattr(temp_artist, c.key)
-        if value is None:
-            continue
-        setattr(artist, c.key, value)
-    if SESSION.is_modified(artist):
-        print("Found updated artist info:", artist.id)
-        artist.updated = GetCurrentTime()
-    current_webpages = ArtistUrl.query.filter_by(artist_id=artist.id).all()
-    active_webpages = AddArtistWebpages(twitter_data, artist.id, False)
+def UpdateIllustFromTweet(illust, tweet):
+    illust.score = tweet['favorite_count']
+    illust.site_data.retweets = tweet['retweet_count']
+    illust.site_data.replies = tweet['reply_count'] if 'reply_count' in tweet else illust.site_data.replies
+    illust.site_data.quotes = tweet['quote_count'] if 'quote_count' in tweet else illust.site_data.quotes
+    dirty = SESSION.is_modified(illust) or SESSION.is_modified(illust.site_data)
+    UpdateTimestamps(illust, dirty)
+    if dirty:
+        print("Committing updates for illust #", illust.id)
+    else:
+        print("No changes detected for illust #", illust.id)
+    # Must update the requery if nothing else
+    SESSION.commit()
+
+
+def UpdateArtistFromUser(artist, twuser):
+    print("UpdateArtistFromUser")
+    dirty = False
+    if artist.created is None:
+        artist.created = ProcessTwitterTimestring(tweet['created_at'])
+        dirty = True
+    dirty = AddArtistName(artist, twuser) or dirty
+    dirty = AddArtistSiteAccount(artist, twuser) or dirty
+    dirty = AddArtistProfile(artist, twuser) or dirty
+    dirty = UpdateArtistWebpages(artist, twuser) or dirty
+    UpdateTimestamps(artist, dirty)
+    if dirty:
+        print("Committing updates for artist #", artist.id)
+    else:
+        print("No changes detected for artist #", artist.id)
+    # Must update the requery if nothing else
+    SESSION.commit()
+
+def UpdateArtistWebpages(artist, twuser):
+    print("UpdateArtistWebpages")
+    current_webpages = artist.webpages
+    active_webpages = AddArtistWebpages(twuser, artist.id, False)
     active_urls = [webpage.url for webpage in active_webpages]
+    print("Current:\n", current_webpages)
+    print("Active:\n", active_webpages)
     for webpage in active_webpages:
-        if webpage.id is not None or webpage.active:
+        if webpage.id is not None and webpage.active:
             continue
         if not webpage.active:
             print("Activated webpage:", webpage.url)
             webpage.active = True
         else:
             print("New webpage:", webpage.url)
-        SESSION.add(webpage)
+            SESSION.add(webpage)
     for webpage in current_webpages:
         if webpage.url not in active_urls:
             print("Deactivated webpage:", webpage.url)
             webpage.active = False
-            SESSION.add(webpage)
-    UpdateRequery(artist, False)
-    SESSION.add(artist)
+    if SESSION.dirty or SESSION.new:
+        SESSION.commit()
+        print("Modified webpages for artist #", artist.id)
+        return True
+    return False
+
+
+# OTHER
+
+def CacheTimelineData(twitter_data, type):
+    tweet_ids = list(map(int, twitter_data.keys()))
+    cache_data = GetApiData(tweet_ids, type)
+    for key in twitter_data:
+        data_id = int(key)
+        cache_item = next(filter(lambda x: x.data_id == data_id, cache_data), None)
+        if not cache_item:
+            print("CacheTimelineData - adding cache item:", type, data_id)
+            data = {
+                'site_id': Site.TWITTER.value,
+                'type': type,
+                'data_id': data_id,
+            }
+            cache_item = ApiData(**data)
+            SESSION.add(cache_item)
+        cache_item.data = twitter_data[key]
+        cache_item.expires = DaysFromNow(1)
     SESSION.commit()
 
-
-def GetIllust(site_illust_id):
+def GetSiteIllust(site_illust_id):
     return Illust.query.filter_by(site_id=Site.TWITTER.value, site_illust_id=site_illust_id).first()
 
+def GetSiteArtist(site_artist_id):
+    return Artist.query.filter_by(site_id=Site.TWITTER.value, site_artist_id=site_artist_id).first()
 
-def GetArtist(artist_id):
-    return Artist.query.filter_by(id=artist_id).first(), None
+def GetApiData(data_ids, type):
+    q = ApiData.query
+    q = q.filter_by(site_id=Site.TWITTER.value, type=type)
+    if len(data_ids) == 1:
+        q = q.filter_by(data_id=data_ids[0])
+    else:
+        q = q.filter(ApiData.data_id.in_(data_ids))
+    q = q.filter(ApiData.expires > GetCurrentTime())
+    return q.all()
+
+def GetApiArtist(site_artist_id):
+    cache = GetApiData([site_artist_id], 'artist')
+    return cache[0].data if len(cache) else None
+
+def GetApiIllust(site_illust_id):
+    cache = GetApiData([site_illust_id], 'illust')
+    return cache[0].data if len(cache) else None
+
+"""
+def GetApiArtists(site_illust_ids):
+    q = ApiData.query
+    q = q.filter_by(site_id=Site.TWITTER.value, type='artist')
+    q = q.filter(ApiData.data_id.in_(site_illust_ids))
+    q = q.filter(ApiData.expires > GetCurrentTime())
+    return q.all()
+"""

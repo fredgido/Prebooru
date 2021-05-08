@@ -1,0 +1,104 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Upload # {{ upload.id }}{% endblock %}
+
+{% block content %}
+    <div id="upload-content">
+        <div class="heading" style="font-size: 32px">Upload #{{ upload.id }}</div>
+        <div style="display: flex; margin-top: 2em;">
+            <div style="width: 15%; margin-left: 1em;">
+                <h5><u>Info</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    <li><strong>Status:</strong> {{ upload.status }}</li>
+                    <li><strong>Type:</strong> {{ upload.type }}</li>
+                    <li><strong>Successes:</strong> {{ upload.successes }}</li>
+                    <li><strong>Failures:</strong> {{ upload.failures }}</li>
+                    <li><strong>Uploaded:</strong> {{ helpers.base.FormatTimestamp(upload.created) }}</li>
+                </ul>
+            </div>
+            <div style="width: 30%; margin-left: 1em;">
+                <h5><u>Webpages</u></h5>
+                <ul style="margin-left: 1.5em;">
+                        <li><strong>Request:</strong> {{ upload.request_url }}</li>
+                        <li><strong>Referrer:</strong> {{ helpers.base.StrOrNone(upload.referrer_url) }}</li>
+                        <li><strong>Image urls:</strong>
+                        {% for image_url in upload.image_urls %}
+                            {% if loop.first %}
+                                <ul style="margin-left: 1.5em;">
+                            {% endif %}
+                                <li>{{ image_url.url }}</li>
+                            {% if loop.last %}
+                                </ul>
+                            {% endif %}
+                        {% else %}
+                            <em>none</em>
+                        {% endfor %}
+                        </li>
+                </ul>
+            </div>
+            <div style="width: 20%; margin-left: 1em;">
+                <h5><u>Errors</u></h5>
+                {% for error in upload.errors %}
+                    <ul style="margin-left: 1.5em;">
+                        <li><strong>Module:</strong>{{ error.module }}</li>
+                        <li><strong>Message:</strong>{{ error.message }}</li>
+                        <li><strong>Created:</strong>{{ helpers.base.FormatTimestamp(error.created) }}</li>
+                    </ul>
+                    {% if not loop.last %}
+                        <hr>
+                    {% endif %}
+                {% else %}
+                    <ul><li><em>none</em></li></ul>
+                {% endfor %}
+            </div>
+            <div style="width: 15%; margin-left: 1em;">
+                <h5><u>Site data</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    {% if upload.artist != None %}
+                        <li><strong><a href="{{ url_for('artist.show_html', id=upload.artist.id) }}">artist #{{ upload.artist.id }}</a></strong>
+                            <ul style="margin-left: 1.5em;">
+                                <li><strong>Names:</strong>
+                                     {% for artist_name in upload.artist.names %}
+                                        <span>{{ artist_name.name }}</span>&emsp;
+                                    {% else %}
+                                        <em>none</em>
+                                    {% endfor %}
+                                    <li><strong>Accounts:</strong>
+                                         {% for account in upload.artist.site_accounts %}
+                                            <span>{{ account.name }}</span>&emsp;
+                                        {% else %}
+                                            <em>none</em>
+                                        {% endfor %}
+                                    </li>
+                                </li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    {% if upload.illust != None %}
+                        <li><strong><a href="{{ url_for('illust.show_html', id=upload.illust.id) }}">illust #{{ upload.illust.id }}</a></strong>
+                            <ul style="margin-left: 1.5em;">
+                                <li><strong>Type:</strong> {{ upload.illust.type }}</li>
+                                <li><strong>Total:</strong> {{ upload.illust.pages }}</li>
+                            </ul>
+                        </li>
+                    {% endif %}
+                    {% if upload.artist == None and upload.illust == None %}
+                        <li><em>none</em></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        <div style="margin-top: 2em;">
+            <h5><u>Posts</u></h5>
+            <div style="display: flex;">
+                 {% for post in upload.posts %}
+                    <div style="width: 340px;">
+                        {{ helpers.post.Preview(post) | safe }}
+                    </div>
+                {% else %}
+                    <em>none</em>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

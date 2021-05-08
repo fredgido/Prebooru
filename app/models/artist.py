@@ -14,6 +14,8 @@ from .artist_url import ArtistUrl
 from .illust import Illust
 from .label import Label
 from .description import Description
+from .post import Post
+from .illust_url import IllustUrl
 
 # ##GLOBAL VARIABLES
 
@@ -41,6 +43,7 @@ class Artist(JsonModel):
     id: int
     site_id: int
     site_artist_id: IntOrNone
+    site_created: DateTimeOrNull
     site_accounts: List[lambda x: x['name']]
     names: List[lambda x: x['name']]
     profiles: List[lambda x: x['body']]
@@ -51,14 +54,25 @@ class Artist(JsonModel):
     id = db.Column(db.Integer, primary_key=True)
     site_id = db.Column(db.Integer, nullable=False)
     site_artist_id = db.Column(db.Integer, nullable=True)
+    site_created = db.Column(db.DateTime(timezone=False), nullable=True)
     site_accounts = db.relationship(Label, secondary=ArtistSiteAccounts, lazy='subquery', backref=db.backref('account_artists', lazy=True))
     names = db.relationship(Label, secondary=ArtistNames, lazy='subquery', backref=db.backref('name_artists', lazy=True))
     profiles = db.relationship(Description, secondary=ArtistProfiles, lazy='subquery', backref=db.backref('artists', lazy=True))
     illusts = db.relationship(Illust, lazy=True, backref=db.backref('artist', lazy=True))
-    webpages = db.relationship(ArtistUrl, backref='artist', lazy=True)
+    webpages = db.relationship(ArtistUrl, backref='artist', lazy=True, cascade="all, delete")
     requery = db.Column(db.DateTime(timezone=False), nullable=True)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
     updated = db.Column(db.DateTime(timezone=False), nullable=False)
+
+    @property
+    def recent_posts(self):
+        if self._recent_posts is None:
+            q = Post.query
+            q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_artist_id=self.site_artist_id))))
+            q = q.order_by(Post.id.desc())
+            q = q.limit(10)
+            self._recent_posts = q.all()
+        return self._recent_posts
 
     @property
     def site_domain(self):
@@ -67,3 +81,5 @@ class Artist(JsonModel):
     @property
     def show_url(self):
         return url_for("artist.show_html", id=self.id)
+
+    _recent_posts = None

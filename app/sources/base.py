@@ -1,10 +1,11 @@
 # APP/SOURCES/BASE.PY
 
 # ##PYTHON IMPORTS
-from ..sources import SOURCES
+from ..sites import GetSiteKey
+from ..sources import SOURCES, DICT as SOURCEDICT
 from ..models import Upload
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
-from .. import database as DB
+from ..database import local as DBLOCAL
 
 
 # ##FUNCTIONS
@@ -27,29 +28,47 @@ def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
     if not force:
         upload = Upload.query.filter_by(type=type, request_url=request_url, referrer_url=referrer_url).order_by(Upload.id.desc()).first()
     if upload is None:
-        return {'error': False, 'data': DB.local.CreateUploadFromRequest(type, request_url, image_urls, uploader_id).to_json()}
+        return {'error': False, 'data': DBLOCAL.CreateUploadFromRequest(type, request_url, image_urls, uploader_id).to_json()}
     else:
         return {'error': True, 'message': 'Already uploaded on upload #%d' % upload.id, 'data': upload.to_json()}
 
 
 def ProcessUpload(upload):
     upload.status = 'processing'
-    DB.local.SaveData(upload)
+    DBLOCAL.SaveData(upload)
     source = GetSource(upload.request_url, upload.referrer_url)
-    illust_id = source.GetIllustId(upload.request_url, upload.referrer_url)
-    print(source)
-    illust, error = source.GetDBIllust(illust_id)
+    site_illust_id = source.GetIllustId(upload.request_url, upload.referrer_url)
+    error = source.Prework(site_illust_id)
     if error is not None:
-        DB.local.AppendError(upload, error)
+        DBLOCAL.AppendError(upload, error)
+    illust = source.DB.GetSiteIllust(site_illust_id)
     if illust is None:
-        upload.status = 'error'
-        DB.local.CreateAndAppendError('sources.base.ProcessUpload', "Error creating illust record.", upload)
-        return
-    artist, error = source.GetDBArtist(illust)
-    if error is not None:
-        DB.local.AppendError(upload, error)
+        illust = source.CreateIllust(site_illust_id)
+        if DBLOCAL.IsError(illust):
+            upload.status = 'error'
+            DBLOCAL.AppendError(upload, illust)
+            return
+    elif DBLOCAL.CheckRequery(illust):
+        source.UpdateIllust(illust)
+    artist = DBLOCAL.GetArtist(illust.artist_id)
+    if DBLOCAL.CheckRequery(artist):
+        source.UpdateArtist(artist)
+
     print(upload, illust, artist)
     if upload.type == 'post' or upload.type == 'subscription':
         DownloadMultipleImages(illust, upload, source)
     elif upload.type == 'image':
         DownloadSingleImage(illust, upload, source)
+
+def _Source(site_id):
+    site_key = GetSiteKey(site_id)
+    return SOURCEDICT[site_key]
+
+def ProcessArtist(artist):
+    source = _Source(artist.site_id)
+    source.UpdateDBArtist(artist)
+
+
+def CreateNewArtist(site_id, site_artist_id):
+    source = GetSource(site_id)
+    source.CreateDBArtist(site_artist_id)

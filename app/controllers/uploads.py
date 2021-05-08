@@ -35,11 +35,15 @@ def CheckParams(request):
 #   Routes
 
 
-@bp.route('/uploads/<int:id><string:type>')
-def show(id,type):
-    if type == '.json':
-        return ShowJson(Upload, id)
-    abort(404)
+@bp.route('/uploads/<int:id>.json')
+def show_json(id):
+    return ShowJson(Upload, id)
+
+
+@bp.route('/uploads/<int:id>')
+def show_html(id):
+    upload = Upload.query.filter_by(id=id).first()
+    return render_template("uploads/show.html", upload=upload) if upload is not None else abort(404)
 
 
 @bp.route('/uploads.json', methods=['GET'])

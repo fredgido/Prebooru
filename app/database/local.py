@@ -3,7 +3,7 @@
 # ##LOCAL IMPORTS
 from ..logical.utility import GetCurrentTime
 from .. import session as SESSION
-from ..models import Error, Post, UploadUrl, Upload
+from ..models import Error, Post, UploadUrl, Upload, Artist
 
 
 # ##FUNCTIONS
@@ -83,7 +83,6 @@ def CreateError(module_name, message, commit=True):
 
 def AppendError(instance, error):
     instance.errors.append(error)
-    SESSION.add(instance)
     SESSION.commit()
 
 
@@ -94,7 +93,6 @@ def CreateAndAppendError(module_name, message, instance):
 
 
 def SaveData(instance):
-    SESSION.add(instance)
     SESSION.commit()
 
 
@@ -104,3 +102,10 @@ def GetDBPostByField(field, value):
 
 def IsError(instance):
     return isinstance(instance, Error)
+
+
+def GetArtist(artist_id):
+    return Artist.query.filter_by(id=artist_id).first()
+
+def CheckRequery(instance):
+    return instance.requery is None or instance.requery < GetCurrentTime()

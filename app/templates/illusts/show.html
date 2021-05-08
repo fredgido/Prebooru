@@ -1,5 +1,7 @@
 {% extends 'layouts/base.html' %}
 
+{% block title %}Illust # {{ illust.id }}{% endblock %}
+
 {% block content %}
     <div id="illust-content">
         <div class="heading" style="font-size: 32px">Illust #{{ illust.id }}</div>
@@ -33,7 +35,7 @@
                     {% endfor %}
                 </ul>
             </div>
-            <div style="width: 15%; margin-left: 1em;">
+            <div style="width: 20%; margin-left: 1em;">
                 <h5><u>Timestamps</u></h5>
                 <ul style="margin-left: 1.5em;">
                     <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(illust.requery) }}</li>
@@ -59,22 +61,22 @@
             <h5><u>Image URLs</u></h5>
             <div style="display: flex;">
                  {% for illust_url in illust.urls %}
-                    <div>
-                    <div>
-                        <ul style="margin-left: 1.5em; padding-right: 0.5em;">
-                            <li><strong>Order: {{ illust_url.order + 1 }}</strong></li>
-                            <li><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</li>
-                            <li><strong>Dimensions:</strong> {{ illust_url.width }} x {{ illust_url.height }}</li>
-                            <li><strong>Active:</strong> {{ illust_url.active | tojson }}</li>
-                        </ul>
-                    </div>
-                    <div>
-                        {% if illust_url.post != None %}
-                            {{ helpers.post.Preview(illust_url.post) | safe }}
-                        {% else %}
-                            <em>No post.</em>
-                        {% endif %}
-                    </div>
+                    <div style="width: 25%;">
+                        <div>
+                            <ul style="margin-left: 1.5em; padding-right: 0.5em;">
+                                <li><strong>Order: {{ illust_url.order + 1 }}</strong></li>
+                                <li><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</li>
+                                <li><strong>Dimensions:</strong> {{ illust_url.width }} x {{ illust_url.height }}</li>
+                                <li><strong>Active:</strong> {{ illust_url.active | tojson }}</li>
+                            </ul>
+                        </div>
+                        <div>
+                            {% if illust_url.post != None %}
+                                {{ helpers.post.Preview(illust_url.post) | safe }}
+                            {% else %}
+                                <em>No post.</em>
+                            {% endif %}
+                        </div>
                     </div>
                 {% else %}
                     <em>none</em>

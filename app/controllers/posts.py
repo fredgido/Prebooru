@@ -50,6 +50,10 @@ def index():
     q = q.options(lazyload('*'))
     q = IdFilter(q, search)
     q = DefaultOrder(q)
+    if 'artist_id' in search:
+        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(id=search['artist_id']))))
+    if 'illust_id' in search:
+        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(id=search['illust_id'])))
     if 'site_illust_id' in search:
         q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_illust_id=search['site_illust_id'])))
     if 'isite_id' in search:

@@ -23,6 +23,7 @@ def init_db(make_new):
 
     from app import db
     from app.models import NONCE  # noqa: F401
+    from app.cache import NONCE  # noqa: F401
 
     class AlembicVersion(db.Model):
         version_num = db.Column(db.String(32), nullable=False, primary_key=True)
@@ -35,6 +36,7 @@ def init_db(make_new):
 def migrate_db():
     from app import app, db
     from app.models import NONCE  # noqa: F401
+    from app.cache import NONCE  # noqa: F401
 
     migrate = Migrate(app, db, render_as_batch=True)  # noqa: F841
     manager = Manager(app)

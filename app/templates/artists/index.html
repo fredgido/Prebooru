@@ -16,7 +16,7 @@
             {% for artist in artists.items %}
                 {% set outer_loop = loop %}
                 <tr id="artist-{{ artist.id }}">
-                    <td><a href="{{ artist.show_url }}">artist #{{ artist.id }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</td>
+                    <td><a href="{{ artist.show_url }}">artist #{{ artist.id }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a></td>
                     <td>
                         <span><strong>Domain:</strong> {{ artist.site_domain }}</span><br>
                         <span><strong>Artist ID:</strong> {{ artist.site_artist_id }}</span>

@@ -8,6 +8,7 @@ from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import db
+from ..logical.utility import UniqueObjects
 from .base import JsonModel, IntOrNone, StrOrNone
 from .upload_url import UploadUrl
 from .post import Post
@@ -74,5 +75,34 @@ class Upload(JsonModel):
 
     @property
     def show_url(self):
-        return url_for("upload.show", id=self.id, type="")
+        return url_for("upload.show_html", id=self.id)
 
+    @property
+    def site_id(self):
+        return self._source.SiteId()
+
+    @property
+    def site_illust_id(self):
+        return self._source.GetIllustId(self.request_url, self.referrer_url)
+
+    @property
+    def illust(self):
+        if self._illust is None:
+            print("illust")
+            if len(self.posts) == 0:
+                return None
+            illusts = UniqueObjects(sum([post.illusts for post in self.posts], []))
+            self._illust = next(filter(lambda x: (x.site_id == self.site_id) and (x.site_illust_id == self.site_illust_id), illusts), None)
+        return self._illust
+
+    @property
+    def artist(self):
+        return self.illust.artist if self.illust is not None else None
+
+    @property
+    def _source(self):
+        from ..sources.base import GetSource
+        return GetSource(self.request_url, self.referrer_url)
+
+    # Stored properties
+    _illust = None

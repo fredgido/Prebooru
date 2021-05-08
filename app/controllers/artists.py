@@ -25,7 +25,8 @@ def show_json(id):
 
 @bp.route('/artists/<int:id>', methods=['GET'])
 def show_html(id):
-    abort(404)
+    artist = Artist.query.filter_by(id=id).first()
+    return render_template("artists/show.html", artist=artist) if artist is not None else abort(404)
 
 
 @bp.route('/artists.json', methods=['GET'])
@@ -47,5 +48,9 @@ def index():
     q = Artist.query
     q = q.options(selectinload(Artist.names), selectinload(Artist.site_accounts), selectinload(Artist.webpages), lazyload(Artist.profiles))
     q = IdFilter(q, search)
+    if 'site_artist_id' in search:
+        q = q.filter_by(site_artist_id=search['site_artist_id'])
+    if 'illust_site_illust_id' in search:
+        q = q.filter(Artist.illusts.any(site_illust_id=search['illust_site_illust_id']))
     q = DefaultOrder(q)
     return q

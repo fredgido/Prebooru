@@ -3,6 +3,7 @@
 # ## PYTHON IMPORTS
 import os
 import time
+from flask import request
 import atexit
 import random
 import threading
@@ -11,7 +12,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 # ## LOCAL IMPORTS
 from app import database as DB, app as APP
 from app import session as SESSION
-from app.models import Upload
+from app.models import Upload, Illust, Artist
 from app.sources import base as BASE_SOURCE
 from app.logical.utility import MinutesAgo, StaticVars
 from app.logical.logger import LogError
@@ -75,12 +76,47 @@ def ProcessUpload(upload):
         BASE_SOURCE.ProcessUpload(upload)
         return True
     except Exception as e:
-        print("\a\aCheckUploads: Exception occured in worker!\n", e)
+        print("\a\aProcessUpload: Exception occured in worker!\n", e)
         print("Unlocking the database...")
         SESSION.rollback()
-        LogError('worker.CheckUploads', "Unhandled exception occurred on upload #%d: %s" % (upload.id, e))
+        LogError('worker.ProcessUpload', "Unhandled exception occurred on upload #%d: %s" % (upload.id, e))
         return False
 
+def ProcessArtist(artist):
+    SESSION.add(artist)
+    print("ProcessArtist:\n",artist)
+    try:
+        BASE_SOURCE.ProcessArtist(artist)
+        return True
+    except Exception as e:
+        print("\a\aProcessArtist: Exception occured in worker!\n", e)
+        print("Unlocking the database...")
+        SESSION.rollback()
+        LogError('worker.ProcessArtist', "Unhandled exception occurred on artist #%d: %s" % (artist.id, e))
+        return False
+
+def CreateNewArtist(site_id, site_artist_id):
+    try:
+        BASE_SOURCE.CreateNewArtist(site_id, site_artist_id)
+        return True
+    except Exception as e:
+        print("\a\aCreateNewArtist: Exception occured in worker!\n", e)
+        print("Unlocking the database...")
+        SESSION.rollback()
+        LogError('worker.CreateNewArtist', "Unhandled exception occurred creating new artist (%d - %d): %s" % (site_id, site_artist_id, e))
+        return False
+
+def ProcessIllust(illust):
+    print("ProcessIllust:\n",illust)
+    try:
+        BASE_SOURCE.ProcessIllust(illust)
+        return True
+    except Exception as e:
+        print("\a\aProcessIllust: Exception occured in worker!\n", e)
+        print("Unlocking the database...")
+        SESSION.rollback()
+        LogError('worker.ProcessIllust', "Unhandled exception occurred on illust #%d: %s" % (illust.id, e))
+        return False
 
 def CheckSubscriptions():
     time.sleep(random.random() * 5)
@@ -94,6 +130,30 @@ def check_uploads():
         SCHED.add_job(ProcessUploads)
         return "Begin processing uploads..."
     return "Uploads already processing!"
+
+@APP.route('/requery_artist/<int:id>')
+def requery_artist(id):
+    artist = Artist.query.filter_by(id=id).first()
+    if artist is None:
+        return "Artist #%d not found!" % id
+    SCHED.add_job(ProcessArtist, args=[artist])
+    return "Reprocessing artist #%d" % id
+
+@APP.route('/create_artist')
+def create_artist():
+    if 'site_id' not in request.values or 'artist_id' not in request.values:
+        return "Must include site ID and artist ID."
+    site_id = int(request.values['site_id'])
+    artist_id = int(request.values['artist_id'])
+    artist = Artist.query.filter_by(site_artist_id=artist_id, site_id=site_id).first()
+    if artist is not None:
+        return "Record already created on artist #%d" % artist.id
+    SCHED.add_job(CreateNewArtist, args=[site_id, artist_id])
+    return "Creating new artist..."
+
+@APP.route('/requery_illust')
+def requery_illust():
+    pass
 
 # ##EXECUTION START
 

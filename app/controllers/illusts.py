@@ -48,6 +48,8 @@ def index():
     q = Illust.query
     q = q.options(selectinload(Illust.site_data), lazyload('*'))
     q = IdFilter(q, search)
+    if 'site_illust_id' in search:
+        q = q.filter_by(site_illust_id=search['site_illust_id'])
     if 'url_site_id' in search:
         q = q.filter(Illust.urls.any(site_id=search['url_site_id']))
     q = DefaultOrder(q)

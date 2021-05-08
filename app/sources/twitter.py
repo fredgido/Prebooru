@@ -10,9 +10,9 @@ import requests
 from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.file import LoadDefault, PutGetJSON
-from .. import database as DB
+from ..database import twitter as DB, local as DBLOCAL
 from ..config import workingdirectory, datafilepath
-from ..sites import GetSiteDomain
+from ..sites import GetSiteDomain, GetSiteId
 
 
 # ##NOTES
@@ -47,6 +47,8 @@ ext: mediaStats,highlightedLabel
 
 
 # ###GLOBAL VARIABLES
+
+DB = DB
 
 #  Module variables
 
@@ -197,31 +199,37 @@ https?://video\.twimg\.com              # Hostname
 
 
 TWITTER_BASE_PARAMS = {
-    "include_profile_interstitial_type": "1",
-    "include_blocking": "1",
-    "include_blocked_by": "1",
-    "include_followed_by": "1",
-    "include_want_retweets": "1",
-    "include_mute_edge": "1",
-    "include_can_dm": "1",
-    "include_can_media_tag": "1",
-    "skip_status": "1",
-    "cards_platform": "Web-12",
-    "include_cards": "1",
-    "include_ext_alt_text": "true",
+    "include_profile_interstitial_type": "false",
+    "include_blocking": "false",
+    "include_blocked_by": "false",
+    "include_followed_by": "false",
+    "include_want_retweets": "false",
+    "include_mute_edge": "false",
+    "include_can_dm": "false",
+    "include_can_media_tag": "false",
+    "skip_status": "true",
+    #"cards_platform": "Web-12",
+    "include_cards": "false",
+    "include_ext_alt_text": "false",
     "include_quote_count": "true",
-    "include_reply_count": "1",
+    "include_reply_count": "true",
     "tweet_mode": "extended",
     "include_entities": "true",
     "include_user_entities": "true",
-    "include_ext_media_color": "true",
-    "include_ext_media_availability": "true",
+    "include_ext_media_color": "false",
+    "include_ext_media_availability": "false",
     "send_error_codes": "true",
     "simple_quoted_tweet": "true",
     "include_ext_has_birdwatch_notes": "false",
-    "ext": "mediaStats,highlightedLabel",
-    "count": "20",
+    "ext": "mediaStats",
+    "count": "1",
 }
+
+ILLUST_SHORTLINK = 'twitter #%d'
+ARTIST_SHORTLINK = 'twuser #%d'
+
+ILLUST_HREFURL = 'https://twitter.com/i/web/status/%d'
+ARTIST_HREFURL = 'https://twitter.com/intent/user?user_id=%d'
 
 # ##FUNCTIONS
 
@@ -299,6 +307,9 @@ def GetUploadType(request_url):
     return 'post' if IsPostUrl(request_url) else 'image'
 
 
+def SiteId():
+    return GetSiteId('twitter.com')
+
 def GetIllustId(request_url, referrer_url):
     return int((TWEET_RG.match(request_url) or TWEET_RG.match(referrer_url)).group(1))
 
@@ -338,35 +349,41 @@ def GetGlobalObject(data, type_name, key):
 
 #   Database
 
-def GetDBIllust(site_illust_id):
-    print("GetDBIllust")
-    error = None
-    illust = DB.twitter.GetIllust(site_illust_id)
-    if illust is None or illust.requery is None or illust.requery < GetCurrentTime():
-        twitter_data = GetTwitterIllustTimeline(site_illust_id)
-        if DB.local.IsError(twitter_data):
-            print("Found error!")
-            if illust is not None:
-                DB.twitter.UpdateRequery(illust)
-            return illust, twitter_data
-        print("Getting tweet,user!")
-        tweet = GetGlobalObject(twitter_data, 'tweets', str(site_illust_id))
-        user = GetGlobalObject(twitter_data, 'users', tweet['user_id_str'])
-        if illust is None:
-            illust = DB.twitter.ProcessIllustData(tweet, user)
-        else:
-            artist = DB.twitter.GetArtist(illust.artist_id)
-            DB.twitter.UpdateArtistFromUser(artist, user)
-    else:
-        print("Found illust #", illust.id)
-    return illust, error
+def Prework(site_illust_id):
+    print("Prework")
+    illust = DB.GetSiteIllust(site_illust_id)
+    if illust is not None:
+        return
+    twitter_data = GetTwitterIllustTimeline(site_illust_id)
+    if DBLOCAL.IsError(twitter_data):
+        print("Found error!")
+        return twitter_data
+    print("Getting tweet,user!")
+    tweets = GetGlobalObjects(twitter_data, 'tweets')
+    DB.CacheTimelineData(tweets, 'illust')
+    users = GetGlobalObjects(twitter_data, 'users')
+    DB.CacheTimelineData(users, 'artist')
+
+"""
+    tweet = GetGlobalObject(twitter_data, 'tweets', str(site_illust_id))
+    twuser = GetGlobalObject(twitter_data, 'users', tweet['user_id_str'])
+    if tweet is None or twuser is None:
+        return DBLOCAL.CreateError('sources.twitter.Prework', "Unable to parse tweet/user data: %d" % site_illust_id)
+    artist = DB.GetSiteArtist(int(twuser['id_str']))
+    if artist is None:
+        artist = DB.CreateArtistFromUser(twuser)
+    elif DBLOCAL.CheckRequery(artist):
+        DB.UpdateArtistFromUser(artist, twuser)
+    DB.CreateIllustFromTweet(tweet, artist.id)
+"""
 
 
+"""
 def GetDBArtist(illust):
     print("GetDBArtist")
     # The full user record is always given when querying the illust, so no need to requery here
-    return DB.twitter.GetArtist(illust.artist_id), None
-
+    return DB.GetArtist(illust.artist_id), None
+"""
 
 #   Network
 
@@ -430,36 +447,98 @@ def GetTwitterIllustTimeline(illust_id):
     url_params = urllib.parse.urlencode(params)
     data = TwitterRequest(("https://twitter.com/i/api/2/timeline/conversation/%d.json?" % illust_id) + url_params)
     if data['error']:
-        return DB.local.CreateError('sources.twitter.GetTwitterIllust', data['message'])
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', data['message'])
     return data['body']
     tweet = GetGlobalObject(data['body'], 'tweets', str(illust_id))
     if tweet is None:
-        return DB.local.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
     return data['body']
 
 
 def GetTwitterIllust(illust_id):
     print("Getting twitter #%d" % illust_id)
-    data = TwitterRequest('https://api.twitter.com/1.1/statuses/lookup.json?id=%d' % illust_id)
+    data = TwitterRequest('https://api.twitter.com/1.1/statuses/lookup.json?id=%d&trim_user=true&tweet_mode=extended&include_quote_count=true&include_reply_count=true' % illust_id)
     if data['error']:
-        return DB.local.CreateError('sources.twitter.GetTwitterIllust', data['message'])
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', data['message'])
     if len(data['body']) == 0:
-        return DB.local.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
     return data['body'][0]
 
 
 def GetTwitterArtist(artist_id):
     print("Getting user #%d" % artist_id)
-    data = TwitterRequest('https://api.twitter.com/1.1/users/lookup.json?id=%s' % artist_id)
+    data = TwitterRequest('https://api.twitter.com/1.1/users/lookup.json?user_id=%s&skip_status=true' % artist_id)
     if data['error']:
-        return DB.local.CreateError('sources.twitter.GetTwitterArtist', data['message'])
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', data['message'])
     if len(data['body']) == 0:
-        return DB.local.CreateError('sources.twitter.GetTwitterArtist', "User not found: %d" % artist_id)
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', "User not found: %d" % artist_id)
     return data['body'][0]
 
+#   Update
+
+def UpdateArtist(artist):
+    twuser = GetTwitterArtist(artist.site_artist_id)
+    if DBLOCAL.IsError(twuser):
+        print("Error getting artist data!")
+        # Check the error and conditionally mark the artist as dead
+        return
+    DB.UpdateArtistFromUser(artist, twuser)
+
+def UpdateIllust(illust,timeline=False):
+    tweet = GetTwitterIllust(illust.site_illust_id)
+    if DBLOCAL.IsError(tweet):
+        print("Error getting illust data!")
+        # Check the error and conditionally mark the illust as dead
+    DB.UpdateIllustFromTweet(illust, tweet)
+
+# Create
+
+
+def CreateArtist(site_artist_id):
+    ### INCLUDED ONLY DURING TESTING PHASE ###
+    artist = DB.GetSiteArtist(site_artist_id)
+    if artist is not None:
+        return artist
+    ### ###
+    twuser = DB.GetApiIllust(site_artist_id)
+    if twuser is None:
+        twuser = GetTwitterArtist(site_artist_id)
+        if DBLOCAL.IsError(twuser):
+            print("Error getting artist data!")
+            # Shouldn't be anything else that can be done
+            return twuser
+    return DB.CreateArtistFromUser(twuser)
+
+
+def CreateIllust(site_illust_id, timeline=False):
+    ### INCLUDED ONLY DURING TESTING PHASE ###
+    illust = DB.GetSiteIllust(site_illust_id)
+    if illust is not None:
+        return illust
+    ### ###
+    tweet = DB.GetApiIllust(site_illust_id)
+    if tweet is None:
+        tweet = GetTwitterIllust(site_illust_id)
+        if DBLOCAL.IsError(tweet):
+            print("Error getting artist data!")
+            # Shouldn't be anything else that can be done
+            return tweet
+    if 'user' in tweet:
+        twuser_id = tweet['user']['id']
+    elif 'user_id_str' in tweet:
+        twuser_id = int(tweet['user_id_str'])
+    else:
+        return DBLOCAL.CreateError('sources.twitter.CreateIllust', "Unknown API data structure on tweet #%d" % site_illust_id)
+    artist = DB.GetSiteArtist(twuser_id)
+    if artist is None:
+        artist = CreateArtist(twuser_id)
+        if DBLOCAL.IsError(artist):
+            return artist
+    return DB.CreateIllustFromTweet(tweet, artist.id)
 
 #   Download
 
+"""
 def DownloadIllust(pixiv_id, upload, type, module):
     illust = GetDBIllust(pixiv_id)
     if illust is None:
@@ -479,3 +558,4 @@ def DownloadIllust(pixiv_id, upload, type, module):
 
 def DownloadArtist(subscription, semaphore, module):
     pass
+"""

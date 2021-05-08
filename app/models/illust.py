@@ -8,7 +8,7 @@ from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import db
-from ..sites import GetSiteDomain
+from ..sites import GetSiteDomain, GetSiteKey
 from .base import JsonModel, DateTimeOrNull, RemoveKeys
 from .tag import Tag
 from .illust_url import IllustUrl
@@ -74,4 +74,18 @@ class Illust(JsonModel):
     @property
     def show_url(self):
         return url_for("illust.show_html", id=self.id)
+
+    @property
+    def type(self):
+        if self._source.IllustHasVideos(self):
+            return 'video'
+        if self._source.IllustHasImages(self):
+            return 'image'
+        return 'unknown'
+
+    @property
+    def _source(self):
+        from ..sources import DICT as SOURCEDICT
+        site_key = GetSiteKey(self.site_id)
+        return SOURCEDICT[site_key]
 

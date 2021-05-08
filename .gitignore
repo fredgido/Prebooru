@@ -140,3 +140,5 @@ ideas.txt
 notes.txt
 old/
 db/
+cache/
+migrations.old/

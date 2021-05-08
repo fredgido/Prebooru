@@ -59,6 +59,12 @@ def GetCurrentTime():
     t = datetime.datetime.utcnow()
     return t - datetime.timedelta(microseconds=t.microsecond)
 
+def DaysAgo(days):
+    return GetCurrentTime() - datetime.timedelta(days=days)
+
+def DaysFromNow(days):
+    return GetCurrentTime() + datetime.timedelta(days=days)
+
 def MinutesAgo(minutes):
     return GetCurrentTime() - datetime.timedelta(minutes=minutes)
 
@@ -105,3 +111,15 @@ def UniqueObjects(objs):
             output.append(obj)
     return output
 
+'''
+DOESN'T WORK
+def pmemoize(func):
+    """Simple memoize for non-mutating property methods"""
+    def memoized_func(*args,**kwargs):
+        if memoized_func.cache is not None:
+            return memoized_func.cache
+        memoized_func.cache = func(*args,**kwargs)
+        return memoized_func.cache
+    setattr(memoized_func, 'cache', None)
+    return memoized_func
+'''
