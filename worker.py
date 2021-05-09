@@ -12,9 +12,10 @@ from apscheduler.schedulers.background import BackgroundScheduler
 # ## LOCAL IMPORTS
 from app import database as DB, app as APP
 from app import session as SESSION
+from app.cache import ApiData
 from app.models import Upload, Illust, Artist
 from app.sources import base as BASE_SOURCE
-from app.logical.utility import MinutesAgo, StaticVars
+from app.logical.utility import MinutesAgo, StaticVars, GetCurrentTime
 from app.logical.logger import LogError
 from argparse import ArgumentParser
 
@@ -29,7 +30,7 @@ SEM = threading.Semaphore()
 
 @atexit.register
 def Cleanup():
-    if SCHED is not None:
+    if SCHED is not None and SCHED.running:
         SCHED.shutdown()
 
 
@@ -121,6 +122,16 @@ def ProcessIllust(illust):
 def CheckSubscriptions():
     time.sleep(random.random() * 5)
 
+def ExpungeCacheRecords():
+    print("ExpungeCacheRecords")
+    SEM.acquire()
+    print("<semaphore acquire>")
+    print("Records to delete:", ApiData.query.filter(ApiData.expires < GetCurrentTime()).count())
+    ApiData.query.filter(ApiData.expires < GetCurrentTime()).delete()
+    SESSION.commit()
+    SEM.release()
+    print("<semaphore release>")
+
 def CheckGlobals():
     print(ProcessUploads.processing, SEM._value)
 
@@ -167,11 +178,13 @@ if __name__ == '__main__':
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        ExpungeCacheRecords()
         SCHED = BackgroundScheduler(daemon=True)
         #SCHED.add_job(CheckSubscriptions, 'interval', seconds=15)
         SCHED.add_job(CheckPendingUploads, 'interval', minutes=5)
         SCHED.add_job(ExpireUploads, 'interval', minutes=1)
         #SCHED.add_job(CheckGlobals, 'interval', seconds=1)
+        SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1)
         SCHED.add_job(ProcessUploads)
         SCHED.start()
 
