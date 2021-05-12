@@ -3,6 +3,7 @@
 # ##PYTHON IMPORTS
 import re
 import time
+import json
 import urllib
 import requests
 
@@ -299,7 +300,7 @@ def IsVideoUrl(url):
 
 
 def UploadCheck(request_url, referrer_url):
-    return IsPostUrl(request_url) or (IsPostUrl(referrer_url) and IsMediaUrl(request_url))
+    return IsPostUrl(request_url) or (referrer_url and IsPostUrl(referrer_url) and IsMediaUrl(request_url))
 
 
 def GetUploadType(request_url):
@@ -465,30 +466,49 @@ def GetTwitterIllust(illust_id):
     return data['body'][0]
 
 
+"""
+TwitterRequest('https://twitter.com/i/api/graphql/WN6Hck-Pwm-YP0uxVj1oMQ/UserByRestIdWithoutResults?%s' % urllib.parse.urlencode({'variables': json.dumps({'userId': '2267697692', 'withHighlightedLabel': False})}))
+"""
+
 def GetTwitterArtist(artist_id):
     print("Getting user #%d" % artist_id)
-    data = TwitterRequest('https://api.twitter.com/1.1/users/lookup.json?user_id=%s&skip_status=true' % artist_id)
+    jsondata = {
+        'userId': str(artist_id),
+        'withHighlightedLabel': False,
+    }
+    urladdons = urllib.parse.urlencode({'variables': json.dumps(jsondata)})
+    data = TwitterRequest('https://twitter.com/i/api/graphql/WN6Hck-Pwm-YP0uxVj1oMQ/UserByRestIdWithoutResults?%s' % urladdons)
     if data['error']:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', data['message'])
-    if len(data['body']) == 0:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', "User not found: %d" % artist_id)
-    return data['body'][0]
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', data['message'])
+    twitterdata = data['body']
+    if 'errors' in twitterdata and len(twitterdata['errors']):
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', '; '.join([error['message'] for error in twitterdata['errors']]))
+    userdata = SafeGet(twitterdata, 'data', 'user')
+    if userdata is None or 'rest_id' not in userdata or 'legacy' not in userdata:
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', "Error parsing data: %s" % json.dumps(twitterdata))
+    retdata = userdata['legacy']
+    retdata['id_str'] = userdata['rest_id']
+    return retdata
 
 #   Update
 
-def UpdateArtist(artist):
-    twuser = GetTwitterArtist(artist.site_artist_id)
-    if DBLOCAL.IsError(twuser):
-        print("Error getting artist data!")
-        # Check the error and conditionally mark the artist as dead
-        return
+def UpdateArtist(artist, explicit=False):
+    twuser = DB.GetApiArtist(artist.site_artist_id)
+    if twuser is None:
+        twuser = GetTwitterArtist(artist.site_artist_id)
+        if DBLOCAL.IsError(twuser):
+            print("Error getting artist data!")
+            # Check the error and conditionally mark the artist as dead
+            return
     DB.UpdateArtistFromUser(artist, twuser)
 
-def UpdateIllust(illust,timeline=False):
-    tweet = GetTwitterIllust(illust.site_illust_id)
-    if DBLOCAL.IsError(tweet):
-        print("Error getting illust data!")
-        # Check the error and conditionally mark the illust as dead
+def UpdateIllust(illust, explicit=False, timeline=False):
+    tweet = DB.GetApiIllust(illust.site_illust_id)
+    if tweet is None:
+        tweet = GetTwitterIllust(illust.site_illust_id)
+        if DBLOCAL.IsError(tweet):
+            print("Error getting illust data!")
+            # Check the error and conditionally mark the illust as dead
     DB.UpdateIllustFromTweet(illust, tweet)
 
 # Create

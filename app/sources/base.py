@@ -20,7 +20,7 @@ def GetSource(request_url, referrer_url):
 def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
     source = GetSource(request_url, referrer_url)
     if source is None:
-        return {'error': "Not a valid URL."}
+        return {'error': True, 'message': "Not a valid URL."}
     type = source.GetUploadType(request_url)
     upload = None
     valid_image_urls = [url for url in image_urls if source.IsImageUrl(url)]

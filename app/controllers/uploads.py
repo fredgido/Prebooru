@@ -91,7 +91,7 @@ def create():
     referrer_url = request.values.get('ref')
     image_urls = request.values.getlist('image_urls[]')
     force = request.values.get('force', type=EvalBoolString)
-    print("Create upload:", force, request.values)
+    print("Create upload:", force, request.values, image_urls)
     try:
         upload = BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
     except Exception as e:
@@ -99,9 +99,9 @@ def create():
         LogError('controllers.uploads.create', "Unhandled exception occurred creating upload: %s" % (str(e)))
         request.environ.get('werkzeug.server.shutdown')()
         return {'error': True, 'message': 'Database exception! Check log file.'}
-    try:
-        requests.get('http://127.0.0.1:4000/check_uploads', timeout=2)
-    except Exception as e:
-        print("Unable to contact worker:", e)
-    finally:
-        return upload
+    if not upload['error']:
+        try:
+            requests.get('http://127.0.0.1:4000/check_uploads', timeout=2)
+        except Exception as e:
+            print("Unable to contact worker:", e)
+    return upload

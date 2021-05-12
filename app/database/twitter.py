@@ -409,6 +409,8 @@ def CacheTimelineData(twitter_data, type):
             }
             cache_item = ApiData(**data)
             SESSION.add(cache_item)
+        else:
+            print("CacheTimelineData - updating cache item:", type, data_id, cache_item.id)
         cache_item.data = twitter_data[key]
         cache_item.expires = DaysFromNow(1)
     SESSION.commit()
