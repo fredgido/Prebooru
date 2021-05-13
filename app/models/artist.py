@@ -68,7 +68,7 @@ class Artist(JsonModel):
     def recent_posts(self):
         if self._recent_posts is None:
             q = Post.query
-            q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_artist_id=self.site_artist_id))))
+            q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == self.id)
             q = q.order_by(Post.id.desc())
             q = q.limit(10)
             self._recent_posts = q.all()

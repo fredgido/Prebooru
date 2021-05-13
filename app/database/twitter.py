@@ -267,10 +267,17 @@ def AddArtistWebpages(user, artist_id, commit=True):
     webpages = set()
     url_entries = SafeGet(user, 'entities', 'url', 'urls') or []
     for entry in url_entries:
-        webpages.add(entry['expanded_url'])
+        if 'expanded_url' in entry:
+            webpages.add(entry['expanded_url'])
+        elif 'url' in entry:
+            webpages.add(entry['url'])
+        
     url_entries = SafeGet(user, 'entities', 'description', 'urls') or []
     for entry in url_entries:
-        webpages.add(entry['expanded_url'])
+        if 'expanded_url' in entry:
+            webpages.add(entry['expanded_url'])
+        elif 'url' in entry:
+            webpages.add(entry['url'])
     for page in webpages:
         artist_url = ArtistUrl.query.filter_by(artist_id=artist_id, url=page).first()
         if artist_url is None:

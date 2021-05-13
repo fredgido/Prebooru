@@ -17,6 +17,7 @@ from app.models import Upload, Illust, Artist
 from app.sources import base as BASE_SOURCE
 from app.logical.utility import MinutesAgo, StaticVars, GetCurrentTime
 from app.logical.logger import LogError
+from app.logical.unshortenlink import UnshortenAllLinks
 from argparse import ArgumentParser
 
 
@@ -48,6 +49,11 @@ def ExpireUploads():
 def CheckPendingUploads():
     if SEM._value > 0 and Upload.query.filter_by(status="pending").count() > 0:
         ProcessUploads()
+
+
+def CheckForShortLinks():
+    print("CheckForShortLinks")
+    UnshortenAllLinks()
 
 
 @StaticVars(processing=False)
@@ -185,6 +191,7 @@ if __name__ == '__main__':
         SCHED.add_job(ExpireUploads, 'interval', minutes=1)
         #SCHED.add_job(CheckGlobals, 'interval', seconds=1)
         SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1)
+        SCHED.add_job(CheckForShortLinks, 'interval', hours=2)
         SCHED.add_job(ProcessUploads)
         SCHED.start()
 

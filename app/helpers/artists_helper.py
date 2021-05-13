@@ -13,4 +13,4 @@ def HrefUrl(artist):
     return source.ARTIST_HREFURL % artist.site_artist_id
 
 def PostSearch(artist):
-    return SearchUrlFor('post.index_html', site_artist_id=artist.site_artist_id, asite_id=artist.site_id)
+    return SearchUrlFor('post.index_html', artist_id=artist.id)

@@ -72,3 +72,4 @@ def ProcessArtist(artist):
 def CreateNewArtist(site_id, site_artist_id):
     source = GetSource(site_id)
     source.CreateDBArtist(site_artist_id)
+

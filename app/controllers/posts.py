@@ -7,7 +7,7 @@ from sqlalchemy.orm import lazyload
 
 # ## LOCAL IMPORTS
 
-from ..models import Illust, IllustUrl, Post
+from ..models import Artist, Illust, IllustUrl, Post
 from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation
 
 
@@ -51,7 +51,8 @@ def index():
     q = IdFilter(q, search)
     q = DefaultOrder(q)
     if 'artist_id' in search:
-        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(id=search['artist_id']))))
+        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(id=search['artist_id']))))
+        q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == search['artist_id'])
     if 'illust_id' in search:
         q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(id=search['illust_id'])))
     if 'site_illust_id' in search:
@@ -59,6 +60,7 @@ def index():
     if 'isite_id' in search:
         q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_id=search['isite_id'])))
     if 'site_artist_id' in search:
+        q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == search['site_artist_id'])
         q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_artist_id=search['site_artist_id']))))
     if 'asite_id' in search:
         q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_id=search['asite_id']))))
