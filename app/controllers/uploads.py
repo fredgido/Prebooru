@@ -8,8 +8,8 @@ from flask import Blueprint, request, render_template, abort
 
 # ## LOCAL IMPORTS
 
-from app.logical.utility import EvalBoolString, IsTruthy, IsFalsey
-from app.logical.logger import LogError
+from ..logical.utility import EvalBoolString, IsTruthy, IsFalsey
+from ..logical.logger import LogError
 from ..models import Upload, Post
 from ..sources import base as BASE_SOURCE
 from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder
@@ -68,6 +68,8 @@ def index():
     q = DefaultOrder(q)
     if 'request_url' in search:
         q = q.filter_by(request_url=search['request_url'])
+    if 'status' in search:
+        q = q.filter_by(status=search['status'])
     if 'has_image_urls' in search:
         if IsTruthy(search['has_image_urls']):
             q = q.filter(Upload.image_urls.any())

@@ -39,10 +39,10 @@ def DownloadMultipleImages(illust, upload, source):
     elif source.IllustHasImages(illust):
         all_upload_urls = [source.NormalizeImageURL(upload_url.url) for upload_url in upload.image_urls]
         image_illust_urls = source.ImageIllustDownloadUrls(illust)
-        print(all_upload_urls, image_illust_urls)
+        #print(all_upload_urls, image_illust_urls)
         for illust_url in image_illust_urls:
-            if len(all_upload_urls) > 0:
-                print(all_upload_urls, illust_url.url, illust_url.url in all_upload_urls)
+            #if len(all_upload_urls) > 0:
+                #print(all_upload_urls, illust_url.url, illust_url.url in all_upload_urls)
             if len(all_upload_urls) == 0 or illust_url.url in all_upload_urls:
                 post = CreateImagePost(illust_url, source)
                 RecordOutcome(post, upload)

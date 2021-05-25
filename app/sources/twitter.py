@@ -11,6 +11,7 @@ import requests
 from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.file import LoadDefault, PutGetJSON
+from ..logical.logger import LogError
 from ..database import twitter as DB, local as DBLOCAL
 from ..config import workingdirectory, datafilepath
 from ..sites import GetSiteDomain, GetSiteId
@@ -144,7 +145,7 @@ USERS_RG = re.compile(r"""
 IMAGE1_RG = re.compile(r"""
 ^https?://pbs\.twimg\.com               # Hostname
 /(media|tweet_video_thumb)
-/([\w-]+)                               # Image key
+/([^.]+)                               # Image key
 \.(jpg|png|gif)                         # Extension
 (?::(orig|large|medium|small|thumb))?   # Size
 """, re.X | re.IGNORECASE)
@@ -169,7 +170,7 @@ IMAGE3_RG = re.compile(r"""
 /(\d+)                                      # Twitter ID
 (?:/\w+)?
 /img
-/([^.?]+)                                   # Image key
+/([^.]+)                                   # Image key
 \.(jpg|png|gif)                             # Extension
 """, re.X | re.IGNORECASE)
 
@@ -179,7 +180,7 @@ IMAGE3_RG = re.compile(r"""
 VIDEO1_RG = re.compile(r"""
 https?://video\.twimg\.com              # Hostname
 /tweet_video
-/(\w+)                                  # Video key
+/([^.]+)                                  # Video key
 \.(mp4)                                 # Extension
 """, re.X | re.IGNORECASE)
 
@@ -194,7 +195,7 @@ https?://video\.twimg\.com              # Hostname
 (?:/\w+)?
 /vid
 /(\d+)x(\d+)                            # Dimensions
-/([^.?]+)                               # Video key
+/([^.]+)                               # Video key
 \.(mp4)                                 # Extension
 """, re.X | re.IGNORECASE)
 
@@ -405,7 +406,7 @@ def AuthenticateGuest(override=False):
     if guest_token is None:
         print("Authenticating as guest...")
         data = TwitterRequest('https://api.twitter.com/1.1/guest/activate.json', 'POST')
-        print(data)
+        #print(data)
         guest_token = data['body']['guest_token']
         SaveGuestToken(guest_token)
     else:
@@ -415,6 +416,7 @@ def AuthenticateGuest(override=False):
 
 @CheckGuestAuth
 def TwitterRequest(url, method='GET'):
+    reauthenticated = False
     for i in range(3):
         try:
             response = REQUEST_METHODS[method](url, headers=twitter_headers, timeout=10)
@@ -427,11 +429,13 @@ def TwitterRequest(url, method='GET'):
             continue
         if response.status_code == 200:
             break
-        if response.status_code == 401:
-            print(response.json())
-            input()
-        if response.status_code == 403 and SafeGet(response.json(), 'errors', 0, 'code') in [200, 239]:
+        #if response.status_code == 401:
+            #print("HTTP 401:", url, response.text)
+            #LogError('sources.twitter.TwitterRequest', "HTTP 401 on URL %s: %s" % (url, response.text))
+            #raise Exception("Unhandled HTTP code!")
+        if not reauthenticated and (response.status_code == 401 or (response.status_code == 403 and SafeGet(response.json(), 'errors', 0, 'code') in [200, 239])):
             AuthenticateGuest(True)
+            reauthenticated = True
         else:
             print("\n%s\nHTTP %d: %s (%s)" % (url, response.status_code, response.reason, response.text))
             return {'error': True, 'message': "HTTP %d - %s" % (response.status_code, response.reason)}
@@ -529,6 +533,12 @@ def CreateArtist(site_artist_id):
             return twuser
     return DB.CreateArtistFromUser(twuser)
 
+
+def CreateDBArtistFromParams(params):
+    return DB.CreateArtistFromParameters(params)
+
+def CreateDBIllustFromParams(params):
+    return DB.CreateIllustFromParameters(params)
 
 def CreateIllust(site_illust_id, timeline=False):
     ### INCLUDED ONLY DURING TESTING PHASE ###

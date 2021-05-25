@@ -6,7 +6,7 @@ from sqlalchemy.orm import declared_attr
 
 # ##LOCAL IMPORTS
 from .. import db
-from .base import JsonModel, DateTimeOrNull
+from .base import JsonModel, DateTimeOrNull, IntOrNone
 
 
 # ##GLOBAL VARIABLES
@@ -34,9 +34,9 @@ class PixivData(SiteData):
     site_uploaded: DateTimeOrNull
     site_updated: DateTimeOrNull
     title: str
-    bookmarks: int
-    replies: int
-    views: int
+    bookmarks: IntOrNone
+    replies: IntOrNone
+    views: IntOrNone
     site_uploaded = db.Column(db.DateTime(timezone=False), nullable=True)
     site_updated = db.Column(db.DateTime(timezone=False), nullable=True)
     title = db.Column(db.UnicodeText, nullable=True)
@@ -55,9 +55,9 @@ class PixivData(SiteData):
 @dataclass
 class TwitterData(SiteData):
     __tablename__ = 'twitter_data'
-    retweets: int
-    replies: int
-    quotes: int
+    retweets: IntOrNone
+    replies: IntOrNone
+    quotes: IntOrNone
     retweets = db.Column(db.Integer, nullable=True)
     quotes = db.Column(db.Integer, nullable=True)
 

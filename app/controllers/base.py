@@ -48,6 +48,21 @@ def GetSearch(request):
         data[key] = request.args[arg]
     return data
 
+
+def GetDataParams(request, type):
+    data = {}
+    for arg in request.values:
+        match = re.match(r'^%s\[([^\]]+)\](\[\])?' % type, arg)
+        if not match:
+            continue
+        key = match.group(1)
+        if match.group(2) is not None:
+            data[key] = request.values.getlist(arg)
+        else:
+            data[key] = request.values.get(arg)
+    return data
+
+
 def IdFilter(query, search):
     if 'id' in search:
         ids = [int(id) for id in search['id'].split(',') if id.isdigit()]

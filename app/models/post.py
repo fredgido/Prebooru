@@ -5,6 +5,7 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
+from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
 from .. import db, storage
@@ -62,6 +63,18 @@ class Post(JsonModel):
         return storage.NetworkDirectory('preview', self.md5) + self.md5 + '.jpg' if storage.HasPreview(self.width, self.height) else self.file_url
 
     @property
+    def file_path(self):
+        return storage.DataDirectory('data', self.md5) + self.md5 + '.' + self.file_ext
+
+    @property
+    def sample_path(self):
+        return storage.DataDirectory('sample', self.md5) + self.md5 + '.jpg' if storage.HasSample(self.width, self.height) or self.file_ext not in ['jpg', 'png', 'gif'] else self.file_path
+
+    @property
+    def preview_path(self):
+        return storage.DataDirectory('preview', self.md5) + self.md5 + '.jpg' if storage.HasPreview(self.width, self.height) else self.file_path
+
+    @property
     def show_url(self):
         return url_for("post.show_html", id=self.id)
 
@@ -81,4 +94,5 @@ class Post(JsonModel):
     size = db.Column(db.Integer, nullable=False)
     illust_urls = db.relationship(IllustUrl, secondary=PostIllustUrls, lazy='subquery', backref=db.backref('post', uselist=False, lazy=True), cascade='all,delete')
     errors = db.relationship(Error, secondary=PostErrors, lazy=True, cascade='all,delete')
+    pools = association_proxy('_pools', 'pool')
     created = db.Column(db.DateTime(timezone=False), nullable=False)

@@ -24,7 +24,7 @@ def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
     type = source.GetUploadType(request_url)
     upload = None
     valid_image_urls = [url for url in image_urls if source.IsImageUrl(url)]
-    print(force, image_urls, valid_image_urls)
+    #print(force, image_urls, valid_image_urls)
     if not force:
         upload = Upload.query.filter_by(type=type, request_url=request_url, referrer_url=referrer_url).order_by(Upload.id.desc()).first()
     if upload is None:
@@ -54,7 +54,7 @@ def ProcessUpload(upload):
     if DBLOCAL.CheckRequery(artist):
         source.UpdateArtist(artist)
 
-    print(upload, illust, artist)
+    #print(upload, illust, artist)
     if upload.type == 'post' or upload.type == 'subscription':
         DownloadMultipleImages(illust, upload, source)
     elif upload.type == 'image':
@@ -73,3 +73,10 @@ def CreateNewArtist(site_id, site_artist_id):
     source = GetSource(site_id)
     source.CreateDBArtist(site_artist_id)
 
+def CreateDBArtistFromParams(params):
+    source = _Source(params['site_id'])
+    return source.CreateDBArtistFromParams(params)
+
+def CreateDBIllustFromParams(params):
+    source = _Source(params['site_id'])
+    return source.CreateDBIllustFromParams(params)

@@ -10,6 +10,15 @@ import datetime
 
 # ##FUNCTIONS
 
+def SafePrint(*args,**kwargs):
+    temp = ''
+    for arg in args:
+        if type(arg) == type(''):
+            temp += arg + ' '
+        else:
+            temp += repr(arg) + ' '
+    temp.strip()
+    print(temp.encode('ascii','backslashreplace').decode(),**kwargs)
 
 def ProcessTimestamp(timestring):
     """Get seconds from the Epoch for timestamps"""

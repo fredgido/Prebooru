@@ -25,7 +25,17 @@ def init_db(make_new):
     from app.models import NONCE  # noqa: F401
     from app.cache import NONCE  # noqa: F401
 
-    class AlembicVersion(db.Model):
+    #NEED TO POTENTIALLY SET THE ALEMBIC VERSION AS WELL AFTER CREATING THE TABLES!!!
+    class AlembicVersionMain(db.Model):
+        __tablename__ = 'alembic_version'
+        version_num = db.Column(db.String(32), nullable=False, primary_key=True)
+    class AlembicVersionCache(db.Model):
+        __tablename__ = 'alembic_version'
+        __bind_key__ = 'cache'
+        version_num = db.Column(db.String(32), nullable=False, primary_key=True)
+    class AlembicVersionSimilarity(db.Model):
+        __tablename__ = 'alembic_version'
+        __bind_key__ = 'similarity'
         version_num = db.Column(db.String(32), nullable=False, primary_key=True)
 
     print("Creating tables")
@@ -37,6 +47,7 @@ def migrate_db():
     from app import app, db
     from app.models import NONCE  # noqa: F401
     from app.cache import NONCE  # noqa: F401
+    from app.similarity import NONCE #noqa: F401
 
     migrate = Migrate(app, db, render_as_batch=True)  # noqa: F841
     manager = Manager(app)

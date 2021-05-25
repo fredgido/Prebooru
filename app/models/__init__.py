@@ -19,6 +19,8 @@ from .error import Error
 from .post import Post
 from .upload_url import UploadUrl
 from .upload import Upload
+from .pool import Pool, PoolPosts
+#from .pool_element import PoolElement
 from .subscription import Subscription
 
 NONCE = None

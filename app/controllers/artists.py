@@ -6,8 +6,10 @@ from sqlalchemy.orm import selectinload, lazyload
 
 # ## LOCAL IMPORTS
 
-from ..models import Artist
-from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder
+from ..logical.logger import LogError
+from ..models import Illust, Artist
+from ..sources import base as BASE_SOURCE
+from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -16,6 +18,16 @@ bp = Blueprint("artist", __name__)
 
 # ## FUNCTIONS
 
+def CheckDataParams(dataparams):
+    if 'site_id' not in dataparams or not dataparams['site_id'].isdigit():
+        return "No site ID present!"
+    if 'site_artist_id' not in dataparams or not dataparams['site_artist_id'].isdigit():
+        return "No site artist ID present!"
+
+
+def ConvertDataParams(dataparams):
+    dataparams['site_id'] = int(dataparams['site_id'])
+    dataparams['site_artist_id'] = int(dataparams['site_artist_id'])
 
 
 @bp.route('/artists/<int:id>.json', methods=['GET'])
@@ -51,6 +63,30 @@ def index():
     if 'site_artist_id' in search:
         q = q.filter_by(site_artist_id=search['site_artist_id'])
     if 'illust_site_illust_id' in search:
-        q = q.filter(Artist.illusts.any(site_illust_id=search['illust_site_illust_id']))
+        #q = q.filter(Artist.illusts.any(site_illust_id=search['illust_site_illust_id']))
+        q = q.unique_join(Illust).filter(Illust.site_illust_id == search['illust_site_illust_id'])
     q = DefaultOrder(q)
     return q
+
+
+@bp.route('/artists.json', methods=['post'])
+def create():
+    dataparams = GetDataParams(request, 'artist')
+    error = CheckDataParams(dataparams)
+    if error is not None:
+        return {'error': True, 'message': error, 'params': dataparams}
+    ConvertDataParams(dataparams)
+    print(dataparams)
+    #return "nothing"
+    artist = Artist.query.filter_by(site_id=dataparams['site_id'], site_artist_id=dataparams['site_artist_id']).first()
+    if artist is not None:
+        return {'error': True, 'message': "Artist already exists.", 'params': dataparams, 'artist': artist}
+    try:
+        artist = BASE_SOURCE.CreateDBArtistFromParams(dataparams)
+    except Exception as e:
+        print("Database exception!", e)
+        LogError('controllers.artists.create', "Unhandled exception occurred creating artist: %s" % (str(e)))
+        request.environ.get('werkzeug.server.shutdown')()
+        return {'error': True, 'message': 'Database exception! Check log file.'}
+    artist_json = artist.to_json() if artist is not None else artist
+    return {'error': False, 'artist': artist}

@@ -5,6 +5,7 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
+from sqlalchemy.orm import aliased
 
 # ##LOCAL IMPORTS
 from .. import db
@@ -58,7 +59,7 @@ class Artist(JsonModel):
     site_accounts = db.relationship(Label, secondary=ArtistSiteAccounts, lazy='subquery', backref=db.backref('account_artists', lazy=True))
     names = db.relationship(Label, secondary=ArtistNames, lazy='subquery', backref=db.backref('name_artists', lazy=True))
     profiles = db.relationship(Description, secondary=ArtistProfiles, lazy='subquery', backref=db.backref('artists', lazy=True))
-    illusts = db.relationship(Illust, lazy=True, backref=db.backref('artist', lazy=True))
+    illusts = db.relationship(Illust, lazy=True, backref=db.backref('artist', lazy=True), cascade="all, delete")
     webpages = db.relationship(ArtistUrl, backref='artist', lazy=True, cascade="all, delete")
     requery = db.Column(db.DateTime(timezone=False), nullable=True)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
@@ -82,4 +83,16 @@ class Artist(JsonModel):
     def show_url(self):
         return url_for("artist.show_html", id=self.id)
 
+    def delete(self):
+        self.names.clear()
+        self.profiles.clear()
+        self.site_accounts.clear()
+        db.session.delete(self)
+        db.session.commit()
+
     _recent_posts = None
+
+#Including these so that joins on both can be disambiguated (see notes)
+
+Names = aliased(Label)
+SiteAccounts = aliased(Label)

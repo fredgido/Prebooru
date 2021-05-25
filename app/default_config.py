@@ -10,6 +10,7 @@ imagefilepath = "pictures\\"
 # Relative path to the DB file
 DB_PATH = r'db\prebooru.db'
 CACHE_PATH = r'db\cache.db'
+SIMILARITY_PATH = r'db\similarity.db'
 
 # ##LINUX###
 '''

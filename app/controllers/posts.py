@@ -52,16 +52,21 @@ def index():
     q = DefaultOrder(q)
     if 'artist_id' in search:
         #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(id=search['artist_id']))))
-        q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == search['artist_id'])
+        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).filter(Illust.artist_id == search['artist_id'])
     if 'illust_id' in search:
-        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(id=search['illust_id'])))
+        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(id=search['illust_id'])))
+        q = q.unique_join(IllustUrl, Post.illust_urls).filter(IllustUrl.illust_id == search['illust_id'])
     if 'site_illust_id' in search:
-        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_illust_id=search['site_illust_id'])))
+        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_illust_id=search['site_illust_id'])))
+        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).filter(Illust.site_illust_id == search['site_illust_id'])
     if 'isite_id' in search:
-        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_id=search['isite_id'])))
+        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_id=search['isite_id'])))
+        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).filter(Illust.site_id == search['isite_id'])
     if 'site_artist_id' in search:
-        q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == search['site_artist_id'])
-        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_artist_id=search['site_artist_id']))))
+        print("site_artist_id", search['site_artist_id'])
+        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).unique_join(Artist).filter(Artist.site_artist_id == search['site_artist_id'])
+        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_artist_id=search['site_artist_id']))))
     if 'asite_id' in search:
-        q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_id=search['asite_id']))))
+        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_id=search['asite_id']))))
+        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).unique_join(Artist).filter(Artist.site_id == search['asite_id'])
     return q

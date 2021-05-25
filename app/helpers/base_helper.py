@@ -25,13 +25,13 @@ def NavLinkTo(text, endpoint):
     link_blueprint = endpoint.split('.')[0]
     request_blueprint = request.endpoint.split('.')[0]
     klass = 'current' if link_blueprint == request_blueprint else None
-    print("#0", repr(klass), repr(endpoint), repr(request.endpoint))
+    #print("#0", repr(klass), repr(endpoint), repr(request.endpoint))
     html_text = text.lower().replace(" ", "-")
     return Markup(render_template("layouts/_nav_link.html", text=text, html_text=html_text, endpoint=endpoint, klass=klass))
 
 
 def PageNavigation(paginate):
-    print(request.endpoint)
+    print("PageNavigation-1:", paginate.page, paginate.prev_num, paginate.next_num, paginate.pages)
     current_page = paginate.page
     previous_page = paginate.prev_num
     next_page = paginate.next_num
@@ -43,7 +43,8 @@ def PageNavigation(paginate):
     pages += ['...'] if left != 2 else []
     pages += list(range(left, right))
     pages += ['...'] if right != penultimate_page else []
-    pages += [last_page] if last_page != 1 else []
+    pages += [last_page] if last_page > 1 else []
+    print("PageNavigation-2:", previous_page, current_page, next_page, pages, left, right, last_page, penultimate_page)
     return render_template("layouts/_paginator.html", prev_page=previous_page, current_page=current_page, next_page=next_page, pages=pages)
 
 def UrlForWithArgs(endpoint, **kwargs):

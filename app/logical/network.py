@@ -25,7 +25,7 @@ def CheckHTTPResponse(response):
     if response.status_code >= 500 and response.status_code < 600:
         print("Server Error! Sleeping 5 seconds...")
         time.sleep(5)
-    print("HTTP %d - %s" % response.status_code, response.reason)
+    print("HTTP %d - %s" % (response.status_code, response.reason))
     return False
 
 

@@ -7,6 +7,7 @@ import datetime
 
 
 # ##LOCAL IMPORTS
+from . import base as BASE
 from .. import session as SESSION
 from ..models import ArtistUrl, Artist, Tag, IllustUrl, TwitterData, Illust, Label, Description
 from ..cache import ApiData
@@ -43,13 +44,14 @@ def UpdateTimestamps(instance, dirty):
     instance.requery = GetCurrentTime() + datetime.timedelta(days=1)
 ###ENDMOVE
 
+
 def ProcessIllustData(tweet, user):
     print("ProcessIllustData")
     artist = Artist.query.filter_by(site_id=Site.TWITTER.value, site_artist_id=int(tweet['user_id_str'])).first()
     if artist is None:
         artist = CreateArtistFromUser(user)
     elif artist.requery is None or artist.requery < GetCurrentTime():
-        #UpdateArtistFromUser(artist, user)
+        # UpdateArtistFromUser(artist, user)
         pass
     illust = CreateIllustFromTweet(tweet, artist.id)
     return illust
@@ -79,6 +81,15 @@ def CreateIllustFromTweet(tweet, artist_id, commit=True):
         AddIllustUrls(illust, tweet)
         AddVideoUrls(illust, tweet)
     return illust
+
+
+def CreateIllustFromParameters(params):
+    if 'site_created' in params:
+        try:
+            params['site_created'] = ProcessTwitterTimestring(params['site_created'])
+        except Exception:
+            del params['site_created']
+    return BASE.CreateIllustFromParameters(params, Site.TWITTER.value)
 
 
 def AddIllustDescription(illust, tweet):
@@ -160,7 +171,7 @@ def GetIllustUrlInfo(entry):
     else:
         return None, None, None
     site_id = GetSiteId(parse.netloc)
-    url = parse.path  + query_addon if site_id !=0 else parse.geturl()
+    url = parse.path + query_addon if site_id != 0 else parse.geturl()
     return url, site_id, dimensions
 
 
@@ -215,9 +226,8 @@ def AddVideoUrls(illust, tweet, commit=True):
     return video_url
 
 
-def AddArtistName(artist, twuser):
+def AddArtistName(artist, name_text):
     print("AddArtistName")
-    name_text = twuser['name']
     current_names = [label.name for label in artist.names]
     if name_text in current_names:
         return False
@@ -230,9 +240,8 @@ def AddArtistName(artist, twuser):
     return True
 
 
-def AddArtistSiteAccount(artist, twuser):
+def AddArtistSiteAccount(artist, site_account_text):
     print("AddArtistSiteAccount")
-    site_account_text = twuser['screen_name']
     current_site_accounts = [label.name for label in artist.site_accounts]
     if site_account_text in current_site_accounts:
         return False
@@ -245,9 +254,8 @@ def AddArtistSiteAccount(artist, twuser):
     return True
 
 
-def AddArtistProfile(artist, twuser):
+def AddArtistProfile(artist, profile_text):
     print("AddArtistProfile")
-    profile_text = GetUserDescription(twuser)
     current_profiles = [descr.body for descr in artist.profiles]
     if profile_text in current_profiles:
         return False
@@ -260,30 +268,16 @@ def AddArtistProfile(artist, twuser):
     return True
 
 
-def AddArtistWebpages(user, artist_id, commit=True):
+def AddArtistWebpages(artist, webpages, commit=True):
     print("AddArtistWebpages")
     artist_urls = []
     new_urls = []
-    webpages = set()
-    url_entries = SafeGet(user, 'entities', 'url', 'urls') or []
-    for entry in url_entries:
-        if 'expanded_url' in entry:
-            webpages.add(entry['expanded_url'])
-        elif 'url' in entry:
-            webpages.add(entry['url'])
-        
-    url_entries = SafeGet(user, 'entities', 'description', 'urls') or []
-    for entry in url_entries:
-        if 'expanded_url' in entry:
-            webpages.add(entry['expanded_url'])
-        elif 'url' in entry:
-            webpages.add(entry['url'])
-    for page in webpages:
-        artist_url = ArtistUrl.query.filter_by(artist_id=artist_id, url=page).first()
+    for url in webpages:
+        artist_url = ArtistUrl.query.filter_by(artist_id=artist.id, url=url).first()
         if artist_url is None:
             data = {
-                'artist_id': artist_id,
-                'url': page,
+                'artist_id': artist.id,
+                'url': url,
                 'active': True,
             }
             artist_url = ArtistUrl(**data)
@@ -294,6 +288,24 @@ def AddArtistWebpages(user, artist_id, commit=True):
         SESSION.commit()
         print("Added artist webpages:", [webpage.url for webpage in new_urls])
     return artist_urls
+
+
+def GetTwitterUserWebpages(twuser):
+    webpages = set()
+    url_entries = SafeGet(twuser, 'entities', 'url', 'urls') or []
+    for entry in url_entries:
+        if 'expanded_url' in entry:
+            webpages.add(entry['expanded_url'])
+        elif 'url' in entry:
+            webpages.add(entry['url'])
+
+    url_entries = SafeGet(twuser, 'entities', 'description', 'urls') or []
+    for entry in url_entries:
+        if 'expanded_url' in entry:
+            webpages.add(entry['expanded_url'])
+        elif 'url' in entry:
+            webpages.add(entry['url'])
+    return list(webpages)
 
 
 def ConvertText(twitter_data, key, *subkeys):
@@ -329,11 +341,20 @@ def CreateArtistFromUser(twuser, commit=True):
     if commit:
         SESSION.add(artist)
         SESSION.commit()
-        AddArtistName(artist, twuser)
-        AddArtistSiteAccount(artist, twuser)
-        AddArtistProfile(artist, twuser)
-        AddArtistWebpages(twuser, artist.id)
+        AddArtistName(artist, twuser['name'])
+        AddArtistSiteAccount(artist, twuser['screen_name'])
+        AddArtistProfile(artist, GetUserDescription(twuser))
+        AddArtistWebpages(artist, GetTwitterUserWebpages(twuser))
     return artist
+
+
+def CreateArtistFromParameters(params):
+    if 'site_created' in params:
+        try:
+            params['site_created'] = ProcessTwitterTimestring(params['site_created'])
+        except Exception:
+            del params['site_created']
+    return BASE.CreateArtistFromParameters(params, Site.TWITTER.value)
 
 
 #   Update
@@ -358,11 +379,11 @@ def UpdateArtistFromUser(artist, twuser):
     print("UpdateArtistFromUser")
     dirty = False
     if artist.created is None:
-        artist.created = ProcessTwitterTimestring(tweet['created_at'])
+        artist.created = ProcessTwitterTimestring(twuser['created_at'])
         dirty = True
-    dirty = AddArtistName(artist, twuser) or dirty
-    dirty = AddArtistSiteAccount(artist, twuser) or dirty
-    dirty = AddArtistProfile(artist, twuser) or dirty
+    dirty = AddArtistName(artist, twuser['name']) or dirty
+    dirty = AddArtistSiteAccount(artist, twuser['screen_name']) or dirty
+    dirty = AddArtistProfile(artist, GetUserDescription(twuser)) or dirty
     dirty = UpdateArtistWebpages(artist, twuser) or dirty
     UpdateTimestamps(artist, dirty)
     if dirty:
@@ -372,10 +393,11 @@ def UpdateArtistFromUser(artist, twuser):
     # Must update the requery if nothing else
     SESSION.commit()
 
+
 def UpdateArtistWebpages(artist, twuser):
     print("UpdateArtistWebpages")
     current_webpages = artist.webpages
-    active_webpages = AddArtistWebpages(twuser, artist.id, False)
+    active_webpages = AddArtistWebpages(artist, GetTwitterUserWebpages(twuser), False)
     active_urls = [webpage.url for webpage in active_webpages]
     print("Current:\n", current_webpages)
     print("Active:\n", active_webpages)
@@ -401,6 +423,7 @@ def UpdateArtistWebpages(artist, twuser):
 
 # OTHER
 
+
 def CacheTimelineData(twitter_data, type):
     tweet_ids = list(map(int, twitter_data.keys()))
     cache_data = GetApiData(tweet_ids, type)
@@ -422,13 +445,46 @@ def CacheTimelineData(twitter_data, type):
         cache_item.expires = DaysFromNow(1)
     SESSION.commit()
 
+
+def CacheLookupData(twitter_data, type):
+    twitter_ids = [int(data['id_str']) for data in twitter_data]
+    cache_data = GetApiData(twitter_ids, type)
+    for data_item in twitter_data:
+        data_id = int(data_item['id_str'])
+        cache_item = next(filter(lambda x: x.data_id == data_id, cache_data), None)
+        if not cache_item:
+            print("CacheLookupData - adding cache item:", type, data_id)
+            data = {
+                'site_id': Site.TWITTER.value,
+                'type': type,
+                'data_id': data_id,
+            }
+            cache_item = ApiData(**data)
+            SESSION.add(cache_item)
+        else:
+            print("CacheTimelineData - updating cache item:", type, data_id, cache_item.id)
+        cache_item.data = data_item
+        cache_item.expires = DaysFromNow(1)
+    SESSION.commit()
+
+
 def GetSiteIllust(site_illust_id):
     return Illust.query.filter_by(site_id=Site.TWITTER.value, site_illust_id=site_illust_id).first()
+
 
 def GetSiteArtist(site_artist_id):
     return Artist.query.filter_by(site_id=Site.TWITTER.value, site_artist_id=site_artist_id).first()
 
+
 def GetApiData(data_ids, type):
+    cache_data = []
+    for i in range(0, len(data_ids), 100):
+        sublist = data_ids[i: i + 100]
+        cache_data += _GetApiData(data_ids, type)
+    return cache_data
+
+
+def _GetApiData(data_ids, type):
     q = ApiData.query
     q = q.filter_by(site_id=Site.TWITTER.value, type=type)
     if len(data_ids) == 1:
@@ -438,13 +494,16 @@ def GetApiData(data_ids, type):
     q = q.filter(ApiData.expires > GetCurrentTime())
     return q.all()
 
+
 def GetApiArtist(site_artist_id):
     cache = GetApiData([site_artist_id], 'artist')
     return cache[0].data if len(cache) else None
 
+
 def GetApiIllust(site_illust_id):
     cache = GetApiData([site_illust_id], 'illust')
     return cache[0].data if len(cache) else None
+
 
 """
 def GetApiArtists(site_illust_ids):

@@ -17,7 +17,7 @@ from app.models import Upload, Illust, Artist
 from app.sources import base as BASE_SOURCE
 from app.logical.utility import MinutesAgo, StaticVars, GetCurrentTime
 from app.logical.logger import LogError
-from app.logical.unshortenlink import UnshortenAllLinks
+#from app.logical.unshortenlink import UnshortenAllLinks
 from argparse import ArgumentParser
 
 
@@ -28,6 +28,7 @@ SEM = threading.Semaphore()
 
 # ### FUNCTIONS
 
+#print(APP)
 
 @atexit.register
 def Cleanup():
@@ -78,7 +79,7 @@ def ProcessUploads():
 
 
 def ProcessUpload(upload):
-    print("ProcessUpload:\n",upload)
+    #print("ProcessUpload:\n",upload)
     try:
         BASE_SOURCE.ProcessUpload(upload)
         return True
@@ -91,7 +92,7 @@ def ProcessUpload(upload):
 
 def ProcessArtist(artist):
     SESSION.add(artist)
-    print("ProcessArtist:\n",artist)
+    print("ProcessArtist:\n",artist.id)
     try:
         BASE_SOURCE.ProcessArtist(artist)
         return True
@@ -114,7 +115,7 @@ def CreateNewArtist(site_id, site_artist_id):
         return False
 
 def ProcessIllust(illust):
-    print("ProcessIllust:\n",illust)
+    print("ProcessIllust:\n",illust.id)
     try:
         BASE_SOURCE.ProcessIllust(illust)
         return True
@@ -191,7 +192,7 @@ if __name__ == '__main__':
         SCHED.add_job(ExpireUploads, 'interval', minutes=1)
         #SCHED.add_job(CheckGlobals, 'interval', seconds=1)
         SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1)
-        SCHED.add_job(CheckForShortLinks, 'interval', hours=2)
+        #SCHED.add_job(CheckForShortLinks, 'interval', hours=2)
         SCHED.add_job(ProcessUploads)
         SCHED.start()
 
