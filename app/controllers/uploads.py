@@ -25,11 +25,15 @@ bp = Blueprint("upload", __name__)
 
 
 def CheckParams(request):
+    messages = []
     user_id = request.values.get('user_id')
     if user_id is None or not user_id.isdigit():
         return "No user ID present!"
-    if request.values.get('url') is None:
-        return "No URL present!"
+    if request.values.get('url') is not None:
+        return
+    if request.values.get('media') is not None and request.values.get('url_id') is not None:
+        return
+    return "No URL or media information present!"
 
 
 #   Routes
@@ -89,13 +93,19 @@ def create():
     if error is not None:
         return {'error': error}
     user_id = int(request.values['user_id'])
-    request_url = request.values['url']
+    request_url = request.values.get('url')
     referrer_url = request.values.get('ref')
+    media_filepath = request.values.get('media')
+    sample_filepath = request.values.get('sample')
+    illust_url_id = request.values.get('url_id', type=int)
     image_urls = request.values.getlist('image_urls[]')
     force = request.values.get('force', type=EvalBoolString)
-    print("Create upload:", force, request.values, image_urls)
+    print("Create upload:", user_id, request_url, referrer_url, media_filepath, sample_filepath, illust_url_id, image_urls, force)
     try:
-        upload = BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
+        if request_url is not None:
+            upload = BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
+        else:
+            upload = BASE_SOURCE.CreateFileUpload(user_id, media_filepath, sample_filepath, illust_url_id)
     except Exception as e:
         print("Database exception!", e)
         LogError('controllers.uploads.create', "Unhandled exception occurred creating upload: %s" % (str(e)))

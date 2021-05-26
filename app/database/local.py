@@ -28,6 +28,27 @@ def CreateUploadFromRequest(type, request_url, image_urls, uploader_id, commit=T
     return upload
 
 
+
+def CreateFileUploadFromRequest(uploader_id, media_filepath, sample_filepath, illust_url_id, commit=True):
+    data = {
+        'uploader_id': uploader_id,
+        'media_filepath': media_filepath,
+        'sample_filepath': sample_filepath,
+        'type': 'file',
+        'status': 'pending',
+        'successes': 0,
+        'failures': 0,
+        'illust_url_id': illust_url_id,
+        'subscription_id': None,
+        'created': GetCurrentTime(),
+    }
+    upload = Upload(**data)
+    if commit:
+        SESSION.add(upload)
+        SESSION.commit()
+    return upload
+
+
 def AppendUploadUrls(upload, image_urls):
     append_urls = []
     for url in image_urls:

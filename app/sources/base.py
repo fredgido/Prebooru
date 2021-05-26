@@ -3,8 +3,9 @@
 # ##PYTHON IMPORTS
 from ..sites import GetSiteKey
 from ..sources import SOURCES, DICT as SOURCEDICT
-from ..models import Upload
+from ..models import Upload, IllustUrl
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
+from ..logical.uploader import UploadIllustUrl
 from ..database import local as DBLOCAL
 
 
@@ -33,9 +34,41 @@ def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
         return {'error': True, 'message': 'Already uploaded on upload #%d' % upload.id, 'data': upload.to_json()}
 
 
+def CreateFileUpload(uploader_id, media_filepath, sample_filepath, illust_url_id):
+    illust_url = IllustUrl.query.filter_by(id=illust_url_id).first()
+    if illust_url is None:
+        return {'error': True, 'message': "Illust Url #%d does not exist." % (illust_url_id)}
+    elif illust_url.post is not None:
+        return {'error': True, 'message': "Illust Url #%d already uploaded as post #%d." % (illust_url.id, illust_url.post.id)}
+    else:
+        return {'error': False, 'data': DBLOCAL.CreateFileUploadFromRequest(uploader_id, media_filepath, sample_filepath, illust_url_id)}
+
+
 def ProcessUpload(upload):
     upload.status = 'processing'
     DBLOCAL.SaveData(upload)
+    if upload.type == 'post':
+        ProcessNetworkUpload(upload)
+    elif upload.type == 'file':
+        ProcessFileUpload(upload)
+
+
+def ProcessFileUpload(upload):
+    site_id = upload.illust_url and upload.illust_url.illust and upload.illust_url.illust.site_id
+    if site_id is None:
+        DBLOCAL.CreateAndAppendError('sources.base.ProcessFileUpload', "No site ID found through illust url.", upload)
+        upload.status = 'error'
+        DBLOCAL.SaveData(upload)
+        return
+    source = _Source(site_id)
+    if UploadIllustUrl(upload, source):
+        upload.status = 'complete'
+    else:
+        upload.status = 'error'
+    DBLOCAL.SaveData(upload)
+
+
+def ProcessNetworkUpload(upload):
     source = GetSource(upload.request_url, upload.referrer_url)
     site_illust_id = source.GetIllustId(upload.request_url, upload.referrer_url)
     error = source.Prework(site_illust_id)

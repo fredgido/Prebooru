@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload, lazyload
 
 from ..logical.logger import LogError
 from ..models import Illust, Artist
+from ..models.artist import Names, SiteAccounts
 from ..sources import base as BASE_SOURCE
 from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, GetDataParams
 
@@ -60,6 +61,10 @@ def index():
     q = Artist.query
     q = q.options(selectinload(Artist.names), selectinload(Artist.site_accounts), selectinload(Artist.webpages), lazyload(Artist.profiles))
     q = IdFilter(q, search)
+    if 'names' in search:
+        q = q.unique_join(Names, Artist.names).filter(Names.name == search['names'])
+    if 'site_accounts' in search:
+        q = q.unique_join(SiteAccounts, Artist.site_accounts).filter(SiteAccounts.name == search['site_accounts'])
     if 'site_artist_id' in search:
         q = q.filter_by(site_artist_id=search['site_artist_id'])
     if 'illust_site_illust_id' in search:

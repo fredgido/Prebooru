@@ -2,6 +2,8 @@
 
 # flake8: noqa
 
+from .. import db
+
 # SITE DATA
 
 from .tag import Tag
@@ -22,5 +24,7 @@ from .upload import Upload
 from .pool import Pool, PoolPosts
 #from .pool_element import PoolElement
 from .subscription import Subscription
+
+IllustUrl.uploads = db.relationship(Upload, backref=db.backref('illust_url', lazy=True), lazy=True)
 
 NONCE = None

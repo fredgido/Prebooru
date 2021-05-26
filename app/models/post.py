@@ -11,8 +11,8 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from .. import db, storage
 from ..logical.utility import UniqueObjects
 from .base import JsonModel, RemoveKeys
-from .illust_url import IllustUrl
 from .error import Error
+from .illust_url import IllustUrl
 
 
 # ##GLOBAL VARIABLES

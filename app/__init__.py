@@ -1,6 +1,6 @@
 import os
 from .config import DB_PATH, CACHE_PATH, SIMILARITY_PATH
-from sqlalchemy import event
+from sqlalchemy import event, MetaData
 from sqlalchemy.engine import Engine
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -24,7 +24,16 @@ app.config.from_mapping(
     EXPLAIN_TEMPLATE_LOADING=True
 )
 
-db = SQLAlchemy(app)
+convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
+metadata = MetaData(naming_convention=convention)
+db = SQLAlchemy(app, metadata=metadata)
 session = db.session
 
 def _test_func(*args, **kwargs):
