@@ -34,6 +34,9 @@ def ConvertDataParams(dataparams):
     dataparams['site_id'] = int(dataparams['site_id'])
     dataparams['site_illust_id'] = int(dataparams['site_illust_id'])
     dataparams['site_artist_id'] = int(dataparams['site_artist_id'])
+    dataparams['pages'] = int(dataparams['pages'])
+    if 'score' in dataparams:
+        dataparams['score'] = int(dataparams['score'])
     if 'urls' in dataparams:
         dataparams['urls'] = [json.loads(url_json) for url_json in dataparams['urls']]
     if 'videos' in dataparams:

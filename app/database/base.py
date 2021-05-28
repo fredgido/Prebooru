@@ -49,10 +49,10 @@ def CreateIllustFromParameters(params, site_id):
         'requery': current_time + datetime.timedelta(days=1),
         'artist_id': params['artist_id'],
         'pages': params['pages'],
-        'score': params['score'],
         'created': current_time,
         'updated': current_time,
     }
+    data['score'] =  params['score'] if 'score' in params else None
     data['site_created'] = params['site_created'] if 'site_created' in params else None
     illust = Illust(**data)
     SESSION.add(illust)

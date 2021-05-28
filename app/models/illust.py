@@ -9,7 +9,7 @@ from flask import url_for
 # ##LOCAL IMPORTS
 from .. import db
 from ..sites import GetSiteDomain, GetSiteKey
-from .base import JsonModel, DateTimeOrNull, RemoveKeys
+from .base import JsonModel, DateTimeOrNull, RemoveKeys, IntOrNone
 from .tag import Tag
 from .illust_url import IllustUrl
 from .site_data import SiteData
@@ -47,7 +47,7 @@ class Illust(JsonModel):
     urls: List[lambda x: RemoveKeys(x, ['id', 'illust_id'])]
     artist_id: int
     pages: int
-    score: int
+    score: IntOrNone
     site_data: lambda x: RemoveKeys(x.to_json(), ['id', 'illust_id', 'type'])
     requery: DateTimeOrNull
     created: datetime.datetime.isoformat

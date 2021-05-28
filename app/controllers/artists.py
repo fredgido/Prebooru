@@ -95,3 +95,22 @@ def create():
         return {'error': True, 'message': 'Database exception! Check log file.'}
     artist_json = artist.to_json() if artist is not None else artist
     return {'error': False, 'artist': artist}
+
+@bp.route('/artists/query.json', methods=['post'])
+def query():
+    site_id = request.values.get('site_id', type=int)
+    site_artist_id = request.values.get('site_artist_id', type=int)
+    if site_id is None or site_artist_id is None:
+        return {'error': True, 'message': "Must include the site ID and site artist ID."}
+    artist = Artist.query.filter_by(site_id=site_id, site_artist_id=site_artist_id).first()
+    if artist is not None:
+        return {'error': True, 'message': "Artist already exists.", 'params': {'site_id': site_id, 'site_artist_id': site_artist_id}, 'artist': artist}
+    try:
+        artist = BASE_SOURCE.QueryCreateArtist(site_id, site_artist_id)
+    except Exception as e:
+        print("Database exception!", e)
+        LogError('controllers.artists.create', "Unhandled exception occurred query/creating artist: %s" % (str(e)))
+        request.environ.get('werkzeug.server.shutdown')()
+        return {'error': True, 'message': 'Database exception! Check log file.'}
+    artist_json = artist.to_json() if artist is not None else artist
+    return {'error': False, 'artist': artist}
