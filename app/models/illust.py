@@ -5,6 +5,7 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
+from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
 from .. import db
@@ -14,6 +15,7 @@ from .tag import Tag
 from .illust_url import IllustUrl
 from .site_data import SiteData
 from .description import Description
+from .pool_element import PoolIllust
 
 
 # ##GLOBAL VARIABLES
@@ -63,6 +65,8 @@ class Illust(JsonModel):
     pages = db.Column(db.Integer, nullable=True)
     score = db.Column(db.Integer, nullable=True)
     site_data = db.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
+    _pools = db.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
+    pools = association_proxy('_pools', 'pool')
     requery = db.Column(db.DateTime(timezone=False), nullable=True)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
     updated = db.Column(db.DateTime(timezone=False), nullable=False)

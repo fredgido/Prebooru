@@ -21,8 +21,10 @@ from .error import Error
 from .post import Post
 from .upload_url import UploadUrl
 from .upload import Upload
-from .pool import Pool, PoolPosts
-#from .pool_element import PoolElement
+from .notation import Notation
+#from .pool import Pool, PoolPosts
+from .pool import Pool
+from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation
 from .subscription import Subscription
 
 IllustUrl.uploads = db.relationship(Upload, backref=db.backref('illust_url', lazy=True), lazy=True)
