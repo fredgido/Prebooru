@@ -41,7 +41,7 @@ def PageNavigation(paginate):
     right = min(current_page + 4, penultimate_page)
     pages = [1]
     pages += ['...'] if left != 2 else []
-    pages += list(range(left, right))
+    pages += list(range(left, right+1))
     pages += ['...'] if right != penultimate_page else []
     pages += [last_page] if last_page > 1 else []
     print("PageNavigation-2:", previous_page, current_page, next_page, pages, left, right, last_page, penultimate_page)
