@@ -138,6 +138,7 @@ app/config.py
 *.db
 ideas.txt
 notes.txt
+similarity_notes.txt
 old/
 db/
 cache/

@@ -49,7 +49,6 @@ def index():
     q = Post.query
     q = q.options(lazyload('*'))
     q = IdFilter(q, search)
-    q = DefaultOrder(q)
     if 'artist_id' in search:
         #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(id=search['artist_id']))))
         q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).filter(Illust.artist_id == search['artist_id'])
@@ -69,4 +68,5 @@ def index():
     if 'asite_id' in search:
         #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_id=search['asite_id']))))
         q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).unique_join(Artist).filter(Artist.site_id == search['asite_id'])
+    q = DefaultOrder(q, search)
     return q

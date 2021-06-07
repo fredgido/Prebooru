@@ -70,7 +70,7 @@ def index():
     if 'illust_site_illust_id' in search:
         #q = q.filter(Artist.illusts.any(site_illust_id=search['illust_site_illust_id']))
         q = q.unique_join(Illust).filter(Illust.site_illust_id == search['illust_site_illust_id'])
-    q = DefaultOrder(q)
+    q = DefaultOrder(q, search)
     return q
 
 

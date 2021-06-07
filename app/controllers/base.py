@@ -3,6 +3,7 @@
 # ## PYTHON IMPORTS
 import re
 from flask import jsonify, render_template
+from sqlalchemy.sql.expression import case
 
 
 # ## FUNCTIONS
@@ -73,8 +74,21 @@ def IdFilter(query, search):
             query = query.filter(entity.id.in_(ids))
     return query
 
-def DefaultOrder(query):
+def CustomOrder(ids, entity):
+    return case(
+        {id: index for index, id in enumerate(ids)},
+        value=entity.id
+     )
+
+def DefaultOrder(query, search):
     entity = query.column_descriptions[0]['entity']
+    if 'order' in search:
+        if search['order'] == 'custom':
+            ids = [int(id) for id in search['id'].split(',') if id.isdigit()]
+            if len(ids) > 1:
+                return query.order_by(CustomOrder(ids, entity))
+        elif search['order'] == 'id_asc':
+            return query.order_by(entity.id.asc())
     return query.order_by(entity.id.desc())
 
 def PageNavigation(paginate, request):

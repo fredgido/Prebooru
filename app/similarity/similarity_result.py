@@ -43,6 +43,7 @@ class SimilarityResult(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     post_id = db.Column(db.Integer, nullable=False)
+    ratio = db.Column(db.Float, nullable=True)
     
     chunk_columns = {}
     for i in range(0, NUM_CHUNKS):

@@ -95,6 +95,8 @@ def GetImageExtension(image_url):
 def UploadCheck(request_url, referrer_url):
     return ARTWORKS_RG.match(request_url) or IMAGE_RG.match(request_url)
 
+def IsImageUrl(image_url):
+    return False
 
 def GetUploadType(request_url, referrer_url):
     artwork_match = ARTWORKS_RG.match(request_url)

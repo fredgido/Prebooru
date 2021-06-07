@@ -78,7 +78,7 @@ def index():
     if 'url_site_id' in search:
         #q = q.filter(Illust.urls.any(site_id=search['url_site_id']))
         q = q.unique_join(IllustUrl).filter(IllustUrl.site_id == search['url_site_id'])
-    q = DefaultOrder(q)
+    q = DefaultOrder(q, search)
     return q
 
 

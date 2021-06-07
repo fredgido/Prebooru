@@ -69,7 +69,6 @@ def index():
     q = Upload.query
     q = q.options(selectinload(Upload.image_urls), selectinload(Upload.posts).lazyload(Post.illust_urls),selectinload(Upload.errors))
     q = IdFilter(q, search)
-    q = DefaultOrder(q)
     if 'request_url' in search:
         q = q.filter_by(request_url=search['request_url'])
     if 'status' in search:
@@ -84,6 +83,7 @@ def index():
             q = q.filter(Upload.errors.any())
         elif IsFalsey(search['has_errors']):
             q = q.filter(sqlalchemy.not_(Upload.errors.any()))
+    q = DefaultOrder(q, search)
     return q
 
 

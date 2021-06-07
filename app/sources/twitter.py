@@ -162,16 +162,17 @@ IMAGE2_RG = re.compile(r"""
 
 
 """http://pbs.twimg.com/ext_tw_video_thumb/1270031579470061568/pu/img/cLxRLtYjq_D10ome.jpg"""
-""""https://pbs.twimg.com/amplify_video_thumb/1096312943845593088/img/VE7v_9MVr3tqZMNH.jpg"""
+"""https://pbs.twimg.com/amplify_video_thumb/1096312943845593088/img/VE7v_9MVr3tqZMNH.jpg"""
 
 IMAGE3_RG = re.compile(r"""
 ^https?://pbs\.twimg\.com                   # Hostname
 /(ext_tw_video_thumb|amplify_video_thumb)   # Type
 /(\d+)                                      # Twitter ID
-(?:/\w+)?
+(/\w+)?                                     # Path
 /img
-/([^.]+)                                   # Image key
+/([^.]+)                                    # Image key
 \.(jpg|png|gif)                             # Extension
+(?::(orig|large|medium|small|thumb))?       # Size
 """, re.X | re.IGNORECASE)
 
 
@@ -324,6 +325,18 @@ def GetFullUrl(illust_url):
         return media_url + '&name=orig'
     return media_url
 
+def SmallImageUrl(image_url):
+    return NormalizedImageUrl(image_url) + ':small'
+
+def NormalizedImageUrl(image_url):
+    match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
+    if match:
+        type, imagekey, extension, _ = match.groups()
+        return "https://pbs.twimg.com/%s/%s.%s" % (type, imagekey, extension)
+    match = IMAGE3_RG.match(image_url)
+    type, imageid, path, imagekey, extension, _ = match.groups()
+    path = path or ""
+    return "https://pbs.twimg.com/%s/%s%s/img/%s.%s" % (type, imageid, path, imagekey, extension)
 
 def GetIllustUrl(site_illust_id):
     return "https://twitter.com/i/web/status/%d" % site_illust_id

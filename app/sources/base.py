@@ -18,6 +18,11 @@ def GetSource(request_url, referrer_url):
             return source
 
 
+def GetImageSource(image_url):
+    for source in SOURCES:
+        if source.IsImageUrl(image_url):
+            return source
+
 def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
     source = GetSource(request_url, referrer_url)
     if source is None:

@@ -6,6 +6,7 @@ import time
 from flask import request
 import atexit
 import random
+import requests
 import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -64,14 +65,22 @@ def ProcessUploads():
     print("<semaphore acquire>")
     try:
         ProcessUploads.processing = True
+        post_ids = []
         while True:
             uploads = Upload.query.filter_by(status="pending").all()
             for upload in uploads:
                 if not ProcessUpload(upload):
                     break
+                post_ids.extend(upload.post_ids)
             else:
                 print("No pending uploads.")
                 break
+        if len(post_ids):
+            print("Check to see if the similarity server call will work.")
+            try:
+                requests.get('http://127.0.0.1:3000/check_posts',timeout=2)
+            except Exception as e:
+                print("Unable to contact similarity server:", e)
     finally:
         ProcessUploads.processing = False
         SEM.release()
