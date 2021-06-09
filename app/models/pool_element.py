@@ -29,6 +29,7 @@ class PoolElement(JsonModel):
     pool_id = db.Column(db.Integer, db.ForeignKey('pool.id'), nullable=False)
     position = db.Column(db.Integer, nullable=False)
     type = db.Column(db.String(50))
+    
     __mapper_args__ = {
         'polymorphic_identity': 'pool_element',
         "polymorphic_on": type

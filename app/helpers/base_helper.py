@@ -54,5 +54,7 @@ def UrlForWithArgs(endpoint, **kwargs):
     for arg in request.args:
         if arg not in kwargs:
             url_args[arg] = request.args[arg]
+    if request.endpoint.find('.show_html') >= 0:
+        url_args['id'] = int(re.search(r'\d+$', request.path).group(0))
     return url_for(endpoint, **url_args)
 

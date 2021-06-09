@@ -33,6 +33,10 @@ def RemoveKeys(data, keylist):
 class JsonModel(db.Model):
     __abstract__ = True
 
+    @classmethod
+    def find(cls, id):
+        return cls.query.filter_by(id=id).first()
+
     def to_json(self):
         fields = self.__dataclass_fields__
         data = {}

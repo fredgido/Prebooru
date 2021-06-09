@@ -26,3 +26,11 @@ class Notation(JsonModel):
     _pools = db.relationship(PoolNotation, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
 
+    def delete(self):
+        pools = self.pools
+        db.session.delete(self)
+        db.session.commit()
+        for pool in pools:
+            pool._elements.reorder()
+        if len(pools) > 0:
+            db.session.commit()

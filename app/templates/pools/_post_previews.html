@@ -1,0 +1,9 @@
+<div style="display: flex; flex-wrap: wrap; flex-direction: row;">
+    {% for post in posts %}
+        <article class="illust-post" style="width: 150px; height: 150px;">
+            <a href="{{ post.show_url }}">
+                <img style="max-width: 150px; max-height: 150px;" src="{{ post.preview_url }}">
+            </a>
+        </article>
+    {% endfor %}
+</div>

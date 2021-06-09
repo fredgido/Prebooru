@@ -1,0 +1,25 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Pool # {{ pool.id }}{% endblock %}
+
+{% block content %}
+    <div id="pool-content">
+        <div class="heading" style="font-size: 32px">Pool #{{ pool.id }}</div>
+        <div class="heading" style="font-size: 24px"><strong>Name:</strong> {{ pool.name }}</div>
+        <div id="pool-items">
+            {% for item in elements.items %}
+                <div style="display: inline-block; height: 350px; width: 20vw; vertical-align: top; margin: 0.25em; padding: 0.75em; border: 1px solid #EEE;">
+                    <div style="font-size: 24px;"><a href="{{ item.show_url }}">{{ item.__table__.name }} #{{ item.id }}</a></div>
+                    {% if item.__table__.name == 'post' %}
+                        {{ helpers.post.Preview(item) | safe }}
+                    {% elif item.__table__.name == 'illust' %}
+                        {{ helpers.illust.PostPreviews(item) }}
+                    {% elif item.__table__.name == 'notation' %}
+                        <div style="">{{ helpers.notation.ConvertToHTML(item) }}</div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    {{ helpers.base.PageNavigation(elements) | safe }}
+{% endblock %}

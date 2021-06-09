@@ -2,7 +2,7 @@
 
 # ## LOCAL IMPORTS
 from app import app
-from app.controllers import uploads, posts, illusts, artists
+from app.controllers import uploads, posts, illusts, artists, pools
 from argparse import ArgumentParser
 
 
@@ -12,6 +12,7 @@ app.register_blueprint(illusts.bp)
 app.register_blueprint(artists.bp)
 app.register_blueprint(uploads.bp)
 app.register_blueprint(posts.bp)
+app.register_blueprint(pools.bp)
 
 
 # ##EXECUTION START

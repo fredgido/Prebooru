@@ -67,6 +67,7 @@ class Illust(JsonModel):
     site_data = db.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
     _pools = db.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
+    posts = association_proxy('urls', 'post')
     requery = db.Column(db.DateTime(timezone=False), nullable=True)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
     updated = db.Column(db.DateTime(timezone=False), nullable=False)
@@ -93,3 +94,11 @@ class Illust(JsonModel):
         site_key = GetSiteKey(self.site_id)
         return SOURCEDICT[site_key]
 
+    def delete(self):
+        pools = self.pools
+        db.session.delete(self)
+        db.session.commit()
+        for pool in pools:
+            pool._elements.reorder()
+        if len(pools) > 0:
+            db.session.commit()

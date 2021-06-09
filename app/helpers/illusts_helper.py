@@ -1,3 +1,5 @@
+from flask import render_template, Markup
+
 from ..sites import GetSiteDomain, GetSiteKey
 from ..sources import DICT as SOURCEDICT
 from .base_helper import SearchUrlFor
@@ -26,3 +28,10 @@ def SiteIllustUrl(illust):
 def PostSearch(illust):
     return SearchUrlFor('post.index_html', site_illust_id=illust.site_illust_id, isite_id=illust.site_id)
 
+
+def PostPreviews(illust):
+    posts = [post for post in illust.posts if post is not None]
+    if len(posts) == 0:
+        return  Markup('<i>No posts.</i>')
+    #return render_template("illusts\_post_previews.html", posts=posts)
+    return Markup(render_template("pools/_post_previews.html", posts=posts))

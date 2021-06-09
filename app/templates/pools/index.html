@@ -1,0 +1,28 @@
+{% extends 'layouts/base.html' %}
+
+{% block content %}
+    <table id="pools-table" class="striped" width="100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Count</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pool in pools.items %}
+                {% set outer_loop = loop %}
+                <tr id="pool-{{ pool.id }}">
+                    <td><a href="{{ pool.show_url }}">pool #{{ pool.id }}</a></td>
+                    <td>
+                        <span>{{ pool.name }}</span>
+                    </td>
+                    <td>
+                        <span>{{ pool.element_count }}</span>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{ helpers.base.PageNavigation(pools) | safe }}
+{% endblock %}
