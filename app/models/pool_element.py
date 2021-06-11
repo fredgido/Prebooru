@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import db, session as SESSION
 from .base import JsonModel, IntOrNone
 
 
@@ -18,6 +18,19 @@ def pool_element_create(item):
     if item.__table__.name == 'notation':
         return PoolNotation(item=item)
     raise Exception("Invalid pool type.")
+
+def pool_element_delete(pool_id, item):
+    table_name = item.__table__.name
+    if table_name == 'post':
+        element = PoolPost.query.filter_by(pool_id=pool_id, post_id=item.id).first()
+    if table_name == 'illust':
+        element = PoolIllust.query.filter_by(pool_id=pool_id, illust_id=item.id).first()
+    if table_name == 'notation':
+        element = PoolNotation.query.filter_by(pool_id=pool_id, notation_id=item.id).first()
+    if element is None:
+        raise Exception("%s #%d not found in pool #%d." % (table_name, item.id, pool_id))
+    SESSION.delete(element)
+
 
 @dataclass
 class PoolElement(JsonModel):

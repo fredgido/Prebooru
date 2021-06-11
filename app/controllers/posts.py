@@ -2,7 +2,7 @@
 
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, abort, url_for
-from sqlalchemy.orm import lazyload
+from sqlalchemy.orm import selectinload, lazyload
 
 
 # ## LOCAL IMPORTS
@@ -34,6 +34,15 @@ def index_json():
     q = index()
     return IndexJson(q, request)
 
+@bp.route('/posts/pools.json', methods=['GET'])
+def pools_json():
+    posts = index().all()
+    retvalue = {}
+    for post in posts:
+        id_str = str(post.id)
+        pool_ids = [pool.id for pool in post.pools]
+        retvalue[id_str] = pool_ids
+    return retvalue
 
 @bp.route('/', methods=['GET'])
 @bp.route('/posts', methods=['GET'])

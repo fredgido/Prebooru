@@ -2,6 +2,8 @@
 
 {% block title %}Artist # {{ artist.id }}{% endblock %}
 
+{% block secondary_links %}{{ helpers.base.render_template("artists/_secondary_links.html", artist=artist) | safe }}{% endblock %}
+
 {% block content %}
     <div id="artist-content">
         <div class="heading" style="font-size: 32px">Artist #{{ artist.id }}</div>
@@ -10,6 +12,7 @@
                 <h5><u>Site</u></h5>
                 <ul style="margin-left: 1.5em;">
                     <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
+                    <li><strong>Links:</strong> <a href="{{ helpers.artist.MainUrl(artist) }}">Main</a> | <a href="{{ helpers.artist.MediaUrl(artist) }}">Media</a> | <a href="{{ helpers.artist.LikesUrl(artist) }}">Likes</a></li>
                     <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
                     <li><strong>Artist ID:</strong> {{ artist.site_artist_id }}</li>
                     <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.site_created) }}</li>

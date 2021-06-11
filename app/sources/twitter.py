@@ -318,7 +318,7 @@ def GetIllustId(request_url, referrer_url):
 
 
 def GetFullUrl(illust_url):
-    media_url = illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
+    media_url = GetMediaUrl(illust_url)
     if IMAGE1_RG.match(media_url):
         return media_url + ':orig'
     if IMAGE2_RG.match(media_url):
@@ -338,6 +338,17 @@ def NormalizedImageUrl(image_url):
     path = path or ""
     return "https://pbs.twimg.com/%s/%s%s/img/%s.%s" % (type, imageid, path, imagekey, extension)
 
+def GetMediaUrl(illust_url):
+    return illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
+
+def GetPostUrl(illust_url):
+    tweet_id = illust_url.illust.site_illust_id
+    screen_name = illust_url.illust.artist.current_site_account
+    if screen_name is None:
+        return GetIllustUrl(tweet_id)
+    else:
+        return "https://twitter.com/%s/status/%d" % (screen_name, tweet_id)
+
 def GetIllustUrl(site_illust_id):
     return "https://twitter.com/i/web/status/%d" % site_illust_id
 
@@ -353,6 +364,20 @@ def NormalizeImageURL(image_url):
     image_match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
     return r'/media/%s.%s' % (image_match.group(2), image_match.group(3))
 
+
+def ArtistMainUrl(artist):
+    if artist.current_site_account is None or (len(artist.site_accounts) != 1):
+        return ""
+    screen_name = artist.current_site_account if artist.current_site_account is not None else artist.site_accounts[0].name
+    return 'https://twitter.com/%s' % screen_name
+
+def ArtistMediaUrl(artist):
+    url = ArtistMainUrl(artist)
+    return url + '/media' if len(url) else ""
+
+def ArtistLikesUrl(artist):
+    url = ArtistMainUrl(artist)
+    return url + '/likes' if len(url) else ""
 
 def GetGlobalObjects(data, type_name):
     return SafeGet(data, 'globalObjects', type_name)

@@ -13,7 +13,8 @@ from ..logical.utility import UniqueObjects
 from .base import JsonModel, RemoveKeys
 from .error import Error
 from .illust_url import IllustUrl
-from .pool_element import PoolPost
+from .notation import Notation
+from .pool_element import PoolPost, pool_element_delete
 
 
 # ##GLOBAL VARIABLES
@@ -30,6 +31,12 @@ PostErrors = db.Table(
     'post_errors',
     db.Column('post_id', db.Integer, db.ForeignKey('post.id'), primary_key=True),
     db.Column('error_id', db.Integer, db.ForeignKey('error.id'), primary_key=True),
+)
+
+PostNotations = db.Table(
+    'post_notations',
+    db.Column('post_id', db.Integer, db.ForeignKey('post.id'), primary_key=True),
+    db.Column('notation_id', db.Integer, db.ForeignKey('notation.id'), primary_key=True),
 )
 
 
@@ -87,6 +94,14 @@ class Post(JsonModel):
     def artists(self):
         return UniqueObjects([illust.artist for illust in self.illusts])
 
+    @property
+    def illust_ids(self):
+        return list(set(illust_url.illust_id for illust_url in self.illust_urls))
+
+    @property
+    def artist_ids(self):
+        return list(set(illust.artist_id for illust in self.illusts))
+
     id = db.Column(db.Integer, primary_key=True)
     width = db.Column(db.Integer, nullable=False)
     height = db.Column(db.Integer, nullable=False)
@@ -95,15 +110,10 @@ class Post(JsonModel):
     size = db.Column(db.Integer, nullable=False)
     illust_urls = db.relationship(IllustUrl, secondary=PostIllustUrls, lazy='subquery', backref=db.backref('post', uselist=False, lazy=True), cascade='all,delete')
     errors = db.relationship(Error, secondary=PostErrors, lazy=True, cascade='all,delete')
+    notations = db.relationship(Notation, secondary=PostNotations, lazy=True, backref=db.backref('posts', uselist=True, lazy=True), cascade='all,delete')
     _pools = db.relationship(PoolPost, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
     created = db.Column(db.DateTime(timezone=False), nullable=False)
 
-    def delete(self):
-        pools = self.pools
-        db.session.delete(self)
-        db.session.commit()
-        for pool in pools:
-            pool._elements.reorder()
-        if len(pools) > 0:
-            db.session.commit()
+    def delete_pool(self, pool_id):
+        pool_element_delete(pool_id, self)

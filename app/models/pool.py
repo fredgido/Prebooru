@@ -14,7 +14,7 @@ from .base import JsonModel
 from .post import Post
 from .illust import Illust
 from .notation import Notation
-from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation, pool_element_create
+from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation, pool_element_create, pool_element_delete
 
 
 # ##GLOBAL VARIABLES
@@ -46,6 +46,8 @@ class Pool(JsonModel):
     name = db.Column(db.String(255), nullable=False)
     _elements = db.relationship(PoolElement, backref='pool', order_by=PoolElement.position, collection_class=ordering_list('position'), cascade='all,delete', lazy=True)
     elements = association_proxy('_elements', 'item', creator=lambda item: pool_element_create(item))
+    created = db.Column(db.DateTime(timezone=False), nullable=True)
+    updated = db.Column(db.DateTime(timezone=False), nullable=True)
     
     @property
     def element_count(self):
@@ -55,6 +57,9 @@ class Pool(JsonModel):
     def show_url(self):
         return url_for("pool.show_html", id=self.id)
     
+    def remove(self, item):
+        pool_element_delete(self.id, item)
+   
     def element_paginate(self, page=None, per_page=None, post_options=lazyload('*'), illust_options=lazyload('*'), notation_options=lazyload('*')):
         q = PoolElement.query
         q = q.options(selectin_polymorphic(PoolElement, [PoolIllust, PoolPost, PoolNotation]))

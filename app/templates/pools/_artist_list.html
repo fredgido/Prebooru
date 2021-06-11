@@ -1,0 +1,5 @@
+<ul style="padding-left: 1em;">
+    {% for artist_id in artist_ids %}
+        <li style=""><a href="{{ url_for('artist.show_html', id=artist_id) }}">artist #{{ artist_id }}</a></li>
+    {% endfor %}
+</ul>

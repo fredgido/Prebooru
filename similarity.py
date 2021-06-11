@@ -36,18 +36,20 @@ SEM = threading.Semaphore()
 
 #### FUNCTIONS
 
-@APP.route('/check_similarity.json')
+@APP.route('/check_similarity.json', methods=['GET'])
 def check_similarity():
     request_urls = request.args.getlist('urls[]')
+    print("check_similarity", request_urls)
     if request_urls is None:
         return {'error': True, 'message': "Must include url."}
     similar_results = []
     for image_url in request_urls:
         source = BASE_SOURCE.GetImageSource(image_url)
-        download_url = source.SmallImageUrl(image_url)
+        download_url = source.SmallImageUrl(image_url) if source is not None else image_url
+        print("Download url:", download_url)
         starttime = time.time()
         buffer = GetHTTPFile(download_url, headers=app.sources.twitter.IMAGE_HEADERS)
-        print("Network:", download_url, time.time() - starttime)
+        print("Network time:", time.time() - starttime)
         if isinstance(buffer, Exception):
             return {'error': True, 'message': "Exception processing download: %s" % repr(buffer)}
         if isinstance(buffer, requests.Response):
@@ -57,10 +59,13 @@ def check_similarity():
             image = Image.open(file_imgdata)
         except Exception as e:
             return {'error': True, 'message': "Error processing image data: %s" % repr(e)}
+        image = image.copy().convert("RGB")
         image_hash = str(imagehash.whash(image, hash_size=HASH_SIZE))
+        print("Image hash:", image_hash)
         #smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause2(image_hash)).all()
         ratio = round(image.width / image.height, 4)
         smatches = GetSimilarMatches(image_hash, ratio)
+        print("Similar matches:", len(smatches))
         start_time = time.time()
         score_results = CheckSimilarMatchScores(smatches, image_hash, 90.0)
         end_time = time.time()
@@ -69,19 +74,19 @@ def check_similarity():
         for result in score_results:
             post = next(filter(lambda x: x.id == result['post_id'], posts), None)
             result['post'] = post.to_json() if post is not None else post
-        normalized_url = source.NormalizedImageUrl(image_url)
+        normalized_url = source.NormalizedImageUrl(image_url) if source is not None else image_url
         print("url:", normalized_url, "hash:", image_hash, "numfound:", len(smatches), "time:", end_time - start_time)
         similar_results.append({'image_url': normalized_url, 'post_results': score_results})
     return {'error': False, 'similar_results': similar_results}
 
-@APP.route('/check_posts')
+@APP.route('/check_posts', methods=['GET'])
 def check_posts():
     if SEM._value > 0:
         SCHED.add_job(ProcessSimilarity)
         return "Begin processing similarity..."
     return "Similarity already processing!"
 
-@APP.route('/generate_similarity.json')
+@APP.route('/generate_similarity.json', methods=['POST'])
 def generate_similarity():
     post_ids = request.args.getlist('post_ids[]', type=int)
     if post_ids is None:
@@ -288,6 +293,67 @@ def ProcessSimilaritySet():
             return True
         page = page.next()
 
+def ChooseSimilarityResult():
+    while True:
+        keyinput = input("Post ID: ")
+        if not keyinput:
+            return
+        if not keyinput.isdigit():
+            print("Must enter a valid ID number.")
+            continue
+        post_id = int(keyinput)
+        sresult = SimilarityResult.query.filter_by(post_id=post_id).first()
+        if sresult is None:
+            print("Post not found:", post_id)
+            continue
+        return sresult
+
+def GetHTTPImage(url):
+    print("Downloading:", url)
+    for i in range(3):
+        try:
+            resp = requests.get(url, timeout=10)
+        except (requests.exceptions.ReadTimeout,requests.exceptions.ConnectionError) as e:
+            print("Server exception:", e)
+            return -2
+        if resp.status_code != 200:
+            print("HTTP Error:", comic_id, resp.status_code, resp.reason)
+            time.sleep(30)
+            continue
+        break
+    else:
+        print("Unable to download:", url)
+        return -1
+    return resp.content
+
+def ComparePostSimilarity(args):
+    sresult = ChooseSimilarityResult()
+    if sresult is None:
+        return
+    print("Result hash:", sresult.image_hash)
+    sresult_binary_string = HexToBinary(sresult.image_hash)
+    while True:
+        keyinput = input("Image URL: ")
+        if not keyinput:
+            break
+        buffer = GetHTTPImage(keyinput)
+        if type(buffer) is int:
+            continue
+        try:
+            file_imgdata = BytesIO(buffer)
+            image = Image.open(file_imgdata)
+        except Exception as e:
+            print("Unable to open image:", e)
+            continue
+        image.copy().convert("RGB")
+        image_hash = str(imagehash.whash(image, hash_size=HASH_SIZE))
+        print("Image hash:", image_hash)
+        image_binary_string = HexToBinary(image_hash)
+        mismatching_bits = distance.hamming(image_binary_string, sresult_binary_string)
+        miss_ratio = mismatching_bits / TOTAL_BITS
+        score = round((1 - miss_ratio) * 100, 2)
+        print("Mismatching:", mismatching_bits, "Ratio:", miss_ratio, "Score:", score)
+
 def StartServer(args):
     global SCHED
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
@@ -301,7 +367,7 @@ def StartServer(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Worker to process uploads.")
-    parser.add_argument('type', choices=['generate', 'pools', 'compare', 'transfer', 'server'])
+    parser.add_argument('type', choices=['generate', 'pools', 'compare', 'comparepost', 'transfer', 'server'])
     parser.add_argument('--logging', required=False, default=False, action="store_true", help="Display the SQL commands.")
     parser.add_argument('--expunge', required=False, default=False, action="store_true", help="Expunge all similarity records.")
     args = parser.parse_args()
@@ -316,6 +382,8 @@ if __name__ == '__main__':
         GenerateSimilarityPools(args)
     elif args.type == 'compare':
         CompareSimilarityResults(args)
+    elif args.type == 'comparepost':
+        ComparePostSimilarity(args)
     elif args.type == 'transfer':
         TransferSimilarityResults(args)
     elif args.type == 'server':

@@ -14,3 +14,18 @@ def HrefUrl(artist):
 
 def PostSearch(artist):
     return SearchUrlFor('post.index_html', artist_id=artist.id)
+
+def MainUrl(artist):
+    site_key = GetSiteKey(artist.site_id)
+    source = SOURCEDICT[site_key]
+    return source.ArtistMainUrl(artist)
+
+def MediaUrl(artist):
+    site_key = GetSiteKey(artist.site_id)
+    source = SOURCEDICT[site_key]
+    return source.ArtistMediaUrl(artist)
+
+def LikesUrl(artist):
+    site_key = GetSiteKey(artist.site_id)
+    source = SOURCEDICT[site_key]
+    return source.ArtistLikesUrl(artist)

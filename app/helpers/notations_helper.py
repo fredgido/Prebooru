@@ -1,8 +1,13 @@
 import re
 import html
-from flask import Markup
+from flask import Markup, render_template
 
 HTTP_RG = re.compile(r'(\b(?:http|https)(?::\/{2}[\w]+)(?:[\/|\.]?)(?:[^\s<>\uff08\uff09\u3011\u3000"\[\]]*))',re.ASCII)
+
+def DisplayNotes(item):
+    if len(item.notations) == 0:
+        return ""
+    return render_template("notations/_list.html", notations=item.notations)
 
 def ConvertToHTML(notation):
     links = HTTP_RG.findall(notation.body)

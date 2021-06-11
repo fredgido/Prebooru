@@ -44,6 +44,7 @@ class Artist(JsonModel):
     id: int
     site_id: int
     site_artist_id: IntOrNone
+    current_site_account: StrOrNone
     site_created: DateTimeOrNull
     site_accounts: List[lambda x: x['name']]
     names: List[lambda x: x['name']]
@@ -55,6 +56,7 @@ class Artist(JsonModel):
     id = db.Column(db.Integer, primary_key=True)
     site_id = db.Column(db.Integer, nullable=False)
     site_artist_id = db.Column(db.Integer, nullable=True)
+    current_site_account = db.Column(db.String(255), nullable=True)
     site_created = db.Column(db.DateTime(timezone=False), nullable=True)
     site_accounts = db.relationship(Label, secondary=ArtistSiteAccounts, lazy='subquery', backref=db.backref('account_artists', lazy=True))
     names = db.relationship(Label, secondary=ArtistNames, lazy='subquery', backref=db.backref('name_artists', lazy=True))

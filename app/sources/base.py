@@ -107,6 +107,10 @@ def ProcessArtist(artist):
     source.UpdateDBArtist(artist)
 
 
+def UpdateArtist(artist):
+    source = _Source(artist.site_id)
+    source.UpdateArtist(artist)
+
 def QueryCreateArtist(site_id, site_artist_id):
     source = _Source(site_id)
     return source.CreateArtist(site_artist_id)

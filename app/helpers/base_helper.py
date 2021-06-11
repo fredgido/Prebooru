@@ -29,6 +29,9 @@ def NavLinkTo(text, endpoint):
     html_text = text.lower().replace(" ", "-")
     return Markup(render_template("layouts/_nav_link.html", text=text, html_text=html_text, endpoint=endpoint, klass=klass))
 
+def SubnavLinkTo(text, endpoint, id=None):
+    html_text = text.lower().replace(" ", "-")
+    return Markup(render_template("layouts/_subnav_link.html", text=text, html_text=html_text, endpoint=endpoint, id=id))
 
 def PageNavigation(paginate):
     print("PageNavigation-1:", paginate.page, paginate.prev_num, paginate.next_num, paginate.pages)

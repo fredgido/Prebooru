@@ -15,6 +15,7 @@ from .tag import Tag
 from .illust_url import IllustUrl
 from .site_data import SiteData
 from .description import Description
+from .notation import Notation
 from .pool_element import PoolIllust
 
 
@@ -34,6 +35,11 @@ IllustDescriptions = db.Table(
     db.Column('illust_id', db.Integer, db.ForeignKey('illust.id'), primary_key=True),
 )
 
+IllustNotations = db.Table(
+    'illust_notations',
+    db.Column('illust_id', db.Integer, db.ForeignKey('illust.id'), primary_key=True),
+    db.Column('notation_id', db.Integer, db.ForeignKey('notation.id'), primary_key=True),
+)
 
 # Classes
 
@@ -65,6 +71,7 @@ class Illust(JsonModel):
     pages = db.Column(db.Integer, nullable=True)
     score = db.Column(db.Integer, nullable=True)
     site_data = db.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
+    notations = db.relationship(Notation, secondary=IllustNotations, lazy=True, backref=db.backref('illusts', uselist=True, lazy=True), cascade='all,delete')
     _pools = db.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
     posts = association_proxy('urls', 'post')

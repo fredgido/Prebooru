@@ -1,7 +1,7 @@
 # APP\CONTROLLERS\ARTISTS.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort
+from flask import Blueprint, request, render_template, abort, redirect, url_for
 from sqlalchemy.orm import selectinload, lazyload
 
 # ## LOCAL IMPORTS
@@ -41,6 +41,13 @@ def show_html(id):
     artist = Artist.query.filter_by(id=id).first()
     return render_template("artists/show.html", artist=artist) if artist is not None else abort(404)
 
+@bp.route('/artists/<int:id>/update', methods=['GET'])
+def update_html(id):
+    artist = Artist.find(id)
+    if artist is None:
+        abort(404)
+    BASE_SOURCE.UpdateArtist(artist)
+    return redirect(url_for('artist.show_html', id=id))
 
 @bp.route('/artists.json', methods=['GET'])
 def index_json():

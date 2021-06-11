@@ -8,15 +8,29 @@
         <div class="heading" style="font-size: 24px"><strong>Name:</strong> {{ pool.name }}</div>
         <div id="pool-items">
             {% for item in elements.items %}
-                <div style="display: inline-block; height: 350px; width: 20vw; vertical-align: top; margin: 0.25em; padding: 0.75em; border: 1px solid #EEE;">
+                <div style="display: inline-block; height: 350px; width: 21.5vw; vertical-align: top; margin: 0.25em; padding: 0.75em; border: 1px solid #EEE;">
                     <div style="font-size: 24px;"><a href="{{ item.show_url }}">{{ item.__table__.name }} #{{ item.id }}</a></div>
-                    {% if item.__table__.name == 'post' %}
-                        {{ helpers.post.Preview(item) | safe }}
-                    {% elif item.__table__.name == 'illust' %}
-                        {{ helpers.illust.PostPreviews(item) }}
-                    {% elif item.__table__.name == 'notation' %}
-                        <div style="">{{ helpers.notation.ConvertToHTML(item) }}</div>
-                    {% endif %}
+                    <div>
+                        <div style="display: inline-block;">
+                            {% if item.__table__.name == 'post' %}
+                                {{ helpers.post.Preview(item) | safe }}
+                            {% elif item.__table__.name == 'illust' %}
+                                {{ helpers.illust.PostPreviews(item) }}
+                            {% elif item.__table__.name == 'notation' %}
+                                <div style="">{{ helpers.notation.ConvertToHTML(item) }}</div>
+                            {% endif %}
+                        </div>
+                        <div style="display: inline-block; vertical-align: top;">
+                            {% if item.__table__.name == 'post' or item.__table__.name == 'illust' %}
+                                {% if item.__table__.name == 'post' %}
+                                    {{ helpers.pool.DisplayArtists(item.artist_ids) | safe }}
+                                {% elif item.__table__.name == 'illust' %}
+                                    {{ helpers.pool.DisplayArtists([item.artist_id]) | safe }}
+                                {% endif %}
+                                {{ helpers.notation.DisplayNotes(item) | safe }}
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             {% endfor %}
         </div>

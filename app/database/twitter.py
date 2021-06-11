@@ -333,6 +333,7 @@ def CreateArtistFromUser(twuser, commit=True):
         'site_id': Site.TWITTER.value,
         'site_artist_id': int(twuser['id_str']),
         'site_created': ProcessTwitterTimestring(twuser['created_at']),
+        'current_site_account': twuser['screen_name'],
         'requery': GetCurrentTime() + datetime.timedelta(days=1),
         'created': current_time,
         'updated': current_time,
@@ -380,6 +381,9 @@ def UpdateArtistFromUser(artist, twuser):
     dirty = False
     if artist.created is None:
         artist.created = ProcessTwitterTimestring(twuser['created_at'])
+        dirty = True
+    if artist.current_site_account != twuser['screen_name']:
+        artist.current_site_account = twuser['screen_name']
         dirty = True
     dirty = AddArtistName(artist, twuser['name']) or dirty
     dirty = AddArtistSiteAccount(artist, twuser['screen_name']) or dirty

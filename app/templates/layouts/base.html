@@ -10,6 +10,7 @@
         <nav>
             <menu id="main-menu" class="main">
                 {{ helpers.base.render_template("layouts/_main_links.html") | safe }}
+                {% block secondary_links %}{% endblock %}
             </menu>
         </nav>
     </header>
