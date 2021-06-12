@@ -1,7 +1,8 @@
+import urllib.parse
 from flask import render_template, Markup
 
 from ..sites import GetSiteDomain, GetSiteKey
-from ..sources import DICT as SOURCEDICT
+from ..sources import DICT as SOURCEDICT, base as BASE_SOURCE
 from .base_helper import SearchUrlFor
 
 def SiteDataIterator(illust):
@@ -35,3 +36,10 @@ def PostPreviews(illust):
         return  Markup('<i>No posts.</i>')
     #return render_template("illusts\_post_previews.html", posts=posts)
     return Markup(render_template("pools/_post_previews.html", posts=posts))
+
+def DanbooruBatchUpload(illust):
+    source = BASE_SOURCE._Source(illust.site_id)
+    post_url = source.GetPostUrl(illust)
+    query_string = urllib.parse.urlencode({'url': post_url})
+    href_url = 'https://danbooru.donmai.us/uploads/batch?' + query_string
+    return '<li id="subnav-batch-bookmarklet"><a id="subnav-batch-bookmarklet-link" href="%s">Batch bookmarklet</a></li>' % href_url

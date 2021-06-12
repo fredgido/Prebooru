@@ -379,8 +379,8 @@ def UpdateIllustFromTweet(illust, tweet):
 def UpdateArtistFromUser(artist, twuser):
     print("UpdateArtistFromUser")
     dirty = False
-    if artist.created is None:
-        artist.created = ProcessTwitterTimestring(twuser['created_at'])
+    if artist.site_created is None:
+        artist.site_created = ProcessTwitterTimestring(twuser['created_at'])
         dirty = True
     if artist.current_site_account != twuser['screen_name']:
         artist.current_site_account = twuser['screen_name']

@@ -10,7 +10,7 @@ from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import db
-from .base import JsonModel
+from .base import JsonModel, DateTimeOrNull
 from .post import Post
 from .illust import Illust
 from .notation import Notation
@@ -42,6 +42,8 @@ class Pool(JsonModel):
     id: int
     name: str
     element_count: int
+    created: DateTimeOrNull
+    updated: DateTimeOrNull
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     _elements = db.relationship(PoolElement, backref='pool', order_by=PoolElement.position, collection_class=ordering_list('position'), cascade='all,delete', lazy=True)
@@ -59,7 +61,18 @@ class Pool(JsonModel):
     
     def remove(self, item):
         pool_element_delete(self.id, item)
-   
+    
+    def insert_before(self, insert_item, mark_item):
+        pool_element = self._get_mark_element(mark_item)
+        element_position = pool_element.position
+        self.elements.insert(element_position, insert_item)
+    
+    def _get_mark_element(self, mark_item):
+        pool_element = next(filter(lambda x: x.pool_id == self.id, mark_item._pools), None)
+        if pool_element is None:
+            raise Exception("Could not find mark item %s #%d in pool #%d")
+        return pool_element
+    
     def element_paginate(self, page=None, per_page=None, post_options=lazyload('*'), illust_options=lazyload('*'), notation_options=lazyload('*')):
         q = PoolElement.query
         q = q.options(selectin_polymorphic(PoolElement, [PoolIllust, PoolPost, PoolNotation]))

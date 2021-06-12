@@ -111,6 +111,10 @@ def UpdateArtist(artist):
     source = _Source(artist.site_id)
     source.UpdateArtist(artist)
 
+def UpdateIllust(artist):
+    source = _Source(artist.site_id)
+    source.UpdateIllust(artist)
+
 def QueryCreateArtist(site_id, site_artist_id):
     source = _Source(site_id)
     return source.CreateArtist(site_artist_id)

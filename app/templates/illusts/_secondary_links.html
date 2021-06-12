@@ -1,0 +1,4 @@
+<menu id="secondary-menu">
+    {{ helpers.base.SubnavLinkTo("Update", 'illust.update_html', illust.id) }}
+    {{ helpers.illust.DanbooruBatchUpload(illust) | safe }}
+</menu>

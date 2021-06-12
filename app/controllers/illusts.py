@@ -81,6 +81,13 @@ def index():
     q = DefaultOrder(q, search)
     return q
 
+@bp.route('/illusts/<int:id>/update', methods=['GET'])
+def update_html(id):
+    illust = Illust.find(id)
+    if illust is None:
+        abort(404)
+    BASE_SOURCE.UpdateIllust(illust)
+    return redirect(url_for('illust.show_html', id=id))
 
 @bp.route('/illusts.json', methods=['post'])
 def create():

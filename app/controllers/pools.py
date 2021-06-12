@@ -89,7 +89,7 @@ def add_element(id):
     if 'post_id' in dataparams:
         return AddTypeElement(pool, Post, dataparams['post_id'], dataparams)
     elif 'illust_id' in dataparams:
-        return AddTypeElement(pool, Post, dataparams['post_id'], dataparams)
+        return AddTypeElement(pool, Illust, dataparams['illust_id'], dataparams)
     return {'error': True, 'message': "Must include illust or post ID.", 'parameters': dataparams}
 
 

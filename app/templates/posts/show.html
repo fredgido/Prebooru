@@ -70,6 +70,16 @@
                     </li>
                 </ul>
             </section>
+            <section id="pool-list" style="margin-top: 1em;">
+                <h2>Pools</h2>
+                <ul>
+                    {% for pool in post.pools %}
+                        <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
+                    {% else %}
+                        <li><em>No pools.</em></li>
+                    {% endfor %}
+                </ul>
+            </section>
             <section id="error-list" style="margin-top: 1em;">
                 <h2>Errors</h2>
                 <ul>

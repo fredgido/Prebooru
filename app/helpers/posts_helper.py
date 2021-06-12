@@ -39,7 +39,7 @@ def DanbooruUploadLinks(post, format_url):
         illust_url = post.illust_urls[i]
         source = BASE_SOURCE._Source(illust_url.site_id)
         media_url = source.GetMediaUrl(illust_url)
-        post_url = source.GetPostUrl(illust_url)
+        post_url = source.GetPostUrl(illust_url.illust)
         query_string = urllib.parse.urlencode({'url': media_url, 'ref': post_url})
         href_url = format_url + query_string
         html = '<a href="%s">image #%d</a>' % (href_url, i + 1)

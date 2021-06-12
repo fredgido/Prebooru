@@ -2,6 +2,8 @@
 
 {% block title %}Illust # {{ illust.id }}{% endblock %}
 
+{% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=illust) | safe }}{% endblock %}
+
 {% block content %}
     <div id="illust-content">
         <div class="heading" style="font-size: 32px">Illust #{{ illust.id }}</div>
@@ -55,6 +57,22 @@
                         There are no commentaries!
                     {% endfor %}
                 </div>
+            </div>
+        </div>
+        <div style="margin-top: 2em;">
+                <h4><u>Local data</u></h4>
+                <ul style="margin-left: 1.5em; margin-top: 0.5em;">
+                    <li><b><a href="{{ url_for('artist.show_html', id=illust.artist_id) }}">artist #{{ illust.artist_id }}</a></b></li>
+                    <li><b>Pools</b>
+                        <ul style="margin-left: 1.5em;">
+                            {% for pool in illust.pools %}
+                                <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
+                            {% else %}
+                                <li><em>No pools.</em></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                </ul>
             </div>
         </div>
         <div style="margin-top: 2em;">

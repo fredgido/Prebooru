@@ -232,7 +232,8 @@ ILLUST_SHORTLINK = 'twitter #%d'
 ARTIST_SHORTLINK = 'twuser #%d'
 
 ILLUST_HREFURL = 'https://twitter.com/i/web/status/%d'
-ARTIST_HREFURL = 'https://twitter.com/intent/user?user_id=%d'
+#ARTIST_HREFURL = 'https://twitter.com/intent/user?user_id=%d'
+ARTIST_HREFURL = 'https://twitter.com/i/user/%d'
 
 # ##FUNCTIONS
 
@@ -341,9 +342,9 @@ def NormalizedImageUrl(image_url):
 def GetMediaUrl(illust_url):
     return illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
 
-def GetPostUrl(illust_url):
-    tweet_id = illust_url.illust.site_illust_id
-    screen_name = illust_url.illust.artist.current_site_account
+def GetPostUrl(illust):
+    tweet_id = illust.site_illust_id
+    screen_name = illust.artist.current_site_account
     if screen_name is None:
         return GetIllustUrl(tweet_id)
     else:
