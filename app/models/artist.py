@@ -50,6 +50,7 @@ class Artist(JsonModel):
     names: List[lambda x: x['name']]
     profiles: List[lambda x: x['body']]
     webpages: List[lambda x: RemoveKeys(x, ['artist_id'])]
+    active: bool
     requery: DateTimeOrNull
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
@@ -63,6 +64,7 @@ class Artist(JsonModel):
     profiles = db.relationship(Description, secondary=ArtistProfiles, lazy='subquery', backref=db.backref('artists', lazy=True))
     illusts = db.relationship(Illust, lazy=True, backref=db.backref('artist', lazy=True), cascade="all, delete")
     webpages = db.relationship(ArtistUrl, backref='artist', lazy=True, cascade="all, delete")
+    active = db.Column(db.Boolean, nullable=True)
     requery = db.Column(db.DateTime(timezone=False), nullable=True)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
     updated = db.Column(db.DateTime(timezone=False), nullable=False)

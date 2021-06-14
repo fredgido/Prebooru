@@ -33,7 +33,7 @@ def Ascii2DSearchLinks(post):
 def IQDBOrgSearchLinks(post):
     return SimilarSearchLinks(post, 'https://iqdb.org/?url=')
 
-def DanbooruUploadLinks(post, format_url):
+def DanbooruPostBookmarkletLinks(post):
     image_links = []
     for i in range(0, len(post.illust_urls)):
         illust_url = post.illust_urls[i]
@@ -41,13 +41,18 @@ def DanbooruUploadLinks(post, format_url):
         media_url = source.GetMediaUrl(illust_url)
         post_url = source.GetPostUrl(illust_url.illust)
         query_string = urllib.parse.urlencode({'url': media_url, 'ref': post_url})
-        href_url = format_url + query_string
+        href_url = 'https://danbooru.donmai.us/uploads/new?' + query_string
         html = '<a href="%s">image #%d</a>' % (href_url, i + 1)
         image_links.append(html)
     return ' | '.join(image_links)
 
-def DanbooruPostBookmarkletLinks(post):
-    return DanbooruUploadLinks(post, 'https://danbooru.donmai.us/uploads/new?')
-
 def DanboooruBatchBookmarkletLinks(post):
-    return DanbooruUploadLinks(post, 'https://danbooru.donmai.us/uploads/batch?')
+    image_links = []
+    for illust in post.illusts:
+        source = BASE_SOURCE._Source(illust.site_id)
+        post_url = source.GetPostUrl(illust)
+        query_string = urllib.parse.urlencode({'url': post_url})
+        href_url = 'https://danbooru.donmai.us/uploads/batch?' + query_string
+        html = '<a href="%s">illust #%d</a>' % (href_url, illust.id)
+        image_links.append(html)
+    return ' | '.join(image_links)

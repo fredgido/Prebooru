@@ -2,7 +2,7 @@
 
 # ## PYTHON IMPORTS
 import json
-from flask import Blueprint, request, render_template, abort
+from flask import Blueprint, request, render_template, abort, jsonify, redirect, url_for
 from sqlalchemy.orm import selectinload, lazyload
 
 
@@ -11,7 +11,7 @@ from sqlalchemy.orm import selectinload, lazyload
 from ..logical.logger import LogError
 from ..models import IllustUrl, Illust, Artist
 from ..sources import base as BASE_SOURCE
-from .base import GetSearch, ShowJson, IndexJson, IdFilter, DefaultOrder, Paginate, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, DefaultOrder, Paginate, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -53,12 +53,27 @@ def show_html(id):
     illust = Illust.query.filter_by(id=id).first()
     return render_template("illusts/show.html", illust=illust) if illust is not None else abort(404)
 
+@bp.route('/illusts/<int:id>/pools.json', methods=['GET'])
+def show_pools_json(id):
+    illust = Illust.find(id)
+    pools = [pool.to_json() for pool in illust.pools]
+    return jsonify(pools)
+
 
 @bp.route('/illusts.json', methods=['GET'])
 def index_json():
     q = index()
     return IndexJson(q, request)
 
+@bp.route('/illusts/pools.json', methods=['GET'])
+def index_pools_json():
+    illusts = index().all()
+    retvalue = {}
+    for illust in illusts:
+        id_str = str(illust.id)
+        pools = [pool.to_json() for pool in illust.pools]
+        retvalue[id_str] = pools
+    return retvalue
 
 @bp.route('/illusts', methods=['GET'])
 def index_html():

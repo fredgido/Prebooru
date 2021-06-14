@@ -12,7 +12,7 @@ from ..models import Post
 from ..models import Illust
 from ..models import IllustUrl
 from ..logical.utility import GetCurrentTime
-from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation, GetPage, GetLimit, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation, GetPage, GetLimit, GetDataParams
 
 
 # ## GLOBAL VARIABLES

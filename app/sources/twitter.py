@@ -365,9 +365,11 @@ def NormalizeImageURL(image_url):
     image_match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
     return r'/media/%s.%s' % (image_match.group(2), image_match.group(3))
 
+def HasArtistUrls(artist):
+    return (artist.current_site_account is not None) or (len(artist.site_accounts) == 1)
 
 def ArtistMainUrl(artist):
-    if artist.current_site_account is None or (len(artist.site_accounts) != 1):
+    if not HasArtistUrls(artist):
         return ""
     screen_name = artist.current_site_account if artist.current_site_account is not None else artist.site_accounts[0].name
     return 'https://twitter.com/%s' % screen_name
@@ -541,7 +543,8 @@ def UpdateArtist(artist, explicit=False):
         twuser = GetTwitterArtist(artist.site_artist_id)
         if DBLOCAL.IsError(twuser):
             print("Error getting artist data!")
-            # Check the error and conditionally mark the artist as dead
+            artist.active = False
+            DBLOCAL.SaveData(artist)
             return
     DB.UpdateArtistFromUser(artist, twuser)
 
@@ -551,7 +554,9 @@ def UpdateIllust(illust, explicit=False, timeline=False):
         tweet = GetTwitterIllust(illust.site_illust_id)
         if DBLOCAL.IsError(tweet):
             print("Error getting illust data!")
-            # Check the error and conditionally mark the illust as dead
+            illust.active = False
+            DBLOCAL.SaveData(illust)
+            return
     DB.UpdateIllustFromTweet(illust, tweet)
 
 # Create

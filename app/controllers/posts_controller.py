@@ -1,14 +1,16 @@
 # APP\CONTROLLERS\POSTS.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort, url_for
+from flask import Blueprint, request, render_template, abort, url_for, jsonify
 from sqlalchemy.orm import selectinload, lazyload
 
 
 # ## LOCAL IMPORTS
 
-from ..models import Artist, Illust, IllustUrl, Post
-from .base import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation
+from .. import session as SESSION
+from ..logical.utility import GetCurrentTime
+from ..models import Artist, Illust, IllustUrl, Notation, Post
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -18,15 +20,21 @@ bp = Blueprint("post", __name__)
 # ## FUNCTIONS
 
 
-@bp.route('/posts/<int:id>.json')
+@bp.route('/posts/<int:id>.json', methods=['GET'])
 def show_json(id):
     return ShowJson(Post, id)
 
 
-@bp.route('/posts/<int:id>')
+@bp.route('/posts/<int:id>', methods=['GET'])
 def show_html(id):
-    post = Post.query.filter_by(id=id).first()
+    post = Post.find(id)
     return render_template("posts/show.html", post=post) if post is not None else abort(404)
+
+@bp.route('/posts/<int:id>/pools.json', methods=['GET'])
+def show_pools_json(id):
+    post = Post.find(id)
+    pools = [pool.to_json() for pool in post.pools]
+    return jsonify(pools)
 
 
 @bp.route('/posts.json', methods=['GET'])
@@ -35,13 +43,13 @@ def index_json():
     return IndexJson(q, request)
 
 @bp.route('/posts/pools.json', methods=['GET'])
-def pools_json():
+def index_pools_json():
     posts = index().all()
     retvalue = {}
     for post in posts:
         id_str = str(post.id)
-        pool_ids = [pool.id for pool in post.pools]
-        retvalue[id_str] = pool_ids
+        pools = [pool.to_json() for pool in post.pools]
+        retvalue[id_str] = pools
     return retvalue
 
 @bp.route('/', methods=['GET'])
@@ -79,3 +87,21 @@ def index():
         q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).unique_join(Artist).filter(Artist.site_id == search['asite_id'])
     q = DefaultOrder(q, search)
     return q
+
+@bp.route('/posts/<int:id>/notation.json', methods=['POST'])
+def add_notation(id):
+    post = Post.find(id)
+    if post is None:
+        return {'error': True, 'message': "Post #%d not found." % id}
+    dataparams = GetDataParams(request, 'post')
+    if 'notation' not in dataparams:
+        return {'error': True, 'message': "Must include notation.", 'params': dataparams}
+    note = Notation.query.filter_by(body=dataparams['notation']).first()
+    if note is None:
+        current_time = GetCurrentTime()
+        note = Notation(body=dataparams['notation'], created=current_time, updated=current_time)
+        SESSION.add(note)
+        SESSION.commit()
+    post.notations.append(note)
+    SESSION.commit()
+    return {'error': False, 'note': note, 'post': post, 'params': dataparams}

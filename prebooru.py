@@ -1,18 +1,21 @@
 # PREBOORU.PY
+import colorama
 
 # ## LOCAL IMPORTS
 from app import app
-from app.controllers import uploads, posts, illusts, artists, pools
+from app import controllers as controller
 from argparse import ArgumentParser
 
 
 # ### INITIALIZATION
 
-app.register_blueprint(illusts.bp)
-app.register_blueprint(artists.bp)
-app.register_blueprint(uploads.bp)
-app.register_blueprint(posts.bp)
-app.register_blueprint(pools.bp)
+colorama.init(autoreset=True)
+
+app.register_blueprint(controller.illust.bp)
+app.register_blueprint(controller.artist.bp)
+app.register_blueprint(controller.upload.bp)
+app.register_blueprint(controller.post.bp)
+app.register_blueprint(controller.pool.bp)
 
 
 # ##EXECUTION START

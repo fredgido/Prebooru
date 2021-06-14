@@ -70,6 +70,7 @@ def CreateIllustFromTweet(tweet, artist_id, commit=True):
         'requery': GetCurrentTime() + datetime.timedelta(days=1),
         'created': current_time,
         'updated': current_time,
+        'active': True,
     }
     illust = Illust(**data)
     if commit:
@@ -337,6 +338,7 @@ def CreateArtistFromUser(twuser, commit=True):
         'requery': GetCurrentTime() + datetime.timedelta(days=1),
         'created': current_time,
         'updated': current_time,
+        'active': True,
     }
     artist = Artist(**data)
     if commit:

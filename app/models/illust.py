@@ -57,6 +57,7 @@ class Illust(JsonModel):
     pages: int
     score: IntOrNone
     site_data: lambda x: RemoveKeys(x.to_json(), ['id', 'illust_id', 'type'])
+    active: bool
     requery: DateTimeOrNull
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
@@ -75,6 +76,7 @@ class Illust(JsonModel):
     _pools = db.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
     posts = association_proxy('urls', 'post')
+    active = db.Column(db.Boolean, nullable=True)
     requery = db.Column(db.DateTime(timezone=False), nullable=True)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
     updated = db.Column(db.DateTime(timezone=False), nullable=False)

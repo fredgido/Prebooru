@@ -12,10 +12,12 @@
                 <h5><u>Site</u></h5>
                 <ul style="margin-left: 1.5em;">
                     <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
-                    <li><strong>Links:</strong> <a href="{{ helpers.artist.MainUrl(artist) }}">Main</a> | <a href="{{ helpers.artist.MediaUrl(artist) }}">Media</a> | <a href="{{ helpers.artist.LikesUrl(artist) }}">Likes</a></li>
+                    <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
                     <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
                     <li><strong>Artist ID:</strong> {{ artist.site_artist_id }}</li>
+                    <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
                     <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.site_created) }}</li>
+                    <li><strong>Active:</strong> {{ artist.active }}</li>
                 </ul>
             </div>
             <div style="width: 12%; margin-left: 1em;">

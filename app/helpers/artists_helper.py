@@ -29,3 +29,14 @@ def LikesUrl(artist):
     site_key = GetSiteKey(artist.site_id)
     source = SOURCEDICT[site_key]
     return source.ArtistLikesUrl(artist)
+
+def ArtistLinks(artist):
+    site_key = GetSiteKey(artist.site_id)
+    source = SOURCEDICT[site_key]
+    if not source.HasArtistUrls(artist):
+        return '<em>N/A</em>'
+    return ' | '.join([
+        '<a href="%s">Main</a>' % MainUrl(artist),
+        '<a href="%s">Media</a>' % MediaUrl(artist),
+        '<a href="%s">Likes</a>' % LikesUrl(artist),
+        ])
