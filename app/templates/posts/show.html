@@ -80,6 +80,22 @@
                     {% endfor %}
                 </ul>
             </section>
+            <section id="notations-list" style="margin-top: 1em;">
+                <h2>Notations</h2>
+                <ul>
+                    {% for notation in post.notations %}
+                        <li><a href="{{ url_for('notation.show_html', id=notation.id) }}">notation #{{ notation.id }}</a>
+                            <ul style="margin-left: 1.5em;">
+                                <li><strong>Body:</strong> {{ notation.body }}</li>
+                                <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(notation.created) }}</li>
+                                <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(notation.updated) }}</li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li><em>No notations.</em></li>
+                    {% endfor %}
+                </ul>
+            </section>
             <section id="error-list" style="margin-top: 1em;">
                 <h2>Errors</h2>
                 <ul>

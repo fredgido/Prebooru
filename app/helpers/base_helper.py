@@ -3,6 +3,9 @@ import html
 import datetime
 from flask import Markup, request, render_template, url_for, Markup
 
+def HasItems(items):
+    return len(items) > 0
+
 def SearchUrlFor(endpoint, **kwargs):
     url_args = {}
     for arg in kwargs:
@@ -34,7 +37,7 @@ def SubnavLinkTo(text, endpoint, id=None):
     return Markup(render_template("layouts/_subnav_link.html", text=text, html_text=html_text, endpoint=endpoint, id=id))
 
 def PageNavigation(paginate):
-    print("PageNavigation-1:", paginate.page, paginate.prev_num, paginate.next_num, paginate.pages)
+    #print("PageNavigation-1:", paginate.page, paginate.prev_num, paginate.next_num, paginate.pages)
     current_page = paginate.page
     previous_page = paginate.prev_num
     next_page = paginate.next_num
@@ -47,7 +50,7 @@ def PageNavigation(paginate):
     pages += list(range(left, right+1))
     pages += ['...'] if right != penultimate_page else []
     pages += [last_page] if last_page > 1 else []
-    print("PageNavigation-2:", previous_page, current_page, next_page, pages, left, right, last_page, penultimate_page)
+    #print("PageNavigation-2:", previous_page, current_page, next_page, pages, left, right, last_page, penultimate_page)
     return render_template("layouts/_paginator.html", prev_page=previous_page, current_page=current_page, next_page=next_page, pages=pages)
 
 def UrlForWithArgs(endpoint, **kwargs):

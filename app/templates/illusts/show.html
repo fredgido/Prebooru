@@ -61,6 +61,7 @@
             </div>
         </div>
         <div style="margin-top: 2em;">
+            <div>
                 <h4><u>Local data</u></h4>
                 <ul style="margin-left: 1.5em; margin-top: 0.5em;">
                     <li><b><a href="{{ url_for('artist.show_html', id=illust.artist_id) }}">artist #{{ illust.artist_id }}</a></b></li>
@@ -70,6 +71,21 @@
                                 <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
                             {% else %}
                                 <li><em>No pools.</em></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li><b>Notations</b>
+                        <ul style="margin-left: 1.5em;">
+                            {% for notation in illust.notations %}
+                                <li><a href="{{ url_for('notation.show_html', id=notation.id) }}">notation #{{ notation.id }}</a>
+                                    <ul style="margin-left: 1.5em;">
+                                        <li><strong>Body:</strong> {{ notation.body }}</li>
+                                        <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(notation.created) }}</li>
+                                        <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(notation.updated) }}</li>
+                                    </ul>
+                                </li>
+                            {% else %}
+                                <li><em>No notations.</em></li>
                             {% endfor %}
                         </ul>
                     </li>

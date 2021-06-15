@@ -13,7 +13,11 @@ def SimilarSearchLinks(post, format_url):
         illust_url = post.illust_urls[i]
         source = BASE_SOURCE._Source(illust_url.site_id)
         media_url = source.GetMediaUrl(illust_url)
-        small_url = source.SmallImageUrl(media_url)
+        if source.IsVideoUrl(media_url):
+            _, thumb_illust_url = source.VideoIllustDownloadUrls(illust_url.illust)
+            small_url = source.GetMediaUrl(thumb_illust_url)
+        else:
+            small_url = source.SmallImageUrl(media_url)
         #print("Small:", small_url)
         encoded_url = urllib.parse.quote_plus(small_url)
         href_url = format_url + encoded_url

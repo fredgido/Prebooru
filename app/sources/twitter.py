@@ -262,6 +262,12 @@ def IllustHasImages(illust):
 def IllustHasVideos(illust):
     return any(map(VIDEO_URL_MAPPER, illust.urls))
 
+def PostHasImages(post):
+    return any(map(IMAGE_URL_MAPPER, post.illust_urls))
+
+def PostHasVideos(post):
+    return any(map(VIDEO_URL_MAPPER, post.illust_urls))
+
 def ImageIllustDownloadUrls(illust):
     return list(filter(lambda x: IMAGE_URL_MAPPER, illust.urls))
 
@@ -544,8 +550,9 @@ def UpdateArtist(artist, explicit=False):
         if DBLOCAL.IsError(twuser):
             print("Error getting artist data!")
             artist.active = False
-            DBLOCAL.SaveData(artist)
+            DBLOCAL.SaveData()
             return
+        DB.CacheLookupData([twuser], 'artist')
     DB.UpdateArtistFromUser(artist, twuser)
 
 def UpdateIllust(illust, explicit=False, timeline=False):
@@ -555,8 +562,9 @@ def UpdateIllust(illust, explicit=False, timeline=False):
         if DBLOCAL.IsError(tweet):
             print("Error getting illust data!")
             illust.active = False
-            DBLOCAL.SaveData(illust)
+            DBLOCAL.SaveData()
             return
+        DB.CacheLookupData([tweet], 'illust')
     DB.UpdateIllustFromTweet(illust, tweet)
 
 # Create

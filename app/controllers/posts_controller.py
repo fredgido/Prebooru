@@ -7,8 +7,8 @@ from sqlalchemy.orm import selectinload, lazyload
 
 # ## LOCAL IMPORTS
 
-from .. import session as SESSION
 from ..logical.utility import GetCurrentTime
+from ..database import local as DBLOCAL
 from ..models import Artist, Illust, IllustUrl, Notation, Post
 from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation, GetDataParams
 
@@ -96,12 +96,9 @@ def add_notation(id):
     dataparams = GetDataParams(request, 'post')
     if 'notation' not in dataparams:
         return {'error': True, 'message': "Must include notation.", 'params': dataparams}
-    note = Notation.query.filter_by(body=dataparams['notation']).first()
-    if note is None:
-        current_time = GetCurrentTime()
-        note = Notation(body=dataparams['notation'], created=current_time, updated=current_time)
-        SESSION.add(note)
-        SESSION.commit()
+    current_time = GetCurrentTime()
+    note = Notation(body=dataparams['notation'], created=current_time, updated=current_time)
+    DBLOCAL.SaveData(note)
     post.notations.append(note)
-    SESSION.commit()
+    DBLOCAL.SaveData()
     return {'error': False, 'note': note, 'post': post, 'params': dataparams}

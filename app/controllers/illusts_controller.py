@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload, lazyload
 from ..logical.logger import LogError
 from ..models import IllustUrl, Illust, Artist
 from ..sources import base as BASE_SOURCE
+from ..database import local as DBLOCAL
 from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, DefaultOrder, Paginate, GetDataParams
 
 
@@ -104,7 +105,7 @@ def update_html(id):
     BASE_SOURCE.UpdateIllust(illust)
     return redirect(url_for('illust.show_html', id=id))
 
-@bp.route('/illusts.json', methods=['post'])
+@bp.route('/illusts.json', methods=['POST'])
 def create():
     dataparams = GetDataParams(request, 'illust')
     error = CheckDataParams(dataparams)
@@ -130,3 +131,19 @@ def create():
         return {'error': True, 'message': 'Database exception! Check log file.'}
     illust_json = illust.to_json() if illust is not None else illust
     return {'error': False, 'illust': illust_json}
+
+
+@bp.route('/illusts/<int:id>/notation.json', methods=['POST'])
+def add_notation(id):
+    illust = Illust.find(id)
+    if illust is None:
+        return {'error': True, 'message': "Illust #%d not found." % id}
+    dataparams = GetDataParams(request, 'illust')
+    if 'notation' not in dataparams:
+        return {'error': True, 'message': "Must include notation.", 'params': dataparams}
+    current_time = GetCurrentTime()
+    note = Notation(body=dataparams['notation'], created=current_time, updated=current_time)
+    DBLOCAL.SaveData(note)
+    illust.notations.append(note)
+    DBLOCAL.SaveData()
+    return {'error': False, 'note': note, 'illust': illust, 'params': dataparams}

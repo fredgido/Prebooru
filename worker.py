@@ -75,6 +75,8 @@ def ProcessUploads():
             else:
                 print("No pending uploads.")
                 break
+            # Give time for upload creation transactions to complete
+            time.sleep(5)
         if len(post_ids):
             print("Check to see if the similarity server call will work.")
             try:

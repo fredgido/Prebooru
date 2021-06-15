@@ -3,6 +3,7 @@
 # ##PYTHON IMPORTS
 import datetime
 from dataclasses import dataclass
+from flask import url_for
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
@@ -25,6 +26,10 @@ class Notation(JsonModel):
     updated = db.Column(db.DateTime(timezone=False), nullable=False)
     _pools = db.relationship(PoolNotation, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
+
+    @property
+    def show_url(self):
+        return url_for("notation.show_html", id=self.id)
 
     def delete(self):
         pools = self.pools

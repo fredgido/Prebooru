@@ -72,7 +72,7 @@ class Illust(JsonModel):
     pages = db.Column(db.Integer, nullable=True)
     score = db.Column(db.Integer, nullable=True)
     site_data = db.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
-    notations = db.relationship(Notation, secondary=IllustNotations, lazy=True, backref=db.backref('illusts', uselist=True, lazy=True), cascade='all,delete')
+    notations = db.relationship(Notation, secondary=IllustNotations, lazy=True, backref=db.backref('illust', uselist=False, lazy=True), cascade='all,delete')
     _pools = db.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
     posts = association_proxy('urls', 'post')

@@ -59,7 +59,7 @@ def RecordOutcome(post, upload):
     else:
         upload.posts.append(post)
         upload.successes += 1
-    DB.local.SaveData(upload)
+    DB.local.SaveData()
 
 
 
@@ -131,7 +131,7 @@ def CheckExisting(buffer, illust_url):
     post = DB.local.GetDBPostByField('md5', md5)
     if post is not None:
         post.illust_urls.append(illust_url)
-        DB.local.SaveData(post)
+        DB.local.SaveData()
         return DB.local.CreateError('utility.downloader.ProcessImageDownload', "Image already uploaded on post #%d" % post.id)
     return md5
 
@@ -241,7 +241,7 @@ def CreateImagePost(image_illust_url, media_filepath, source):
     post = DB.local.CreatePostAndAddIllustUrl(image_illust_url, image_width, image_height, image_file_ext, md5, len(buffer))
     if len(post_errors):
         post.errors.extend(post_errors)
-        DB.local.SaveData(post)
+        DB.local.SaveData()
     return post
 
 
@@ -261,5 +261,5 @@ def CreateVideoPost(video_illust_url, media_filepath, sample_filepath, source):
     post = DB.local.CreatePostAndAddIllustUrl(video_illust_url, video_width, video_height, video_file_ext, md5, len(buffer))
     if len(post_errors):
         post.errors.extend(post_errors)
-        DB.local.SaveData(post)
+        DB.local.SaveData()
     return post

@@ -51,7 +51,7 @@ def DownloadMultipleImages(illust, upload, source):
     if no_media or (len(upload.posts) == 0 and len(upload.errors) == 0):
         DB.local.CreateAndAppendError('DownloadMultipleImages', "Did not find any media to download for illust #%d" % illust.id, upload)
     upload.status = 'complete'
-    DB.local.SaveData(upload)
+    DB.local.SaveData()
 
 
 def RecordOutcome(post, upload):
@@ -64,7 +64,7 @@ def RecordOutcome(post, upload):
     else:
         upload.posts.append(post)
         upload.successes += 1
-    DB.local.SaveData(upload)
+    DB.local.SaveData()
 
 
 def DownloadSingleImage(illust, upload, source):
@@ -73,11 +73,11 @@ def DownloadSingleImage(illust, upload, source):
         if image_url == illust_url.url:
             DownloadAndRecordOutcome(illust_url, upload, source)
             upload.status = 'complete'
-            DB.local.SaveData(upload)
+            DB.local.SaveData()
             return
     DB.local.CreateAndAppendError('utility.downloader.DownloadSingleImage', "Unable to find submitted image URL %s on illust #%d." % (image_url, illust.id), upload)
     upload.status = 'error'
-    DB.local.SaveData(upload)
+    DB.local.SaveData()
 
 
 def DownloadAndRecordOutcome(process_func, upload, *args):
@@ -154,7 +154,7 @@ def CheckExisting(buffer, illust_url):
     post = DB.local.GetDBPostByField('md5', md5)
     if post is not None:
         post.illust_urls.append(illust_url)
-        DB.local.SaveData(post)
+        DB.local.SaveData()
         return DB.local.CreateError('utility.downloader.ProcessImageDownload', "Image already uploaded on post #%d" % post.id)
     return md5
 
@@ -268,7 +268,7 @@ def CreateImagePost(image_illust_url, source):
     post = DB.local.CreatePostAndAddIllustUrl(image_illust_url, image_width, image_height, image_file_ext, md5, len(buffer))
     if len(post_errors):
         post.errors.extend(post_errors)
-        DB.local.SaveData(post)
+        DB.local.SaveData()
     return post
 
 
@@ -289,5 +289,5 @@ def CreateVideoPost(video_illust_url, thumb_illust_url, source):
     post = DB.local.CreatePostAndAddIllustUrl(video_illust_url, video_width, video_height, video_file_ext, md5, len(buffer))
     if len(post_errors):
         post.errors.extend(post_errors)
-        DB.local.SaveData(post)
+        DB.local.SaveData()
     return post

@@ -113,7 +113,9 @@ def CreateAndAppendError(module_name, message, instance):
     return error
 
 
-def SaveData(instance):
+def SaveData(instance=None):
+    if instance is not None:
+        SESSION.add(instance)
     SESSION.commit()
 
 

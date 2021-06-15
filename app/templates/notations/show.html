@@ -1,0 +1,38 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Notation # {{ notation.id }}{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.render_template("notations/_secondary_links.html", notation=notation) | safe }}{% endblock %}
+
+{% block content %}
+    <div id="notation-content">
+        <div class="heading" style="font-size: 32px">Notation #{{ notation.id }}</div>
+        <div style="margin-top: 2em;">
+            <div style="">
+                <h5><u>Timestamps</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(notation.created) }}</li>
+                    <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(notation.updated) }}</li>
+                </ul>
+            </div>
+        </div>
+         <div style="margin-top: 2em;">
+            <div>
+                <h5><u>Pools</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    {% for pool in notation.pools %}
+                        <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
+                    {% else %}
+                        <li><em>No pools.</em></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div style="margin-top: 2em; width: 75%;">
+            <h5><u>Body</u></h5>
+            <div style="border: 1px solid; padding: 5px;">
+                {{ helpers.notation.ConvertToHTML(notation) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

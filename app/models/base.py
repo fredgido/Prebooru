@@ -37,6 +37,10 @@ class JsonModel(db.Model):
     def find(cls, id):
         return cls.query.filter_by(id=id).first()
 
+    @property
+    def shortlink(self):
+        return "%s #%d" % (self.__table__.name, self.id)
+
     def to_json(self):
         fields = self.__dataclass_fields__
         data = {}

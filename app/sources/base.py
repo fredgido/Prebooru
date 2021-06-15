@@ -51,7 +51,7 @@ def CreateFileUpload(uploader_id, media_filepath, sample_filepath, illust_url_id
 
 def ProcessUpload(upload):
     upload.status = 'processing'
-    DBLOCAL.SaveData(upload)
+    DBLOCAL.SaveData()
     if upload.type == 'post':
         ProcessNetworkUpload(upload)
     elif upload.type == 'file':
@@ -63,14 +63,14 @@ def ProcessFileUpload(upload):
     if site_id is None:
         DBLOCAL.CreateAndAppendError('sources.base.ProcessFileUpload', "No site ID found through illust url.", upload)
         upload.status = 'error'
-        DBLOCAL.SaveData(upload)
+        DBLOCAL.SaveData()
         return
     source = _Source(site_id)
     if UploadIllustUrl(upload, source):
         upload.status = 'complete'
     else:
         upload.status = 'error'
-    DBLOCAL.SaveData(upload)
+    DBLOCAL.SaveData()
 
 
 def ProcessNetworkUpload(upload):

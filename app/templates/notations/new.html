@@ -1,0 +1,14 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}New Notation{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.render_template("notations/_secondary_links.html", notation=notation) | safe }}{% endblock %}
+
+{% block content %}
+    <form method="POST" action="/notations">
+        {{ form.csrf_token }}
+        {{ form.body.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.body(style="display: block;",rows=20,cols=200) }}
+        {{ form.pool_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.pool_id(style="display: block;") }}
+        <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
+    </form>
+{% endblock %}

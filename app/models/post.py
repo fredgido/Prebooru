@@ -110,7 +110,7 @@ class Post(JsonModel):
     size = db.Column(db.Integer, nullable=False)
     illust_urls = db.relationship(IllustUrl, secondary=PostIllustUrls, lazy='subquery', backref=db.backref('post', uselist=False, lazy=True), cascade='all,delete')
     errors = db.relationship(Error, secondary=PostErrors, lazy=True, cascade='all,delete')
-    notations = db.relationship(Notation, secondary=PostNotations, lazy=True, backref=db.backref('posts', uselist=True, lazy=True), cascade='all,delete')
+    notations = db.relationship(Notation, secondary=PostNotations, lazy=True, backref=db.backref('post', uselist=False, lazy=True), cascade='all,delete')
     _pools = db.relationship(PoolPost, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
     created = db.Column(db.DateTime(timezone=False), nullable=False)
