@@ -1,0 +1,34 @@
+{% extends 'layouts/base.html' %}
+
+{% block secondary_links %}{{ helpers.base.render_template("notations/_secondary_links.html", notation=None) | safe }}{% endblock %}
+
+{% block content %}
+    <table id="notations-table" class="striped" width="100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Excerpt</th>
+                <th>Created</th>
+                <th>Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for notation in notations.items %}
+                {% set outer_loop = loop %}
+                <tr id="notation-{{ notation.id }}">
+                    <td><a href="{{ notation.show_url }}">{{ notation.shortlink }}</a></td>
+                    <td>
+                        <span>{{ helpers.notation.Excerpt(notation) }}</span>
+                    </td>
+                    <td>
+                        <span>{{ helpers.base.FormatTimestamp(notation.created) }}</span>
+                    </td>
+                    <td>
+                        <span>{{ helpers.base.FormatTimestamp(notation.updated) }}</span>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{ helpers.base.PageNavigation(notations) | safe }}
+{% endblock %}

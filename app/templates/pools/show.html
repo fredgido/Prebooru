@@ -8,7 +8,7 @@
         <div class="heading" style="font-size: 24px"><strong>Name:</strong> {{ pool.name }}</div>
         <div id="pool-items">
             {% for item in elements.items %}
-                <div style="display: inline-block; height: 480px; vertical-align: top; margin: 0.25em; padding: 0.75em; border: 1px solid #EEE; min-width: 320px;">
+                <div style="display: inline-block; height: 480px; vertical-align: top; margin: 0.25em; padding: 0.75em; border: 1px solid #EEE; min-width: 30px;">
                     <div style="font-size: 24px;"><a href="{{ item.show_url }}">{{ item.shortlink }}</a></div>
                     <div>
                         <div style="display: block; height: 320px; margin-left: 1em;">
@@ -22,7 +22,7 @@
                         </div>
                         <div style="display: block; vertical-align: top; max-height: 125px; overflow-y: auto; background-color: #F8F8F8; border: 1px solid #DDD;">
                             {% if helpers.pool.ItemIsOfTypes(item, ['post', 'illust']) %}
-                                <ul style="margin-left: 1.5em; min-height: 120px; display: inline-block; width: 160px; vertical-align: top;">
+                                <ul style="margin-left: 1.5em; min-height: 120px; display: inline-block; width: 140px; vertical-align: top;">
                                     <li><strong>Artists:</strong>
                                         {% if helpers.pool.ItemIsOfType(item, 'post') %}
                                             {{ helpers.pool.DisplayArtists(item.artist_ids) | safe }}
@@ -41,7 +41,7 @@
                                         </li>
                                     {% endif %}
                                 </ul>
-                                <ul style="margin-left: 1.5em; min-height: 120px; display: inline-block; width: 160px; vertical-align: top;">
+                                <ul style="margin-left: 1.5em; min-height: 120px; display: inline-block; width: 140px; vertical-align: top;">
                                     <li><strong>Type:</strong> {{ helpers.pool.MediaType(item) }}</li>
                                 </ul>
                             {% endif %}

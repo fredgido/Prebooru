@@ -5,7 +5,7 @@ import requests
 from sqlalchemy.orm import selectinload
 from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
 from flask_wtf import FlaskForm
-from wtforms import TextAreaField, IntegerField
+from wtforms import TextAreaField, IntegerField, Form
 from wtforms.validators import DataRequired
 from wtforms.meta import DefaultMeta
 
@@ -31,29 +31,53 @@ class BindNameMeta(DefaultMeta):
             options['name'] = unbound_field.kwargs.pop('custom_name')
         return unbound_field.bind(form=form, **options)
 
-class CustomNameForm(FlaskForm):
+class CustomNameForm(Form):
     Meta = BindNameMeta
 
-class NotationForm(CustomNameForm):
-    body = TextAreaField('Body', id='notation-body', custom_name='notation[body]', validators=[DataRequired()])
-    pool_id = IntegerField('Pool ID', id='notation-pool-id', custom_name='notation[pool_id]')
+def GetNotationFrom(**kwargs):
+    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
+    class NotationForm(CustomNameForm):
+        body = TextAreaField('Body', id='notation-body', custom_name='notation[body]', validators=[DataRequired()])
+        pool_id = IntegerField('Pool ID', id='notation-pool-id', custom_name='notation[pool_id]')
+    return NotationForm(**kwargs)
 
 # ## FUNCTIONS
 
-@bp.route('/notations/<int:id>.json')
+@bp.route('/notations/<int:id>.json', methods=['GET'])
 def show_json(id):
     return ShowJson(Notation, id)
 
 
-@bp.route('/notations/<int:id>')
+@bp.route('/notations/<int:id>', methods=['GET'])
 def show_html(id):
     notation = Notation.find(id)
     return render_template("notations/show.html", notation=notation) if notation is not None else abort(404)
 
+@bp.route('/notations.json', methods=['GET'])
+def index_json():
+    q = index()
+    return IndexJson(q, request)
+
+
+@bp.route('/notations', methods=['GET'])
+def index_html():
+    q = index()
+    notations = Paginate(q, request)
+    return render_template("notations/index.html", notations=notations)
+
+
+def index():
+    search = GetSearch(request)
+    print(search)
+    q = Notation.query
+    q = IdFilter(q, search)
+    q = DefaultOrder(q, search)
+    return q
+
 @bp.route('/notations/new', methods=['GET'])
 def new_html():
-    form = NotationForm()
-    return render_template("notations/new.html", form=form)
+    form = GetNotationFrom()
+    return render_template("notations/new.html", form=form, notation=None)
 
 @bp.route('/notations/<int:id>/edit', methods=['GET'])
 def edit_html(id):
@@ -61,7 +85,7 @@ def edit_html(id):
     if notation is None:
         abort(404)
     pool_id = notation._pools[0].pool_id if len(notation._pools) > 0 else None
-    form = NotationForm(body=notation.body, pool_id=pool_id)
+    form = GetNotationFrom(body=notation.body, pool_id=pool_id)
     return render_template("notations/edit.html", form=form, notation=notation)
 
 @bp.route('/notations/<int:id>', methods=['POST','PUT'])

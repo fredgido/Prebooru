@@ -92,22 +92,24 @@
                             </ul>
                         </li>
                     {% else %}
-                        <li><em>No notations.</em></li>
+                        <li><em>None</em></li>
                     {% endfor %}
                 </ul>
             </section>
-            <section id="error-list" style="margin-top: 1em;">
-                <h2>Errors</h2>
-                <ul>
-                {% for error in post.errors %}
-                    <li><strong>Module:</strong> {{ error.module }}</li>
-                    <li><strong>Message:</strong> {{ error.message }}</li>
-                    <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(error.created) }}</li>
-                {% else %}
-                    <li><em>none</em></li>
-                {% endfor %}
-                </ul>
-            </section>
+            {% if helpers.base.HasItems(post.errors) %}
+                <section id="error-list" style="margin-top: 1em;">
+                    <h2>Errors</h2>
+                    <ul>
+                    {% for error in post.errors %}
+                        <li><strong>Module:</strong> {{ error.module }}</li>
+                        <li><strong>Message:</strong> {{ error.message }}</li>
+                        <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(error.created) }}</li>
+                    {% else %}
+                        <li><em>none</em></li>
+                    {% endfor %}
+                    </ul>
+                </section>
+            {% endif %}
             <section id="post-image-search" style="margin-top: 1em;">
                 <h2>Image search</h2>
                 <ul>

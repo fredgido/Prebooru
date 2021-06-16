@@ -1,6 +1,9 @@
 <menu id="secondary-menu">
+    {{ helpers.base.SubnavLinkTo("Listing", 'notation.index_html') }}
     {{ helpers.base.SubnavLinkTo("New", 'notation.new_html') }}
-    |
-    {{ helpers.base.SubnavLinkTo("Show", 'notation.show_html', id=notation.id) }}
-    {{ helpers.base.SubnavLinkTo("Edit", 'notation.edit_html', id=notation.id) }}
+    {% if notation != None %}
+        |
+        {{ helpers.base.SubnavLinkTo("Show", 'notation.show_html', id=notation.id) }}
+        {{ helpers.base.SubnavLinkTo("Edit", 'notation.edit_html', id=notation.id) }}
+    {% endif %}
 </menu>
