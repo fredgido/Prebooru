@@ -39,3 +39,7 @@ class Notation(JsonModel):
             pool._elements.reorder()
         if len(pools) > 0:
             db.session.commit()
+
+    @staticmethod
+    def searchable_attributes():
+        return ['id', 'body', 'created', 'updated']

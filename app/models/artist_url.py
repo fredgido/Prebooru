@@ -21,3 +21,9 @@ class ArtistUrl(JsonModel):
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
     url = db.Column(db.String(255), nullable=False)
     active = db.Column(db.Boolean, nullable=False)
+
+    @staticmethod
+    def searchable_attributes():
+        basic_attributes = ['id', 'artist_id', 'url', 'active']
+        relation_attributes = ['artist']
+        return basic_attributes + relation_attributes

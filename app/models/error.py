@@ -22,3 +22,7 @@ class Error(JsonModel):
     module = db.Column(db.String(255), nullable=False)
     message = db.Column(db.UnicodeText, nullable=False)
     created = db.Column(db.DateTime(timezone=False), nullable=False)
+
+    @staticmethod
+    def searchable_attributes():
+        return ['id', 'module', 'message', 'created']

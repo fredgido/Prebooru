@@ -12,7 +12,7 @@ from ..logical.logger import LogError
 from ..models import IllustUrl, Illust, Artist
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, DefaultOrder, Paginate, GetDataParams
+from .base_controller import GetSearch, GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, IdFilter, SearchFilter, DefaultOrder, Paginate, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -84,17 +84,22 @@ def index_html():
 
 
 def index():
-    search = GetSearch(request)
-    print(search)
+    params = ProcessRequestValues(request.values)
+    search = GetParamsValue(params, 'search', True)
+    #search = GetSearch(request)
+    print("Params:", params, flush=True)
+    print("Search:", search, flush=True)
     q = Illust.query
     q = q.options(selectinload(Illust.site_data), lazyload('*'))
     #q = IdFilter(q, search)
-    q = SearchFilter(q, search, 'id', 'site_id', 'site_illust_id', 'site_created', 'artist_id', 'pages', 'score', 'active', 'created', 'updated', 'requery')
-    if 'site_illust_id' in search:
-        q = q.filter_by(site_illust_id=search['site_illust_id'])
+    q = SearchFilter(q, search)
+    #if 'site_illust_id' in search:
+    #    q = q.filter_by(site_illust_id=search['site_illust_id'])
+    """
     if 'url_site_id' in search:
         #q = q.filter(Illust.urls.any(site_id=search['url_site_id']))
         q = q.unique_join(IllustUrl).filter(IllustUrl.site_id == search['url_site_id'])
+    """
     q = DefaultOrder(q, search)
     return q
 

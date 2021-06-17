@@ -111,3 +111,9 @@ class Illust(JsonModel):
             pool._elements.reorder()
         if len(pools) > 0:
             db.session.commit()
+    
+    @staticmethod
+    def searchable_attributes():
+        basic_attributes = ['id', 'site_id', 'site_illust_id', 'site_created', 'artist_id', 'pages', 'score', 'active', 'created', 'updated', 'requery']
+        relation_attributes = ['artist', 'urls', 'tags', 'descriptions', 'notations']
+        return basic_attributes + relation_attributes

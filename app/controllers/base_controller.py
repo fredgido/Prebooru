@@ -5,7 +5,7 @@ import re
 from flask import jsonify, render_template
 from sqlalchemy.sql.expression import case
 
-from app.logical.searchable import AllAtributeFilters 
+from app.logical.searchable import AllAttributeFilters 
 
 # ## FUNCTIONS
 
@@ -50,6 +50,55 @@ def GetSearch(request):
         data[key] = request.args[arg]
     return data
 
+def GetParamsValue(params, key, is_hash=False):
+    default = {} if is_hash else None
+    value = params.get(key, default)
+    if is_hash and type(value) is not dict:
+        value = default
+    return value
+
+def ProcessRequestValues(values_dict):
+    params = {}
+    for key in values_dict:
+        match = re.match(r'^([^[]+)(.*)', key)
+        if not match:
+            print("ProcessParams - no initial key.")
+            continue
+        primary_key, sub_groups = match.groups()
+        is_subhash = _AssignParams(values_dict, key, params, primary_key, sub_groups)
+        if is_subhash is None:
+            continue
+        if not is_subhash:
+            continue
+        is_valid = _ProcessParamsRecurse(values_dict, key, sub_groups, params[primary_key])
+        if not is_valid:
+            del params[primary_key]
+    return params
+
+def _ProcessParamsRecurse(values_dict, key, sub_keys, params):
+    #print("ProcessParamsRecurse:", values_dict, key, sub_keys, params)
+    secondary_key, sub_groups = re.match(r'^\[([^[]+)\](.*)', sub_keys).groups()
+    result = _AssignParams(values_dict, key, params, secondary_key, sub_groups)
+    if result is None:
+        return False
+    if result:
+        return _ProcessParamsRecurse(values_dict, key, sub_groups, params[secondary_key])
+    return True
+
+def _AssignParams(values_dict, key, params, primary_key, sub_groups):
+    if sub_groups == '':
+        params[primary_key] = values_dict.get(key)
+        return False
+    elif sub_groups == '[]':
+        params[primary_key] = values_dict.getlist(key)
+        return False
+    elif re.match(r'^\[.*\]$', sub_groups):
+        params[primary_key] = params[primary_key] if primary_key in params else {}
+        params[primary_key] = params[primary_key] if type(params[primary_key]) is dict else {}
+        return True
+    print("ProcessParams - incorrect sub groups.", primary_key, sub_groups)
+    return None
+
 
 def GetDataParams(request, type):
     data = {}
@@ -77,10 +126,9 @@ def IdFilter(query, search):
             query = query.filter(entity.id.in_(ids))
     return query
 
-def SearchFilter(query, search, *attributes):
+def SearchFilter(query, search):
     entity = QueryModel(query)
-    return query.filter(*AllAtributeFilters(entity, search, *attributes))
-    
+    return AllAttributeFilters(query, entity, search)
 
 def CustomOrder(ids, entity):
     return case(

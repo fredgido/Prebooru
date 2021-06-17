@@ -29,3 +29,9 @@ class IllustUrl(JsonModel):
     order = db.Column(db.Integer, nullable=False)
     illust_id = db.Column(db.Integer, db.ForeignKey('illust.id'), nullable=False)
     active = db.Column(db.Boolean, nullable=False)
+
+    @staticmethod
+    def searchable_attributes():
+        basic_attributes = ['id', 'site_id', 'url', 'width', 'height', 'order', 'illust_id', 'active']
+        relation_attributes = ['illust', 'post']
+        return basic_attributes + relation_attributes

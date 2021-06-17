@@ -96,7 +96,14 @@ class Artist(JsonModel):
 
     _recent_posts = None
 
-#Including these so that joins on both can be disambiguated (see notes)
+    @staticmethod
+    def searchable_attributes():
+        basic_attributes = ['id', 'site_id', 'site_artist_id', 'site_created', 'current_site_account', 'active', 'created', 'updated', 'requery']
+        relation_attributes = ['names', 'site_accounts', 'profiles', 'webpages', 'illusts']
+        return basic_attributes + relation_attributes
 
+"""
+#Including these so that joins on both can be disambiguated (see notes)
 Names = aliased(Label)
 SiteAccounts = aliased(Label)
+"""

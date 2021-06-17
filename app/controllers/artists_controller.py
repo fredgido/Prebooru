@@ -8,9 +8,9 @@ from sqlalchemy.orm import selectinload, lazyload
 
 from ..logical.logger import LogError
 from ..models import Illust, Artist
-from ..models.artist import Names, SiteAccounts
+#from ..models.artist import Names, SiteAccounts
 from ..sources import base as BASE_SOURCE
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, Paginate, DefaultOrder, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -63,12 +63,16 @@ def index_html():
 
 
 def index():
-    search = GetSearch(request)
-    print(search)
+    params = ProcessRequestValues(request.values)
+    search = GetParamsValue(params, 'search', True)
+    #search = GetSearch(request)
+    print("Params:", params, flush=True)
+    print("Search:", search, flush=True)
     q = Artist.query
     q = q.options(selectinload(Artist.names), selectinload(Artist.site_accounts), selectinload(Artist.webpages), lazyload(Artist.profiles))
     #q = IdFilter(q, search)
-    q = SearchFilter(q, search, 'id', 'site_id', 'site_artist_id', 'site_created', 'current_site_account', 'active', 'created', 'updated', 'requery')
+    q = SearchFilter(q, search)
+    """TEMP
     if 'names' in search:
         q = q.unique_join(Names, Artist.names).filter(Names.name == search['names'])
     if 'site_accounts' in search:
@@ -78,6 +82,7 @@ def index():
     if 'illust_site_illust_id' in search:
         #q = q.filter(Artist.illusts.any(site_illust_id=search['illust_site_illust_id']))
         q = q.unique_join(Illust).filter(Illust.site_illust_id == search['illust_site_illust_id'])
+    """
     q = DefaultOrder(q, search)
     return q
 

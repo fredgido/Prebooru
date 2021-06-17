@@ -109,3 +109,9 @@ class Upload(JsonModel):
 
     # Stored properties
     _illust = None
+
+    @staticmethod
+    def searchable_attributes():
+        basic_attributes = ['id', 'uploader_id', 'successes', 'failures', 'subscription_id', 'illust_url_id', 'request_url', 'referrer_url', 'type', 'status', 'media_filepath', 'sample_filepath', 'created']
+        relation_attributes = ['image_urls', 'posts', 'errors']
+        return basic_attributes + relation_attributes

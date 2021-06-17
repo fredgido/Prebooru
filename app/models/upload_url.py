@@ -17,3 +17,7 @@ class UploadUrl(JsonModel):
     url: str
     id = db.Column(db.Integer, primary_key=True)
     url = db.Column(db.String(255), nullable=False)
+
+    @staticmethod
+    def searchable_attributes():
+        return ['id', 'url']

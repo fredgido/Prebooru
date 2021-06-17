@@ -17,3 +17,7 @@ class Tag(JsonModel):
     name: str
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.Unicode(255), nullable=False)
+
+    @staticmethod
+    def searchable_attributes():
+        return ['id', 'name']

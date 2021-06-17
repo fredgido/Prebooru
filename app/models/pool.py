@@ -97,3 +97,7 @@ class Pool(JsonModel):
             elif page_item.type == 'pool_notation':
                 page.items[i] = next(filter(lambda x: x.id == page_item.notation_id, notations))
         return page
+
+    @staticmethod
+    def searchable_attributes():
+        return ['id', 'name', 'created', 'updated']

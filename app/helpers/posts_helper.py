@@ -11,10 +11,13 @@ def SimilarSearchLinks(post, format_url):
     image_links = []
     for i in range(0, len(post.illust_urls)):
         illust_url = post.illust_urls[i]
+        illust = illust_url.illust
+        if not illust.active:
+            continue
         source = BASE_SOURCE._Source(illust_url.site_id)
         media_url = source.GetMediaUrl(illust_url)
         if source.IsVideoUrl(media_url):
-            _, thumb_illust_url = source.VideoIllustDownloadUrls(illust_url.illust)
+            _, thumb_illust_url = source.VideoIllustDownloadUrls(illust)
             small_url = source.GetMediaUrl(thumb_illust_url)
         else:
             small_url = source.SmallImageUrl(media_url)
@@ -41,9 +44,12 @@ def DanbooruPostBookmarkletLinks(post):
     image_links = []
     for i in range(0, len(post.illust_urls)):
         illust_url = post.illust_urls[i]
+        illust = illust_url.illust
+        if not illust.active:
+            continue
         source = BASE_SOURCE._Source(illust_url.site_id)
         media_url = source.GetMediaUrl(illust_url)
-        post_url = source.GetPostUrl(illust_url.illust)
+        post_url = source.GetPostUrl(illust)
         query_string = urllib.parse.urlencode({'url': media_url, 'ref': post_url})
         href_url = 'https://danbooru.donmai.us/uploads/new?' + query_string
         html = '<a href="%s">image #%d</a>' % (href_url, i + 1)
@@ -53,6 +59,8 @@ def DanbooruPostBookmarkletLinks(post):
 def DanboooruBatchBookmarkletLinks(post):
     image_links = []
     for illust in post.illusts:
+        if not illust.active:
+            continue
         source = BASE_SOURCE._Source(illust.site_id)
         post_url = source.GetPostUrl(illust)
         query_string = urllib.parse.urlencode({'url': post_url})

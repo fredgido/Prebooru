@@ -1,6 +1,7 @@
 import re
 from sqlalchemy import and_, or_, not_
 import sqlalchemy.sql.sqltypes as sqltypes
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy import func as sqlfuncs
 
@@ -9,11 +10,14 @@ from .utility import IsTruthy, IsFalsey, ProcessUTCTimestring
 def IsRelationship(model, columnname):
     return type(getattr(model, columnname).property) is RelationshipProperty
 
-def RelationshipModel(model, columnname):
-    return getattr(model, columnname).property.mapper.class_
+def RelationshipModel(model, attribute):
+    return getattr(model, attribute).property.mapper.class_
 
 def IsCollection(model, columnname):
     return getattr(model, columnname).property.uselist
+
+def IsPolymorphic(model, attribute):
+    return getattr(model, attribute).property.mapper.polymorphic_on is not None
 
 def IsColumn(model, columnname):
     return columnname in model.__table__.c.keys()
@@ -42,20 +46,42 @@ def ColumnType(model, columnname):
     except Exception:
         raise Exception("%s - column of unexpected type: %s" % (columnname, str(column_type)))
 
-def AllAtributeFilters(model, params, *columnnames):
-    query_filters = ()
-    for columnname in columnnames:
-        query_filters += AttributeFilters(model, columnname, params)
-    return query_filters
+def AllAttributeFilters(query, model, params):
+    #print("AllAttributeFilters:", model, params)
+    attributes = model.searchable_attributes()
+    for attribute in attributes:
+        query = AttributeFilters(query, model, attribute, params)
+    return query
 
-def AttributeFilters(model, columnname, params):
-    if IsColumn(model, columnname):
-        return BasicAttributeFilters(model, columnname, params)
-    if IsRelationship(model, columnname):
-        return ()
-    raise Exception("%s is not a column or relationship" % columnname);
+def AttributeFilters(query, model, attribute, params):
+    #print("AttributeFilters:", model, attribute, params)
+    if IsColumn(model, attribute):
+        return BasicAttributeFilters(query, model, attribute, params)
+    if IsRelationship(model, attribute):
+        return RelationAttributeFilters(query, model, attribute, params)
+    raise Exception("%s is not a column or relationship" % attribute);
 
-def BasicAttributeFilters(model, columnname, params):
+def RelationAttributeFilters(query, model, attribute, params):
+    #print("RelationAttributeFilters:", model, attribute, params)
+    if IsPolymorphic(model, attribute):
+        raise Exception("%s - polymorphic attributes are currently unhandled" % attribute)
+    relation = getattr(model, attribute)
+    if ('has_' + attribute) in params:
+        operator = 'any' if IsCollection(model, attribute) else 'has'
+        if IsTruthy(params['has_' + attribute]):
+            query = query.filter(getattr(relation, operator)())
+        elif IsFalsey(params['has_' + attribute]):
+            query = query.filter(not_(getattr(relation, operator)()))
+        else:
+            raise Exception("%s - value must be truthy or falsey" % ('has_' + attribute))
+    if attribute in params:
+        relation_model = RelationshipModel(model, attribute)
+        aliased_model = aliased(relation_model)
+        query = query.unique_join(aliased_model, relation)
+        query = AllAttributeFilters(query, aliased_model, params[attribute])
+    return query
+
+def BasicAttributeFilters(query, model, columnname, params):
     switcher = {
         'INTEGER': NumericFilters,
         'DATETIME': NumericFilters,
@@ -65,7 +91,7 @@ def BasicAttributeFilters(model, columnname, params):
         'TEXT': TextFilters,
     }
     type = ColumnType(model, columnname)
-    return switcher[type](model, columnname, params)
+    return query.filter(*switcher[type](model, columnname, params))
 
 def NumericFilters(model, columnname, params):
     type = ColumnType(model, columnname)

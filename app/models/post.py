@@ -117,3 +117,10 @@ class Post(JsonModel):
 
     def delete_pool(self, pool_id):
         pool_element_delete(pool_id, self)
+
+    @staticmethod
+    def searchable_attributes():
+        basic_attributes = ['id', 'width', 'height', 'size', 'file_ext', 'md5', 'created']
+        relation_attributes = ['illust_urls', 'notations', 'errors']
+        return basic_attributes + relation_attributes
+
