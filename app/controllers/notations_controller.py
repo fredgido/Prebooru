@@ -16,7 +16,7 @@ from ..logical.logger import LogError
 from ..models import Notation, Pool
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, Paginate, DefaultOrder, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -70,7 +70,8 @@ def index():
     search = GetSearch(request)
     print(search)
     q = Notation.query
-    q = IdFilter(q, search)
+    #q = IdFilter(q, search)
+    q = SearchFilter(q, search, 'id', 'body', 'created', 'updated')
     q = DefaultOrder(q, search)
     return q
 

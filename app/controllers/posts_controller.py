@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload, lazyload
 from ..logical.utility import GetCurrentTime
 from ..database import local as DBLOCAL
 from ..models import Artist, Illust, IllustUrl, Notation, Post
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, SearchFilter, IdFilter, Paginate, DefaultOrder, PageNavigation, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -65,7 +65,8 @@ def index():
     print(search)
     q = Post.query
     q = q.options(lazyload('*'))
-    q = IdFilter(q, search)
+    #q = IdFilter(q, search)
+    q = SearchFilter(q, search, 'id', 'width', 'height', 'size', 'file_ext', 'md5', 'created')
     if 'artist_id' in search:
         #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(id=search['artist_id']))))
         q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).filter(Illust.artist_id == search['artist_id'])

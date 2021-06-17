@@ -24,6 +24,8 @@ def ProcessTimestamp(timestring):
     """Get seconds from the Epoch for timestamps"""
     return round(iso8601.parse_date(timestring).timestamp())
 
+def ProcessUTCTimestring(timestring):
+    return iso8601.parse_date(timestring)
 
 def GetBufferChecksum(buffer):
     hasher = hashlib.md5()

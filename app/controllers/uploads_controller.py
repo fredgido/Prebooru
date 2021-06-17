@@ -12,7 +12,7 @@ from ..logical.utility import EvalBoolString, IsTruthy, IsFalsey
 from ..logical.logger import LogError
 from ..models import Upload, Post
 from ..sources import base as BASE_SOURCE
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, Paginate, DefaultOrder
 
 
 # ## GLOBAL VARIABLES
@@ -68,11 +68,12 @@ def index():
     print(search)
     q = Upload.query
     q = q.options(selectinload(Upload.image_urls), selectinload(Upload.posts).lazyload(Post.illust_urls),selectinload(Upload.errors))
-    q = IdFilter(q, search)
-    if 'request_url' in search:
-        q = q.filter_by(request_url=search['request_url'])
-    if 'status' in search:
-        q = q.filter_by(status=search['status'])
+    #q = IdFilter(q, search)
+    q = SearchFilter(q, search, 'id', 'uploader_id', 'successes', 'failures', 'subscription_id', 'illust_url_id', 'request_url', 'referrer_url', 'type', 'status', 'media_filepath', 'sample_filepath', 'created')
+    #if 'request_url' in search:
+    #    q = q.filter_by(request_url=search['request_url'])
+    #if 'status' in search:
+    #    q = q.filter_by(status=search['status'])
     if 'has_image_urls' in search:
         if IsTruthy(search['has_image_urls']):
             q = q.filter(Upload.image_urls.any())

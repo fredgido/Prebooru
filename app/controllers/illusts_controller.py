@@ -12,7 +12,7 @@ from ..logical.logger import LogError
 from ..models import IllustUrl, Illust, Artist
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, DefaultOrder, Paginate, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, DefaultOrder, Paginate, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -88,7 +88,8 @@ def index():
     print(search)
     q = Illust.query
     q = q.options(selectinload(Illust.site_data), lazyload('*'))
-    q = IdFilter(q, search)
+    #q = IdFilter(q, search)
+    q = SearchFilter(q, search, 'id', 'site_id', 'site_illust_id', 'site_created', 'artist_id', 'pages', 'score', 'active', 'created', 'updated', 'requery')
     if 'site_illust_id' in search:
         q = q.filter_by(site_illust_id=search['site_illust_id'])
     if 'url_site_id' in search:

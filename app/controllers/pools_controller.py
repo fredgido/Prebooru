@@ -12,7 +12,7 @@ from ..models import Post
 from ..models import Illust
 from ..models import IllustUrl
 from ..logical.utility import GetCurrentTime
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, PageNavigation, GetPage, GetLimit, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, SearchFilter, IdFilter, Paginate, DefaultOrder, PageNavigation, GetPage, GetLimit, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -60,7 +60,8 @@ def index():
     search = GetSearch(request)
     print(search)
     q = Pool.query
-    q = IdFilter(q, search)
+    #q = IdFilter(q, search)
+    q = SearchFilter(q, search, 'id', 'name', 'created', 'updated')
     q = DefaultOrder(q, search)
     return q
 

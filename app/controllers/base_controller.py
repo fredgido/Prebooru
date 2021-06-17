@@ -5,6 +5,7 @@ import re
 from flask import jsonify, render_template
 from sqlalchemy.sql.expression import case
 
+from app.logical.searchable import AllAtributeFilters 
 
 # ## FUNCTIONS
 
@@ -63,6 +64,8 @@ def GetDataParams(request, type):
             data[key] = request.values.get(arg)
     return data
 
+def QueryModel(query):
+    return query.column_descriptions[0]['entity']
 
 def IdFilter(query, search):
     if 'id' in search:
@@ -73,6 +76,11 @@ def IdFilter(query, search):
             entity = query.column_descriptions[0]['entity']
             query = query.filter(entity.id.in_(ids))
     return query
+
+def SearchFilter(query, search, *attributes):
+    entity = QueryModel(query)
+    return query.filter(*AllAtributeFilters(entity, search, *attributes))
+    
 
 def CustomOrder(ids, entity):
     return case(

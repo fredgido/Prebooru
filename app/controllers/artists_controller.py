@@ -10,7 +10,7 @@ from ..logical.logger import LogError
 from ..models import Illust, Artist
 from ..models.artist import Names, SiteAccounts
 from ..sources import base as BASE_SOURCE
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, Paginate, DefaultOrder, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, Paginate, DefaultOrder, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -67,13 +67,14 @@ def index():
     print(search)
     q = Artist.query
     q = q.options(selectinload(Artist.names), selectinload(Artist.site_accounts), selectinload(Artist.webpages), lazyload(Artist.profiles))
-    q = IdFilter(q, search)
+    #q = IdFilter(q, search)
+    q = SearchFilter(q, search, 'id', 'site_id', 'site_artist_id', 'site_created', 'current_site_account', 'active', 'created', 'updated', 'requery')
     if 'names' in search:
         q = q.unique_join(Names, Artist.names).filter(Names.name == search['names'])
     if 'site_accounts' in search:
         q = q.unique_join(SiteAccounts, Artist.site_accounts).filter(SiteAccounts.name == search['site_accounts'])
-    if 'site_artist_id' in search:
-        q = q.filter_by(site_artist_id=search['site_artist_id'])
+    #if 'site_artist_id' in search:
+    #    q = q.filter_by(site_artist_id=search['site_artist_id'])
     if 'illust_site_illust_id' in search:
         #q = q.filter(Artist.illusts.any(site_illust_id=search['illust_site_illust_id']))
         q = q.unique_join(Illust).filter(Illust.site_illust_id == search['illust_site_illust_id'])
