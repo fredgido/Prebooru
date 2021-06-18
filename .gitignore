@@ -128,11 +128,6 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-app/local_config.py
-migrations.old/
-junk/
-similarity_notes.txt
-
 notes.txt
 app/local_config.py
 *.db
@@ -141,6 +136,5 @@ notes.txt
 similarity_notes.txt
 old/
 db/
-cache/
 migrations.old/
 junk/
