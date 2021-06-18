@@ -134,7 +134,7 @@ junk/
 similarity_notes.txt
 
 notes.txt
-app/config.py
+app/local_config.py
 *.db
 ideas.txt
 notes.txt

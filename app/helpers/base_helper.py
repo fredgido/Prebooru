@@ -7,10 +7,17 @@ def HasItems(items):
     return len(items) > 0
 
 def SearchUrlFor(endpoint, **kwargs):
+    def _Recurse(current_key, arg_dict, url_args):
+        print(current_key, arg_dict, url_args)
+        for key in arg_dict:
+            updated_key = current_key + '[' + key + ']'
+            if type(arg_dict[key]) is dict:
+                _Recurse(updated_key, arg_dict[key], url_args)
+            else:
+                url_args[updated_key] = arg_dict[key]
     url_args = {}
-    for arg in kwargs:
-        key = 'search[' + arg + ']'
-        url_args[key] = kwargs[arg]
+    _Recurse('search', kwargs, url_args)
+    print("Final:", url_args)
     return url_for(endpoint, **url_args)
 
 def ConvertStrToHTML(text):

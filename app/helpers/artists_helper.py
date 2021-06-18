@@ -13,7 +13,7 @@ def HrefUrl(artist):
     return source.ARTIST_HREFURL % artist.site_artist_id
 
 def PostSearch(artist):
-    return SearchUrlFor('post.index_html', artist_id=artist.id)
+    return SearchUrlFor('post.index_html', illust_urls={'illust': {'artist_id': artist.id}})
 
 def MainUrl(artist):
     site_key = GetSiteKey(artist.site_id)

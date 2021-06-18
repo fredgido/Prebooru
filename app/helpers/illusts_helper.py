@@ -27,7 +27,7 @@ def SiteIllustUrl(illust):
 
 
 def PostSearch(illust):
-    return SearchUrlFor('post.index_html', site_illust_id=illust.site_illust_id, isite_id=illust.site_id)
+    return SearchUrlFor('post.index_html', illust_urls={'illust_id': illust.id}) #, site_illust_id=illust.site_illust_id, isite_id=illust.site_id)
 
 
 def PostPreviews(illust):
