@@ -31,3 +31,6 @@ SYSTEM_USER_ID = 2
 
 # Log into Pixiv and get this value from the cookie PHPSESSID
 PIXIV_PHPSESSID = None
+
+DANBOORU_USERNAME = None
+DANBOORU_APIKEY = None

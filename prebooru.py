@@ -17,6 +17,7 @@ app.register_blueprint(controller.upload.bp)
 app.register_blueprint(controller.post.bp)
 app.register_blueprint(controller.pool.bp)
 app.register_blueprint(controller.notation.bp)
+app.register_blueprint(controller.proxy.bp)
 
 
 # ##EXECUTION START
