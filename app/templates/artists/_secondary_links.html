@@ -1,3 +1,8 @@
 <menu id="secondary-menu">
-    {{ helpers.base.SubnavLinkTo("Update", 'artist.update_html', artist.id) }}
+    {{ helpers.base.SubnavLinkTo("Listing", 'artist.index_html') }}
+    {% if artist != None %}
+        |
+        {{ helpers.base.SubnavLinkTo("Show", 'artist.show_html', id=artist.id) }}
+        {{ helpers.base.SubnavLinkTo("Update", 'artist.update_html', id=artist.id) }}
+    {% endif %}
 </menu>

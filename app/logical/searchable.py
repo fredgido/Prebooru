@@ -133,7 +133,7 @@ def NumericMatching(model, columnname, value):
     match = re.match(r'>(.+)', value)
     if match:
         return getattr(model, columnname) > parser(match.group(1))
-    if re.match(r'[ ,]', value):
+    if re.search(r'[ ,]', value):
         return getattr(model, columnname).in_(map(parser, re.split(r'[ ,]', value)))
     if value == 'any':
         return getattr(model, columnname) != None

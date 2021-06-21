@@ -4,20 +4,35 @@
 import json
 from flask import Blueprint, request, render_template, abort, jsonify, redirect, url_for
 from sqlalchemy.orm import selectinload, lazyload
-
+from wtforms import TextAreaField, IntegerField, BooleanField, SelectField
+from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
 
+from ..logical.utility import GetCurrentTime
 from ..logical.logger import LogError
-from ..models import IllustUrl, Illust, Artist
+from ..models import IllustUrl, Illust, Artist, Notation
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from .base_controller import GetSearch, GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, IdFilter, SearchFilter, DefaultOrder, Paginate, GetDataParams
+from .base_controller import GetSearch, GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, IdFilter, SearchFilter, DefaultOrder, Paginate, GetDataParams, CustomNameForm
 
 
 # ## GLOBAL VARIABLES
 
 bp = Blueprint("illust", __name__)
+
+# Forms
+
+def GetIllustForm(**kwargs):
+    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
+    class IllustForm(CustomNameForm):
+        site_id = SelectField('Site', choices=[('1', 'Pixiv'), ('3', 'Twitter')], id='illust-site-id', custom_name='illust[site_id]', validators=[DataRequired()])
+        site_illust_id = IntegerField('Site Illust ID', id='illust-site-illust-id', custom_name='illust[site_illust_id]', validators=[DataRequired()])
+        artist_id = IntegerField('Artist ID', id='illust-artist-id', custom_name='illust[artist_id]', validators=[DataRequired()])
+        pages = IntegerField('Pages', id='illust-pages', custom_name='illust[pages]')
+        score = IntegerField('Score', id='illust-score', custom_name='illust[score]')
+        active = BooleanField('Active', id='illust-active', custom_name='illust[active]')
+    return IllustForm(**kwargs)
 
 # ## FUNCTIONS
 
@@ -102,6 +117,19 @@ def index():
     """
     q = DefaultOrder(q, search)
     return q
+
+@bp.route('/illusts/new', methods=['GET'])
+def new_html():
+    form = GetIllustForm()
+    return render_template("illusts/new.html", form=form, illust=None)
+
+@bp.route('/illusts/<int:id>/edit', methods=['GET'])
+def edit_html(id):
+    illust = Illust.find(id)
+    if illust is None:
+        abort(404)
+    form = GetIllustForm(site_id=illust.site_id, site_illust_id=illust.site_illust_id, artist_id=illust.artist_id, pages=illust.pages, score=illust.score, active=illust.active)
+    return render_template("illusts/edit.html", form=form, illust=illust)
 
 @bp.route('/illusts/<int:id>/update', methods=['GET'])
 def update_html(id):

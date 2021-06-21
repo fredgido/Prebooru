@@ -1,0 +1,18 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}New Illust{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=illust) | safe }}{% endblock %}
+
+{% block content %}
+    <form method="POST" action="/illusts">
+        {{ form.csrf_token }}
+        {{ form.site_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.site_id(style="display: block;") }}
+        {{ form.site_illust_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.site_illust_id(style="display: block;") }}
+        {{ form.artist_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.artist_id(style="display: block;") }}
+        {{ form.pages.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.pages(style="display: block;") }}
+        {{ form.score.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.score(style="display: block;") }}
+        {{ form.active.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.active(style="display: block;") }}
+        <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
+    </form>
+{% endblock %}

@@ -4,8 +4,23 @@
 import re
 from flask import jsonify, render_template
 from sqlalchemy.sql.expression import case
+from wtforms import TextAreaField, IntegerField, Form
+from wtforms.meta import DefaultMeta
+
+# ## LOCAL IMPORTS
 
 from app.logical.searchable import AllAttributeFilters 
+
+# ## GLOBAL VARIABLES
+
+class BindNameMeta(DefaultMeta):
+    def bind_field(self, form, unbound_field, options):
+        if 'custom_name' in unbound_field.kwargs:
+            options['name'] = unbound_field.kwargs.pop('custom_name')
+        return unbound_field.bind(form=form, **options)
+
+class CustomNameForm(Form):
+    Meta = BindNameMeta
 
 # ## FUNCTIONS
 

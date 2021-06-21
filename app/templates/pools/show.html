@@ -17,7 +17,7 @@
                             {% elif helpers.pool.ItemIsOfType(item, 'illust') %}
                                 {{ helpers.illust.PostPreviews(item) }}
                             {% elif helpers.pool.ItemIsOfType(item, 'notation') %}
-                                <div style="word-break: break-word; width: 320px;">{{ helpers.notation.ConvertToHTML(item) }}</div>
+                                <div style="word-break: break-word; width: 315px;">{{ helpers.notation.ConvertToHTML(item) }}</div>
                             {% endif %}
                         </div>
                         {% if helpers.pool.ItemIsOfTypes(item, ['post', 'illust']) %}

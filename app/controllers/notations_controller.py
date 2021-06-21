@@ -5,9 +5,8 @@ import requests
 from sqlalchemy.orm import selectinload
 from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
 from flask_wtf import FlaskForm
-from wtforms import TextAreaField, IntegerField, Form
+from wtforms import TextAreaField, IntegerField
 from wtforms.validators import DataRequired
-from wtforms.meta import DefaultMeta
 
 # ## LOCAL IMPORTS
 
@@ -16,7 +15,7 @@ from ..logical.logger import LogError
 from ..models import Notation, Pool
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams
+from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, CustomNameForm
 
 
 # ## GLOBAL VARIABLES
@@ -25,16 +24,7 @@ bp = Blueprint("notation", __name__)
 
 # Forms
 
-class BindNameMeta(DefaultMeta):
-    def bind_field(self, form, unbound_field, options):
-        if 'custom_name' in unbound_field.kwargs:
-            options['name'] = unbound_field.kwargs.pop('custom_name')
-        return unbound_field.bind(form=form, **options)
-
-class CustomNameForm(Form):
-    Meta = BindNameMeta
-
-def GetNotationFrom(**kwargs):
+def GetNotationForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
     class NotationForm(CustomNameForm):
         body = TextAreaField('Body', id='notation-body', custom_name='notation[body]', validators=[DataRequired()])
@@ -80,7 +70,7 @@ def index():
 
 @bp.route('/notations/new', methods=['GET'])
 def new_html():
-    form = GetNotationFrom()
+    form = GetNotationForm()
     return render_template("notations/new.html", form=form, notation=None)
 
 @bp.route('/notations/<int:id>/edit', methods=['GET'])
@@ -89,7 +79,7 @@ def edit_html(id):
     if notation is None:
         abort(404)
     pool_id = notation._pools[0].pool_id if len(notation._pools) > 0 else None
-    form = GetNotationFrom(body=notation.body, pool_id=pool_id)
+    form = GetNotationForm(body=notation.body, pool_id=pool_id)
     return render_template("notations/edit.html", form=form, notation=notation)
 
 @bp.route('/notations/<int:id>', methods=['POST','PUT'])

@@ -1,4 +1,19 @@
 <menu id="secondary-menu">
-    {{ helpers.base.SubnavLinkTo("Update", 'illust.update_html', illust.id) }}
-    {{ helpers.illust.DanbooruBatchUpload(illust) | safe }}
+    {{ helpers.base.SubnavLinkTo("Listing", 'illust.index_html') }}
+    {{ helpers.base.SubnavLinkTo("New", 'illust.new_html') }}
+    {% if illust != None %}
+        |
+        {{ helpers.base.SubnavLinkTo("Show", 'illust.show_html', illust.id) }}
+        {{ helpers.base.SubnavLinkTo("Update", 'illust.update_html', illust.id) }}
+        {{ helpers.base.SubnavLinkTo("Edit", 'illust.edit_html', illust.id) }}
+    {% endif %}
+    {% if request.endpoint == 'illust.show_html' %}
+        <li style="margin-left: 1em; font-weight: bold;">
+        [
+            <ul style="display:inline-block; list-style: none;">
+                {{ helpers.illust.DanbooruBatchUpload(illust) | safe }}
+            </ul>
+        ]
+        </li>
+    {% endif %}
 </menu>
