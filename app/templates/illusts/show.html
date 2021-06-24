@@ -86,7 +86,7 @@
             </div>
             <div style="margin-left: 1em;">
                 <h5><u>Commentaries</u></h5>
-                <div style="border: 1px solid lightgrey; padding: 5px;">
+                <div style="border: 1px solid lightgrey; padding: 5px; max-width: 80%;">
                     {% for description in illust.descriptions %}
                         {{ helpers.base.ConvertStrToHTML(description.body) }}
                         {% if not loop.last %}
@@ -98,31 +98,51 @@
                 </div>
             </div>
         </div>
-        <div style="margin-top: 2em;">
-            <h5><u>Image URLs</u></h5>
-            <div style="display: flex;">
-                 {% for illust_url in illust.urls %}
-                    <div style="width: 25%;">
-                        <div>
-                            <ul style="margin-left: 1.5em; padding-right: 0.5em;">
-                                <li><strong>Order: {{ illust_url.order + 1 }}</strong></li>
-                                <li><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</li>
-                                <li><strong>Dimensions:</strong> {{ illust_url.width }} x {{ illust_url.height }}</li>
-                                <li><strong>Active:</strong> {{ illust_url.active | tojson }}</li>
-                            </ul>
-                        </div>
-                        <div>
-                            {% if illust_url.post != None %}
-                                {{ helpers.post.Preview(illust_url.post) | safe }}
-                            {% else %}
-                                <em>No post.</em>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% else %}
-                    <em>none</em>
-                {% endfor %}
+        {% if illust.type == 'video' %}
+            <div style="margin-top: 2em;">
+                <h5><u>Video URLs</u></h5>
+                <div>
+                    <ul style="margin-left: 1.5em; padding-right: 0.5em;">
+                        <li><strong>Order: {{ illust.video_illust_url.order + 1 }}</strong></li>
+                        <li><strong>Video URL:</strong> {{ helpers.illust.OriginalUrl(illust.video_illust_url) }}</li>
+                        <li><strong>Thumb URL:</strong> {{ helpers.illust.OriginalUrl(illust.thumb_illust_url) }}</li>
+                        <li><strong>Dimensions:</strong> {{ illust.video_illust_url.width }} x {{ illust.video_illust_url.height }}</li>
+                        <li><strong>Active:</strong> {{ illust.video_illust_url.active | tojson }}</li>
+                    </ul>
+                </div>
+                <div>
+                    {% if illust.video_illust_url.post != None %}
+                        {{ helpers.post.Preview(illust.video_illust_url.post) | safe }}
+                    {% else %}
+                        <em>No post.</em>
+                    {% endif %}
+                </div>
             </div>
-        </div>
+        {% elif illust.type == 'image' %}
+            <div style="margin-top: 2em;">
+                <h5><u>Image URLs</u></h5>
+                <div style="display: flex;">
+                     {% for illust_url in illust.urls %}
+                        <div style="width: 25%;">
+                            <div>
+                                <ul style="margin-left: 1.5em; padding-right: 0.5em;">
+                                    <li><strong>Order: {{ illust_url.order + 1 }}</strong></li>
+                                    <li><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</li>
+                                    <li><strong>Dimensions:</strong> {{ illust_url.width }} x {{ illust_url.height }}</li>
+                                    <li><strong>Active:</strong> {{ illust_url.active | tojson }}</li>
+                                </ul>
+                            </div>
+                            <div>
+                                {% if illust_url.post != None %}
+                                    {{ helpers.post.Preview(illust_url.post) | safe }}
+                                {% else %}
+                                    <em>No post.</em>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
     </div>
 {% endblock %}

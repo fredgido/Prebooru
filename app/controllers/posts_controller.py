@@ -7,7 +7,8 @@ from sqlalchemy.orm import selectinload, lazyload
 
 # ## LOCAL IMPORTS
 
-from ..logical.utility import GetCurrentTime
+from ..logical.file import PutGetRaw
+from ..logical.utility import GetCurrentTime, GetBufferChecksum
 from ..database import local as DBLOCAL
 from ..models import Artist, Illust, IllustUrl, Notation, Post
 from .base_controller import GetSearch, ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, IdFilter, Paginate, DefaultOrder, PageNavigation, GetDataParams
@@ -93,6 +94,24 @@ def index():
     """
     q = DefaultOrder(q, search)
     return q
+
+@bp.route('/posts/<int:id>/update', methods=['GET'])
+def update_html(id):
+    post = Post.find(id)
+    if post is None:
+        abort(404)
+    #BASE_SOURCE.UpdateIllust(illust)
+    return redirect(url_for('post.show_html', id=id))
+
+@bp.route('/posts/<int:id>/check.json', methods=['GET'])
+def check_json(id):
+    post = Post.find(id)
+    if post is None:
+        abort(404)
+    buffer = PutGetRaw(post.file_path, 'rb')
+    current_md5 = GetBufferChecksum(buffer)
+    data_md5 = post.md5
+    return {'current_md5': current_md5, 'data_md5': data_md5}
 
 @bp.route('/posts/<int:id>/notation.json', methods=['POST'])
 def add_notation(id):

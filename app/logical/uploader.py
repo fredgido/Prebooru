@@ -91,12 +91,11 @@ def CreateSample(image, md5, downsample=True):
         return DB.local.CreateError('utility.downloader.CreateSample', "Error creating sample: %s" % repr(e))
 
 
-def CreateData(image, md5, file_ext):
+def CreateData(buffer, md5, file_ext):
     print("Saving data:", md5)
     filepath = storage.DataDirectory('data', md5) + md5 + '.' + file_ext
     CreateDirectory(filepath)
-    print("Saving data:", filepath)
-    image.save(filepath)
+    PutGetRaw(filepath, 'wb', buffer)
 
 
 def CreateVideo(buffer, md5, file_ext):
@@ -162,9 +161,9 @@ def CheckFiletype(buffer, file_ext, post_errors):
     return file_ext
 
 
-def SaveImage(image, md5, image_file_ext, illust_url, post_errors):
+def SaveImage(buffer, image, md5, image_file_ext, illust_url, post_errors):
     try:
-        CreateData(image, md5, image_file_ext)
+        CreateData(buffer, md5, image_file_ext)
     except Exception as e:
         CreatePostError('utility.downloader.SaveImage', "Error saving image to disk: %s" % repr(e), post_errors)
         return False
@@ -236,7 +235,7 @@ def CreateImagePost(image_illust_url, media_filepath, source):
     if DB.local.IsError(image):
         return post_errors + [image]
     image_width, image_height = CheckImageDimensions(image, image_illust_url, post_errors)
-    if not SaveImage(image, md5, image_file_ext, image_illust_url, post_errors):
+    if not SaveImage(buffer, image, md5, image_file_ext, image_illust_url, post_errors):
         return post_errors
     post = DB.local.CreatePostAndAddIllustUrl(image_illust_url, image_width, image_height, image_file_ext, md5, len(buffer))
     if len(post_errors):

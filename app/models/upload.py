@@ -13,7 +13,7 @@ from .base import JsonModel, IntOrNone, StrOrNone
 from .upload_url import UploadUrl
 from .post import Post
 from .error import Error
-
+from .illust_url import IllustUrl
 
 # ##GLOBAL VARIABLES
 
@@ -46,6 +46,9 @@ class Upload(JsonModel):
     subscription_id: IntOrNone
     request_url: StrOrNone
     referrer_url: StrOrNone
+    media_filepath: StrOrNone
+    sample_filepath: StrOrNone
+    illust_url_id: IntOrNone
     type: str
     status: str
     successes: int
@@ -86,7 +89,11 @@ class Upload(JsonModel):
 
     @property
     def site_illust_id(self):
-        return self._source.GetIllustId(self.request_url, self.referrer_url)
+        if self.request_url:
+            return self._source.GetIllustId(self.request_url, self.referrer_url)
+        elif self.illust_url.id:
+            return self.illust_url.illust.site_illust_id
+        raise Exception("Unable to find site illust ID for upload #%d" % self.id)
 
     @property
     def illust(self):
@@ -104,8 +111,12 @@ class Upload(JsonModel):
 
     @property
     def _source(self):
-        from ..sources.base import GetSource
-        return GetSource(self.request_url, self.referrer_url)
+        from ..sources import base as BASE_SOURCE
+        if self.request_url:
+            return BASE_SOURCE.GetSource(self.request_url, self.referrer_url)
+        elif self.illust_url_id:
+            return BASE_SOURCE._Source(self.illust_url.site_id)
+        raise Exception("Unable to find source for upload #%d" % self.id)
 
     # Stored properties
     _illust = None

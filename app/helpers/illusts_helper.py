@@ -11,6 +11,15 @@ def SiteDataIterator(illust):
         if key not in ['id', 'type', 'illust_id']:
             yield key, val
 
+def IllustHasImages(illust):
+    site_key = GetSiteKey(illust.site_id)
+    source = SOURCEDICT[site_key]
+    return source.IllustHasImages(illust)
+
+def IllustHasVideos(illust):
+    site_key = GetSiteKey(illust.site_id)
+    source = SOURCEDICT[site_key]
+    return source.IllustHasImages(illust)
 
 def OriginalUrl(illust_url):
     return 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url

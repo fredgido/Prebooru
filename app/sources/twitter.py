@@ -276,6 +276,12 @@ def VideoIllustDownloadUrls(illust):
     thumb_illust_url = next(filter(IMAGE_URL_MAPPER, illust.urls), None)
     return video_illust_url, thumb_illust_url
 
+def VideoIllustVideoUrl(illust):
+    return next(filter(VIDEO_URL_MAPPER, illust.urls), None)
+
+def VideoIllustThumbUrl(illust):
+    return next(filter(IMAGE_URL_MAPPER, illust.urls), None)
+
 #   URL
 
 def GetMediaExtension(media_url):

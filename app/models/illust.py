@@ -91,17 +91,34 @@ class Illust(JsonModel):
 
     @property
     def type(self):
-        if self._source.IllustHasVideos(self):
-            return 'video'
-        if self._source.IllustHasImages(self):
-            return 'image'
-        return 'unknown'
+        if not hasattr(self, '__type'):
+            if self._source.IllustHasVideos(self):
+                self.__type = 'video'
+            elif self._source.IllustHasImages(self):
+                self.__type = 'image'
+            else:
+                self.__type =  'unknown'
+        return self.__type
+
+    @property
+    def video_illust_url(self):
+        if not hasattr(self, '__video_illust_url'):
+            self.__video_illust_url = self._source.VideoIllustVideoUrl(self) if self.type == 'video' else None
+        return self.__video_illust_url
+
+    @property
+    def thumb_illust_url(self):
+        if not hasattr(self, '__thumb_illust_url'):
+            self.__thumb_illust_url = self._source.VideoIllustThumbUrl(self) if self.type == 'video' else None
+        return self.__thumb_illust_url
 
     @property
     def _source(self):
-        from ..sources import DICT as SOURCEDICT
-        site_key = GetSiteKey(self.site_id)
-        return SOURCEDICT[site_key]
+        if not hasattr(self, '__source'):
+            from ..sources import DICT as SOURCEDICT
+            site_key = GetSiteKey(self.site_id)
+            self.__source = SOURCEDICT[site_key]
+        return self.__source
 
     def delete(self):
         pools = self.pools
