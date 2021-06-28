@@ -6,6 +6,9 @@ from flask import Markup, request, render_template, url_for, Markup
 def HasItems(items):
     return len(items) > 0
 
+def FlashMessages(messages):
+    return Markup('<br>----------------------------------<br>'.join(messages))
+
 def SearchUrlFor(endpoint, **kwargs):
     def _Recurse(current_key, arg_dict, url_args):
         #print(current_key, arg_dict, url_args)

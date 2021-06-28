@@ -84,9 +84,9 @@
                     </li>
                 </ul>
             </div>
-            <div style="margin-left: 1em;">
+            <div style="margin-left: 1em; width: 40%;">
                 <h5><u>Commentaries</u></h5>
-                <div style="border: 1px solid lightgrey; padding: 5px; max-width: 80%;">
+                <div style="border: 1px solid lightgrey; padding: 5px;">
                     {% for description in illust.descriptions %}
                         {{ helpers.base.ConvertStrToHTML(description.body) }}
                         {% if not loop.last %}

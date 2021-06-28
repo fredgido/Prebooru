@@ -3,12 +3,13 @@
 # ## PYTHON IMPORTS
 import requests
 from bs4 import BeautifulSoup
-from flask import Blueprint, request, render_template, abort, Markup, jsonify
+from flask import Blueprint, request, render_template, abort, Markup, jsonify, redirect
 
 # ## LOCAL IMPORTS
 from ..logical.file import PutGetRaw
 from ..sources import base as BASE_SOURCE
 from ..models import Post
+from .base_controller import GetDataParams
 from ..config import DANBOORU_USERNAME, DANBOORU_APIKEY
 
 bp = Blueprint("proxy", __name__)
@@ -64,29 +65,46 @@ def _CORS_JSON(json):
     response.headers.add("Access-Control-Allow-Origin", "*")
     return response
 
-@bp.route('/proxy/danbooru_preprocess_upload.json', methods=['GET'])
+def ErrorResp(message):
+    print("ErrorResp:", message)
+    return _CORS_JSON({'error': True, 'message': message})
+
+@bp.route('/proxy/danbooru_preprocess_upload.json', methods=['POST'])
 def danbooru_preprocess_upload():
-    post_id = request.args.get('post_id', type=int)
+    post_id = request.values.get('post_id', type=int)
     if post_id is None:
-        return _CORS_JSON({'error': True, 'message': "Must include post ID."})
+        return ErrorResp("Must include post ID.")
     post = Post.find(post_id)
     if post is None:
-        return _CORS_JSON({'error': True, 'message': "Post #d not found." % post_id})
+        return ErrorResp("Post #d not found." % post_id)
     if len(post.illusts) > 1:
-        illust_id = request.args.get('illust_id', type=int)
+        illust_id = request.values.get('illust_id', type=int)
         if illust_id is None:
-            return _CORS_JSON({'error': True, 'message': "Ambiguous illustrations. Must include illust ID."})
+            return ErrorResp("Ambiguous illustrations. Must include illust ID.")
         illust = next(filter(lambda x: x.id == illust_id, post.illusts), None)
         if illust is None:
-            return _CORS_JSON({'error': True, 'message': "Illust #%d not on post #%d." % (post_id, illust_id)})
+            return ErrorResp("Illust #%d not on post #%d." % (post_id, illust_id))
     else:
         illust = post.illusts[0]
     source = BASE_SOURCE._Source(illust.site_id)
     post_url = source.GetPostUrl(illust)
-    ret_data = PreprocessPost(post)
-    if not ret_data['error']:
-        ret_data.update({'post_url': post_url, 'post': post.to_json(), 'illust': illust.to_json()})
-    return _CORS_JSON(ret_data)
+    profile_urls = source.ArtistProfileUrls(illust.artist)
+    illust_commentaries = source.IllustCommentaries(illust)
+    check = CheckPreprocess(post)
+    if type(check) is str:
+        return ErrorResp(check)
+    if not check:
+        preprocess = PreprocessPost(post)
+        if type(preprocess) is str:
+            return ErrorResp(preprocess)
+    return _CORS_JSON({'error': False, 'post_url': post_url, 'post': post.to_json(), 'profile_urls': profile_urls, 'illust_commentaries': illust_commentaries, 'illust': illust.to_json(), 'artist': illust.artist.to_json()})
+
+
+@bp.route('/proxy/danbooru_create_upload.json', methods=['post'])
+def danbooru_create_upload():
+    dataparams = GetDataParams(request, 'upload')
+    print("Data:", dataparams)
+    return redirect('https://testbooru.donmai.us/uploads/new')
 
 MIMETYPES = {
     'jpg': 'image/jpeg',
@@ -95,8 +113,24 @@ MIMETYPES = {
     'mp4': 'video/mp4',
 }
 
+def CheckPreprocess(post):
+    print("CheckPreprocess")
+    params = {
+        'search[uploader_name]': DANBOORU_USERNAME,
+        'search[md5]': post.md5,
+    }
+    #print(params)
+    danbooru_resp = requests.get('https://danbooru.donmai.us/uploads.json', params=params, auth=(DANBOORU_USERNAME, DANBOORU_APIKEY))
+    #breakpoint()
+    if danbooru_resp.status_code != 200:
+        return "HTTP %d: %s; Unable to query Danbooru for existing upload: %s - %s" % (danbooru_resp.status_code, danbooru_resp.reason, DANBOORU_USERNAME, post.md5)
+    data = danbooru_resp.json()
+    print(data)
+    return len(data)
+
 def PreprocessPost(post):
-    return {'error': False}
+    print("PreprocessPost")
+    #return None
     buffer = PutGetRaw(post.file_path, 'rb')
     filename = post.md5 + '.' + post.file_ext
     mimetype = MIMETYPES[post.file_ext]
@@ -104,12 +138,12 @@ def PreprocessPost(post):
         'upload[file]': (filename, buffer, mimetype)
     }
     try:
-        testbooru_resp = requests.post('https://testbooru.donmai.us/uploads/preprocess', files=files, auth=('BrokenEagle98', 'utvkhMWzJCHh8tJzED5wmdZq'), timeout=30)
+        #testbooru_resp = requests.post('https://testbooru.donmai.us/uploads/preprocess', files=files, auth=('BrokenEagle98', 'utvkhMWzJCHh8tJzED5wmdZq'), timeout=30)
+        danbooru_resp = requests.post('https://danbooru.donmai.us/uploads/preprocess', files=files, auth=(DANBOORU_USERNAME, DANBOORU_APIKEY), timeout=30)
     except (requests.exceptions.ReadTimeout,requests.exceptions.ConnectionError) as e:
-        return {'error': True, 'message': "Connection error: %s" % e}
-    if testbooru_resp.status_code != 200:
-        return {'error': True, 'message': "HTTP %d - %s" % (testbooru_resp.status_code, testbooru_resp.reason)}
-    return {'error': False}
+        return "Connection error: %s" % e
+    if danbooru_resp.status_code != 200:
+        return "HTTP %d - %s" % (danbooru_resp.status_code, danbooru_resp.reason)
 
 @bp.route('/proxy/danbooru_iqdb', methods=['GET'])
 def danbooru_iqdb():

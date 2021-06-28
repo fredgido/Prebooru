@@ -1,0 +1,30 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}Similarity results{% endblock %}
+
+{% block content %}
+    <div id="similarity-results-content">
+        <div class="heading" style="font-size: 32px">Similarity results</div>
+        <div style="margin-top: 1em; margin-left: 2em;">
+            {% for similar_result in similar_results %}
+                <div style="margin-top: 1em;">
+                    <div class="heading" style="font-size: 28px;">Image #{{ loop.index }}</div>
+                    <div style="">
+                        <img src="{{ similar_result['cache'] }}" style="max-width: 300px; max-height: 300px; width: auto; height: auto; display: block;">
+                        <div style="font-size: 20px; margin-top: 1em;"><strong>Image url:</strong> {{ similar_result['image_url'] }}</div>
+                    </div>
+                    <div style="margin-top: 1em; border: 2px solid #ddd; background-color: #eee; width: 90%; padding: 1em;">
+                        {% for result in similar_result['post_results'] %}
+                            <div style="display: inline-block;">
+                                {{ helpers.post.Preview(result['post']) | safe }}
+                                <div style="margin-top: 1em; font-size: 18px;"><strong>Score:</strong> {{ result['score']}} </div>
+                            </div>
+                        {% else %}
+                            <div style="font-size: 20px; font-weight: bold; height: 50px;">No results.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

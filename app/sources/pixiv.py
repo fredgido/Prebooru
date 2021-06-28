@@ -91,12 +91,25 @@ def GetImageExtension(image_url):
     filename = GetHTTPFilename(image_url)
     return GetFileExtension(filename)
 
+def GetMediaExtension(media_url):
+    return GetImageExtension(media_url)
 
 def UploadCheck(request_url, referrer_url):
     return ARTWORKS_RG.match(request_url) or IMAGE_RG.match(request_url)
 
 def IsImageUrl(image_url):
-    return False
+    return bool(IMAGE_RG.match(image_url))
+
+"""https://i.pximg.net/c/540x540_70/img-master/img/2017/05/02/01/10/08/62686328_p0_master1200.jpg"""
+def SmallImageUrl(image_url):
+    image_url = urllib.parse.urlparse(image_url).path.replace('img-original', 'img-master')
+    image_url = re.sub(r'_(?:master|square)1200', '_master1200', image_url)
+    image_url = re.sub(r'(?:/c/\w+)', '', image_url)
+    image_url = '/c/540x540_70' + image_url
+    return IMAGE_SERVER + image_url
+
+def NormalizedImageUrl(image_url):
+    return IMAGE_SERVER + NormalizeImageURL(image_url)
 
 def GetUploadType(request_url, referrer_url):
     artwork_match = ARTWORKS_RG.match(request_url)

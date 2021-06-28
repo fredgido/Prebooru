@@ -31,6 +31,7 @@ def CheckHTTPResponse(response):
 
 def GetHTTPFile(serverfilepath, headers={}, timeout=10):
     for i in range(3):
+        print("GetHTTPFile:", serverfilepath, headers)
         response = NetworkQuery(serverfilepath, headers, timeout)
         if response is False:
             continue

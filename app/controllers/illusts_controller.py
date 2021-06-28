@@ -2,7 +2,7 @@
 
 # ## PYTHON IMPORTS
 import json
-from flask import Blueprint, request, render_template, abort, jsonify, redirect, url_for
+from flask import Blueprint, request, render_template, abort, jsonify, redirect, url_for, flash
 from sqlalchemy.orm import selectinload, lazyload
 from wtforms import TextAreaField, IntegerField, BooleanField, SelectField
 from wtforms.validators import DataRequired
@@ -137,6 +137,7 @@ def update_html(id):
     if illust is None:
         abort(404)
     BASE_SOURCE.UpdateIllust(illust)
+    flash("Illust updated.")
     return redirect(url_for('illust.show_html', id=id))
 
 @bp.route('/illusts.json', methods=['POST'])

@@ -21,8 +21,8 @@
                             {% endif %}
                         </div>
                         {% if helpers.pool.ItemIsOfTypes(item, ['post', 'illust']) %}
-                            <div style="display: block; vertical-align: top; max-height: 125px; overflow-y: auto; background-color: #F8F8F8; border: 1px solid #DDD;">
-                                <ul style="margin-left: 1.5em; min-height: 120px; display: inline-block; width: 140px; vertical-align: top;">
+                            <div style="display: block; vertical-align: top; max-height: 125px; overflow-y: auto; background-color: #F8F8F8; border: 1px solid #DDD; width: 310px;">
+                                <ul style="margin-left: 1.5em; min-height: 120px; display: inline-block; width: 150px; vertical-align: top;">
                                     <li><strong>Artists:</strong>
                                         {% if helpers.pool.ItemIsOfType(item, 'post') %}
                                             {{ helpers.pool.DisplayArtists(item.artist_ids) | safe }}
@@ -41,7 +41,7 @@
                                         </li>
                                     {% endif %}
                                 </ul>
-                                <ul style="margin-left: 1.5em; min-height: 120px; display: inline-block; width: 140px; vertical-align: top;">
+                                <ul style="margin-left: 1.5em; min-height: 120px; display: inline-block; width: 80px; vertical-align: top;">
                                     <li><strong>Type:</strong> {{ helpers.pool.MediaType(item) }}</li>
                                 </ul>
                             </div>

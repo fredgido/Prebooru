@@ -56,6 +56,7 @@ def DanbooruPostBookmarkletLinks(post):
         href_url = 'https://danbooru.donmai.us/uploads/new?' + query_string
         html = '<a href="%s">illust #%d</a>' % (href_url, illust.id)
         image_links.append(html)
+    image_links.append('<a href="https://danbooru.donmai.us/uploads/new?prebooru_post_id=%d">file</a>' % post.id)
     return ' | '.join(image_links)
 
 def DanboooruBatchBookmarkletLinks(post):

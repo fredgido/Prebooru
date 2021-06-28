@@ -1,13 +1,22 @@
 # APP/SOURCES/BASE.PY
 
 # ##PYTHON IMPORTS
+import sys
+
+
 from ..sites import GetSiteKey
 from ..sources import SOURCES, DICT as SOURCEDICT
 from ..models import Upload, IllustUrl
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.uploader import UploadIllustUrl
+from ..logical.utility import GetHTTPFilename, GetFileExtension
 from ..database import local as DBLOCAL
 
+CURRENT_MODULE = sys.modules[__name__]
+
+#print(__name__, __package__, CURRENT_MODULE)
+
+IMAGE_HEADERS = {}
 
 # ##FUNCTIONS
 
@@ -22,6 +31,20 @@ def GetImageSource(image_url):
     for source in SOURCES:
         if source.IsImageUrl(image_url):
             return source
+    return CURRENT_MODULE
+
+def SmallImageUrl(image_url):
+    return image_url
+
+def NormalizedImageUrl(image_url):
+    return image_url
+
+def GetImageExtension(image_url):
+    filename = GetHTTPFilename(image_url)
+    return GetFileExtension(filename)
+
+def GetMediaExtension(media_url):
+    return GetImageExtension(media_url)
 
 def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
     source = GetSource(request_url, referrer_url)

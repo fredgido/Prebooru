@@ -13,7 +13,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 # ## LOCAL IMPORTS
 from app import database as DB, app as APP
 from app import session as SESSION
-from app.cache import ApiData
+from app.cache import ApiData, MediaFile
 from app.models import Upload, Illust, Artist
 from app.sources import base as BASE_SOURCE
 from app.logical.utility import MinutesAgo, StaticVars, GetCurrentTime
@@ -144,9 +144,21 @@ def ExpungeCacheRecords():
     print("ExpungeCacheRecords")
     SEM.acquire()
     print("<semaphore acquire>")
-    print("Records to delete:", ApiData.query.filter(ApiData.expires < GetCurrentTime()).count())
-    ApiData.query.filter(ApiData.expires < GetCurrentTime()).delete()
-    SESSION.commit()
+    api_delete_count = ApiData.query.filter(ApiData.expires < GetCurrentTime()).count()
+    print("Records to delete:", api_delete_count)
+    if api_delete_count > 0:
+        ApiData.query.filter(ApiData.expires < GetCurrentTime()).delete()
+        SESSION.commit()
+    media_delete_count = MediaFile.query.filter(MediaFile.expires < GetCurrentTime()).count()
+    print("Media files to delete:", media_delete_count)
+    if media_delete_count > 0:
+        media_records = MediaFile.query.filter(MediaFile.expires < GetCurrentTime()).all()
+        for media in media_records:
+            if os.path.exists(media.file_path):
+                os.remove(media.file_path)
+                time.sleep(0.2)
+            SESSION.delete(media)
+        SESSION.commit()
     SEM.release()
     print("<semaphore release>")
 

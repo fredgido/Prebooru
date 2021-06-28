@@ -14,6 +14,7 @@ from .illust_url import IllustUrl
 from .illust import Illust
 from .artist_url import ArtistUrl
 from .artist import Artist
+from .booru import Booru
 
 # LOCAL DATA
 
@@ -22,7 +23,6 @@ from .post import Post
 from .upload_url import UploadUrl
 from .upload import Upload
 from .notation import Notation
-#from .pool import Pool, PoolPosts
 from .pool import Pool
 from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation
 from .subscription import Subscription

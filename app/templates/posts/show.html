@@ -12,7 +12,7 @@
             <section id="tag-list"><!-- placeholder for user tags --></section>
             <section id="artist-info">
                 <h3>Artists</h3>
-                <ul>
+                <ul style="margin-left: 1em;">
                     {% for artist in post.artists %}
                         {% set outer_loop = loop %}
                         <li><strong>ID:</strong> <a href="{{url_for('artist.show_html', id=artist.id)}}">artist #{{ artist.id }}</a></li>
@@ -33,7 +33,7 @@
             </section>
             <section id="illust-info" style="margin-top: 1em;">
                 <h3>Illusts</h3>
-                <ul>
+                <ul style="margin-left: 1em;">
                     {% for illust in post.illusts %}
                         {% set outer_loop = loop %}
                         <li><strong>ID:</strong> <a href="{{url_for('illust.show_html', id=illust.id)}}">illust #{{ illust.id }}</a></li>
@@ -53,7 +53,7 @@
             </section>
             <section id="post-info" style="margin-top: 1em;">
                 <h2>Info</h2>
-                <ul>
+                <ul style="margin-left: 1em;">
                     <li><strong>ID:</strong> post #{{ post.id }}</li>
                     <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(post.created) }}</li>
                     <li><strong>Size:</strong> {{ post.size }} bytes</li>
@@ -72,7 +72,7 @@
             </section>
             <section id="pool-list" style="margin-top: 1em;">
                 <h2>Pools</h2>
-                <ul>
+                <ul style="margin-left: 1em;">
                     {% for pool in post.pools %}
                         <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
                     {% else %}
@@ -82,7 +82,7 @@
             </section>
             <section id="notations-list" style="margin-top: 1em;">
                 <h2>Notations</h2>
-                <ul>
+                <ul style="margin-left: 1em;">
                     {% for notation in post.notations %}
                         <li><a href="{{ url_for('notation.show_html', id=notation.id) }}">notation #{{ notation.id }}</a>
                             <ul style="margin-left: 1.5em;">
@@ -99,7 +99,7 @@
             {% if helpers.base.HasItems(post.errors) %}
                 <section id="error-list" style="margin-top: 1em;">
                     <h2>Errors</h2>
-                    <ul>
+                    <ul style="margin-left: 1em;">
                     {% for error in post.errors %}
                         <li><strong>Module:</strong> {{ error.module }}</li>
                         <li><strong>Message:</strong> {{ error.message }}</li>
@@ -112,7 +112,7 @@
             {% endif %}
             <section id="post-image-search" style="margin-top: 1em;">
                 <h2>Image search</h2>
-                <ul>
+                <ul style="margin-left: 1em;">
                     <li><strong>Danbooru:</strong> {{ helpers.post.DanbooruSearchLinks(post) | safe }}</li>
                     <li><strong>Sauce:</strong> {{ helpers.post.SauceNAOSearchLinks(post) | safe }}</li>
                     <li><strong>Ascii2D:</strong> {{ helpers.post.Ascii2DSearchLinks(post) | safe }}</li>
@@ -121,14 +121,13 @@
             </section>
             <section id="post-image-search" style="margin-top: 1em;">
                 <h2>Upload to Danbooru</h2>
-                <ul>
+                <ul style="margin-left: 1em;">
                     <li><strong>Post bookmarklet:</strong> {{ helpers.post.DanbooruPostBookmarkletLinks(post) | safe }}</li>
-                    <li><strong>Batch bookmarklet:</strong> {{ helpers.post.DanboooruBatchBookmarkletLinks(post) | safe }}</li>
                 </ul>
             </section>
             <section id="post-options" style="margin-top: 1em;">
                 <h2>Options</h2>
-                <ul>
+                <ul style="margin-left: 1em;">
                     <li><a href="{{ post.file_url }}">Original file</a></li>
                     <li><a href="javascript:prompt('Copy file link:', '{{ post.file_path.encode('unicode-escape').decode() }}');false;">File link</a></li>
                 </ul>

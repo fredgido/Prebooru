@@ -1,7 +1,7 @@
 # APP\CONTROLLERS\ARTISTS.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort, redirect, url_for
+from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
 from sqlalchemy.orm import selectinload, lazyload
 
 # ## LOCAL IMPORTS
@@ -47,6 +47,7 @@ def update_html(id):
     if artist is None:
         abort(404)
     BASE_SOURCE.UpdateArtist(artist)
+    flash("Artist updated.")
     return redirect(url_for('artist.show_html', id=id))
 
 @bp.route('/artists.json', methods=['GET'])

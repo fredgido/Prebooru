@@ -7,3 +7,4 @@ from . import uploads_controller as upload
 from . import notations_controller as notation
 
 from . import proxy_controller as proxy
+from . import similarity_controller as similarity

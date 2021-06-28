@@ -356,11 +356,10 @@ def GetMediaUrl(illust_url):
 
 def GetPostUrl(illust):
     tweet_id = illust.site_illust_id
-    screen_name = illust.artist.current_site_account
-    if screen_name is None:
+    if not HasArtistUrls(illust.artist):
         return GetIllustUrl(tweet_id)
-    else:
-        return "https://twitter.com/%s/status/%d" % (screen_name, tweet_id)
+    screen_name = ArtistScreenName(illust.artist)
+    return "https://twitter.com/%s/status/%d" % (screen_name, tweet_id)
 
 def GetIllustUrl(site_illust_id):
     return "https://twitter.com/i/web/status/%d" % site_illust_id
@@ -380,10 +379,27 @@ def NormalizeImageURL(image_url):
 def HasArtistUrls(artist):
     return (artist.current_site_account is not None) or (len(artist.site_accounts) == 1)
 
+def ArtistScreenName(artist):
+    return artist.current_site_account if artist.current_site_account is not None else artist.site_accounts[0].name
+
+def ArtistProfileUrls(artist):
+    profile_urls = ['https://twitter.com/intent/user?user_id=%d' % artist.site_artist_id]
+    for site_account in artist.site_accounts:
+        profile_urls += ['https://twitter.com/%s' % site_account.name]
+    return profile_urls
+
+def IllustCommentaries(illust):
+    commentary = illust.descriptions[0].body # Twitter descriptions are unchangable.
+    for tag in illust.tags:
+        hashtag = '#' + tag.name
+        hashtag_link = r'"%s":[https://twitter.com/hashtag/%s]' % (hashtag, tag.name)
+        commentary = re.sub(r'%s(?=$|\s)' % hashtag, hashtag_link, commentary)
+    return [commentary]
+
 def ArtistMainUrl(artist):
     if not HasArtistUrls(artist):
         return ""
-    screen_name = artist.current_site_account if artist.current_site_account is not None else artist.site_accounts[0].name
+    screen_name = ArtistScreenName(artist)
     return 'https://twitter.com/%s' % screen_name
 
 def ArtistMediaUrl(artist):
@@ -556,6 +572,7 @@ def UpdateArtist(artist, explicit=False):
         if DBLOCAL.IsError(twuser):
             print("Error getting artist data!")
             artist.active = False
+            artist.updated = GetCurrentTime()
             DBLOCAL.SaveData()
             return
         DB.CacheLookupData([twuser], 'artist')
@@ -568,6 +585,7 @@ def UpdateIllust(illust, explicit=False, timeline=False):
         if DBLOCAL.IsError(tweet):
             print("Error getting illust data!")
             illust.active = False
+            illust.updated = GetCurrentTime()
             DBLOCAL.SaveData()
             return
         DB.CacheLookupData([tweet], 'illust')

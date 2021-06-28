@@ -3,7 +3,7 @@
 # ## PYTHON IMPORTS
 import os
 import time
-from flask import request
+from flask import request, abort, render_template
 import atexit
 import random
 import threading
@@ -19,12 +19,16 @@ from apscheduler.schedulers.background import BackgroundScheduler
 # ## LOCAL IMPORTS
 from app import app as APP
 from app import session as SESSION
+import app.models
 from app.models import Post
+from app.cache import MediaFile
 from app.similarity.similarity_result import SimilarityResult, HASH_SIZE
 from app.similarity.similarity_result3 import SimilarityResult3
 from app.similarity.similarity_pool import SimilarityPool
-from app.logical.utility import GetCurrentTime
+from app.logical.file import PutGetRaw, CreateDirectory
+from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow
 from app.logical.network import GetHTTPFile
+from app.storage import CACHE_DATA_DIRECTORY, CACHE_NETWORK_URLPATH
 import app.sources.twitter
 from app.sources import base as BASE_SOURCE
 from argparse import ArgumentParser
@@ -39,26 +43,40 @@ SEM = threading.Semaphore()
 @APP.route('/check_similarity.json', methods=['GET'])
 def check_similarity():
     request_urls = request.args.getlist('urls[]')
-    print("check_similarity", request_urls)
+    include_posts = request.args.get('include_posts', type=bool, default=False)
+    print("check_similarity", request_urls, include_posts)
     if request_urls is None:
         return {'error': True, 'message': "Must include url."}
     similar_results = []
     for image_url in request_urls:
         source = BASE_SOURCE.GetImageSource(image_url)
-        download_url = source.SmallImageUrl(image_url) if source is not None else image_url
-        print("Download url:", download_url)
-        starttime = time.time()
-        buffer = GetHTTPFile(download_url, headers=app.sources.twitter.IMAGE_HEADERS)
-        print("Network time:", time.time() - starttime)
-        if isinstance(buffer, Exception):
-            return {'error': True, 'message': "Exception processing download: %s" % repr(buffer)}
-        if isinstance(buffer, requests.Response):
-            return {'error': True, 'message': "HTTP %d - %s" % (buffer.status_code, buffer.reason)}
-        try:
-            file_imgdata = BytesIO(buffer)
-            image = Image.open(file_imgdata)
-        except Exception as e:
-            return {'error': True, 'message': "Error processing image data: %s" % repr(e)}
+        download_url = source.SmallImageUrl(image_url)
+        media = MediaFile.query.filter_by(media_url=download_url).first()
+        if media is None:
+            print("Download url:", download_url)
+            starttime = time.time()
+            print(image_url, download_url, source.IMAGE_HEADERS)
+            buffer = GetHTTPFile(download_url, headers=source.IMAGE_HEADERS)
+            print("Network time:", time.time() - starttime)
+            if isinstance(buffer, Exception):
+                return {'error': True, 'message': "Exception processing download: %s" % repr(buffer)}
+            if isinstance(buffer, requests.Response):
+                return {'error': True, 'message': "HTTP %d - %s" % (buffer.status_code, buffer.reason)}
+            try:
+                file_imgdata = BytesIO(buffer)
+                image = Image.open(file_imgdata)
+            except Exception as e:
+                return {'error': True, 'message': "Error processing image data: %s" % repr(e)}
+            md5 = GetBufferChecksum(buffer)
+            extension = source.GetMediaExtension(download_url)
+            media = MediaFile(md5=md5, file_ext=extension, media_url=download_url, expires=DaysFromNow(1))
+            CreateDirectory(CACHE_DATA_DIRECTORY)
+            PutGetRaw(media.file_path, 'wb', buffer)
+            SESSION.add(media)
+            SESSION.commit()
+        else:
+            print("Cache Hit:", media)
+            image = Image.open(media.file_path)
         image = image.copy().convert("RGB")
         image_hash = str(imagehash.whash(image, hash_size=HASH_SIZE))
         print("Image hash:", image_hash)
@@ -69,14 +87,15 @@ def check_similarity():
         start_time = time.time()
         score_results = CheckSimilarMatchScores(smatches, image_hash, 90.0)
         end_time = time.time()
-        post_ids = [result['post_id'] for result in score_results]
-        posts = app.models.Post.query.filter(app.models.Post.id.in_(post_ids)).all()
-        for result in score_results:
-            post = next(filter(lambda x: x.id == result['post_id'], posts), None)
-            result['post'] = post.to_json() if post is not None else post
-        normalized_url = source.NormalizedImageUrl(image_url) if source is not None else image_url
+        if include_posts:
+            post_ids = [result['post_id'] for result in score_results]
+            posts = app.models.Post.query.filter(app.models.Post.id.in_(post_ids)).all()
+            for result in score_results:
+                post = next(filter(lambda x: x.id == result['post_id'], posts), None)
+                result['post'] = post.to_json() if post is not None else post
+        normalized_url = source.NormalizedImageUrl(image_url)
         print("url:", normalized_url, "hash:", image_hash, "numfound:", len(smatches), "time:", end_time - start_time)
-        similar_results.append({'image_url': normalized_url, 'post_results': score_results})
+        similar_results.append({'image_url': normalized_url, 'post_results': score_results, 'cache': media.file_url})
     return {'error': False, 'similar_results': similar_results}
 
 @APP.route('/check_posts', methods=['GET'])
