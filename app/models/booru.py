@@ -58,15 +58,11 @@ class Booru(JsonModel):
     def recent_posts(self):
         if not hasattr(self, '_recent_posts'):
             q = Post.query
-            q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).join(Booru).filter(Booru.id == self.id)
+            q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).join(Booru, Artist.boorus).filter(Booru.id == self.id)
             q = q.order_by(Post.id.desc())
             q = q.limit(10)
             self._recent_posts = q.all()
         return self._recent_posts
-
-    @property
-    def show_url(self):
-        return url_for("booru.show_html", id=self.id)
 
     def delete(self):
         self.names.clear()

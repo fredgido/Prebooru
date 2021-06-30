@@ -9,7 +9,7 @@ from wtforms.meta import DefaultMeta
 
 # ## LOCAL IMPORTS
 
-from app.logical.searchable import AllAttributeFilters 
+from ..logical.searchable import AllAttributeFilters 
 
 # ## GLOBAL VARIABLES
 

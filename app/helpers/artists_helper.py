@@ -40,3 +40,6 @@ def ArtistLinks(artist):
         '<a href="%s">Media</a>' % MediaUrl(artist),
         '<a href="%s">Likes</a>' % LikesUrl(artist),
         ])
+
+def WebpageLink(url):
+    return '<a href="%s">%s</a>' % (url, url)

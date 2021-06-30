@@ -249,7 +249,7 @@ def LoadGuestToken():
 
 
 def SaveGuestToken(guest_token):
-    PutGetJSON(TOKEN_FILE, 'w', {"token": guest_token})
+    PutGetJSON(TOKEN_FILE, 'w', {"token": str(guest_token)})
 
 # Illust
 

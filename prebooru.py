@@ -1,4 +1,6 @@
 # PREBOORU.PY
+
+# ## PYTHON IMPORTS
 import colorama
 
 # ## LOCAL IMPORTS
@@ -13,6 +15,7 @@ colorama.init(autoreset=True)
 
 app.register_blueprint(controller.illust.bp)
 app.register_blueprint(controller.artist.bp)
+app.register_blueprint(controller.booru.bp)
 app.register_blueprint(controller.upload.bp)
 app.register_blueprint(controller.post.bp)
 app.register_blueprint(controller.pool.bp)
@@ -24,7 +27,7 @@ app.register_blueprint(controller.similarity.bp)
 # ##EXECUTION START
 
 if __name__ == '__main__':
-    parser = ArgumentParser(description="Sever to process network requests.")
+    parser = ArgumentParser(description="Server to process network requests.")
     parser.add_argument('--extension', required=False, default=False, action="store_true", help="Enable Chrome extension.")
     args = parser.parse_args()
     if args.extension:

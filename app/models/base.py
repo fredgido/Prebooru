@@ -3,6 +3,7 @@
 # ##PYTHON IMPORTS
 import datetime
 from typing import List, _GenericAlias
+from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import db
@@ -40,6 +41,10 @@ class JsonModel(db.Model):
     @property
     def shortlink(self):
         return "%s #%d" % (self.__table__.name, self.id)
+
+    @property
+    def show_url(self):
+        return url_for(self.__table__.name + ".show_html", id=self.id)
 
     def to_json(self):
         fields = self.__dataclass_fields__

@@ -1,5 +1,9 @@
 {% extends 'layouts/base.html' %}
 
+{% block title %}Artists{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.render_template("artists/_secondary_links.html", artist=artist) | safe }}{% endblock %}
+
 {% block content %}
     <table id="artists-table" class="striped" width="100%">
         <thead>

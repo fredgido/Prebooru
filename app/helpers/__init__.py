@@ -5,3 +5,4 @@ from . import illusts_helper as illust
 from . import notations_helper as notation
 from . import pools_helper as pool
 from . import similarity_helper as similarity
+from . import boorus_helper as booru

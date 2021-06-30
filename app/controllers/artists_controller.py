@@ -60,7 +60,7 @@ def index_json():
 def index_html():
     q = index()
     artists = Paginate(q, request)
-    return render_template("artists/index.html", artists=artists)
+    return render_template("artists/index.html", artists=artists, artist=None)
 
 
 def index():
