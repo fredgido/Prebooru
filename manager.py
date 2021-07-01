@@ -21,46 +21,46 @@ def init_db(make_new):
         print("Deleting database!")
         os.remove(DB_PATH)
 
-    from app import db
+    from app import DB
     from app.models import NONCE  # noqa: F401
     from app.cache import NONCE  # noqa: F401
 
     #NEED TO POTENTIALLY SET THE ALEMBIC VERSION AS WELL AFTER CREATING THE TABLES!!!
-    class AlembicVersionMain(db.Model):
+    class AlembicVersionMain(DB.Model):
         __tablename__ = 'alembic_version'
-        version_num = db.Column(db.String(32), nullable=False, primary_key=True)
-    class AlembicVersionCache(db.Model):
+        version_num = DB.Column(DB.String(32), nullable=False, primary_key=True)
+    class AlembicVersionCache(DB.Model):
         __tablename__ = 'alembic_version'
         __bind_key__ = 'cache'
-        version_num = db.Column(db.String(32), nullable=False, primary_key=True)
-    class AlembicVersionSimilarity(db.Model):
+        version_num = DB.Column(DB.String(32), nullable=False, primary_key=True)
+    class AlembicVersionSimilarity(DB.Model):
         __tablename__ = 'alembic_version'
         __bind_key__ = 'similarity'
-        version_num = db.Column(db.String(32), nullable=False, primary_key=True)
+        version_num = DB.Column(DB.String(32), nullable=False, primary_key=True)
 
     print("Creating tables")
-    db.drop_all()
-    db.create_all()
+    DB.drop_all()
+    DB.create_all()
 
 
 def migrate_db():
-    from app import app, db
+    from app import PREBOORU_APP, DB
     from app.models import NONCE  # noqa: F401
     from app.cache import NONCE  # noqa: F401
     from app.similarity import NONCE #noqa: F401
 
-    migrate = Migrate(app, db, render_as_batch=True)  # noqa: F841
-    manager = Manager(app)
+    migrate = Migrate(PREBOORU_APP, DB, render_as_batch=True)  # noqa: F841
+    manager = Manager(PREBOORU_APP)
     manager.add_command('db', MigrateCommand)
     manager.run()
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Stuff", formatter_class=RawTextHelpFormatter)
-    parser.add_argument('operation', choices=['db', 'init'], help="db: runs the migration manager\ninit: drops and recreates the tables")
+    parser.add_argument('operation', choices=['db', 'init'], help="DB: runs the migration manager\ninit: drops and recreates the tables")
     parser.add_argument('--new', required=False, action="store_true", default=False, help="Start with a new database file.")
     args, unknown = parser.parse_known_args()
     if args.operation == 'init':
         init_db(args.new)
-    else:
+    elif args.operation == 'db':
         migrate_db()

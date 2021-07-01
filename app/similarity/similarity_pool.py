@@ -1,31 +1,31 @@
-from .. import db
+from .. import DB
 from .similarity_pool_element import SimilarityPoolElement
 
 
-class SimilarityPool(db.Model):
+class SimilarityPool(DB.Model):
     __bind_key__ = 'similarity'
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, nullable=False)
-    total_results = db.Column(db.Integer, nullable=False)
-    calculation_time = db.Column(db.Float, nullable=False)
-    elements = db.relationship(SimilarityPoolElement, lazy=True, backref=db.backref('pool', lazy=True), cascade="all, delete")
-    created = db.Column(db.DateTime(timezone=False), nullable=False)
-    updated = db.Column(db.DateTime(timezone=False), nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    post_id = DB.Column(DB.Integer, nullable=False)
+    total_results = DB.Column(DB.Integer, nullable=False)
+    calculation_time = DB.Column(DB.Float, nullable=False)
+    elements = DB.relationship(SimilarityPoolElement, lazy=True, backref=DB.backref('pool', lazy=True), cascade="all, delete")
+    created = DB.Column(DB.DateTime(timezone=False), nullable=False)
+    updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
     
     def append(self, post_id, score):
         self._create_or_update_element(post_id, score)
-        db.session.commit()
+        DB.session.commit()
     
     def update(self, results):
         for result in results:
             self._create_or_update_element(**result)
-        db.session.commit()
+        DB.session.commit()
     
     def _create_or_update_element(self, post_id, score):
         element = next(filter(lambda x: x.post_id == post_id, self.elements), None)
         if element is None:
             element = SimilarityPoolElement(pool_id=self.id, post_id=post_id, score=score)
-            db.session.add(element)
+            DB.session.add(element)
         else:
             element.score = score
         return element

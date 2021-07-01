@@ -1,8 +1,8 @@
-from .. import db
+from .. import DB
 
-class SimilarityPoolElement(db.Model):
+class SimilarityPoolElement(DB.Model):
     __bind_key__ = 'similarity'
-    id = db.Column(db.Integer, primary_key=True)
-    pool_id = db.Column(db.Integer, db.ForeignKey('similarity_pool.id'), nullable=False)
-    post_id = db.Column(db.Integer, nullable=False)
-    score = db.Column(db.Float, nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    pool_id = DB.Column(DB.Integer, DB.ForeignKey('similarity_pool.id'), nullable=False)
+    post_id = DB.Column(DB.Integer, nullable=False)
+    score = DB.Column(DB.Float, nullable=False)

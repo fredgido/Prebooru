@@ -5,7 +5,7 @@ import datetime
 from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from .base import JsonModel
 
 
@@ -18,10 +18,10 @@ class Error(JsonModel):
     module: str
     message: str
     created: datetime.datetime.isoformat
-    id = db.Column(db.Integer, primary_key=True)
-    module = db.Column(db.String(255), nullable=False)
-    message = db.Column(db.UnicodeText, nullable=False)
-    created = db.Column(db.DateTime(timezone=False), nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    module = DB.Column(DB.String(255), nullable=False)
+    message = DB.Column(DB.UnicodeText, nullable=False)
+    created = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
     @staticmethod
     def searchable_attributes():

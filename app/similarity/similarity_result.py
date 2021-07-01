@@ -1,4 +1,4 @@
-from .. import db
+from .. import DB
 
 # ###Constants####
 
@@ -26,7 +26,7 @@ def HexChunk(hashstr, index):
 
 
 ## RENAME THIS TO SimilarityData
-class SimilarityResult(db.Model):
+class SimilarityResult(DB.Model):
     __bind_key__ = 'similarity'
     
     @property
@@ -41,14 +41,14 @@ class SimilarityResult(db.Model):
         for i in range(0, NUM_CHUNKS):
             setattr(self, ChunkKey(i), HexChunk(image_hash, i))
     
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, nullable=False)
-    ratio = db.Column(db.Float, nullable=True)
+    id = DB.Column(DB.Integer, primary_key=True)
+    post_id = DB.Column(DB.Integer, nullable=False)
+    ratio = DB.Column(DB.Float, nullable=True)
     
     chunk_columns = {}
     for i in range(0, NUM_CHUNKS):
         key = ChunkKey(i)
-        chunk_columns[key] = db.Column(db.String(2), nullable=False)
+        chunk_columns[key] = DB.Column(DB.String(2), nullable=False)
     locals().update(chunk_columns)
     del chunk_columns, i, key
     

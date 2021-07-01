@@ -2,7 +2,7 @@
 
 # ##LOCAL IMPORTS
 from ..logical.utility import GetCurrentTime
-from .. import session as SESSION
+from .. import SESSION
 from ..models import Error, Post, UploadUrl, Upload, Artist
 
 

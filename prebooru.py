@@ -1,27 +1,27 @@
 # PREBOORU.PY
 
 # ## PYTHON IMPORTS
+from argparse import ArgumentParser
 import colorama
 
 # ## LOCAL IMPORTS
-from app import app
+from app import PREBOORU_APP
 from app import controllers as controller
-from argparse import ArgumentParser
 
 
 # ### INITIALIZATION
 
 colorama.init(autoreset=True)
 
-app.register_blueprint(controller.illust.bp)
-app.register_blueprint(controller.artist.bp)
-app.register_blueprint(controller.booru.bp)
-app.register_blueprint(controller.upload.bp)
-app.register_blueprint(controller.post.bp)
-app.register_blueprint(controller.pool.bp)
-app.register_blueprint(controller.notation.bp)
-app.register_blueprint(controller.proxy.bp)
-app.register_blueprint(controller.similarity.bp)
+PREBOORU_APP.register_blueprint(controller.illust.bp)
+PREBOORU_APP.register_blueprint(controller.artist.bp)
+PREBOORU_APP.register_blueprint(controller.booru.bp)
+PREBOORU_APP.register_blueprint(controller.upload.bp)
+PREBOORU_APP.register_blueprint(controller.post.bp)
+PREBOORU_APP.register_blueprint(controller.pool.bp)
+PREBOORU_APP.register_blueprint(controller.notation.bp)
+PREBOORU_APP.register_blueprint(controller.proxy.bp)
+PREBOORU_APP.register_blueprint(controller.similarity.bp)
 
 
 # ##EXECUTION START
@@ -32,5 +32,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.extension:
         from flask_flaskwork import Flaskwork
-        Flaskwork(app)
-    app.run(threaded=True)
+        Flaskwork(PREBOORU_APP)
+    PREBOORU_APP.run(threaded=True)

@@ -9,7 +9,7 @@ from sqlalchemy.orm import lazyload, selectin_polymorphic
 from flask import url_for
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from .base import JsonModel, DateTimeOrNull
 from .post import Post
 from .illust import Illust
@@ -19,23 +19,6 @@ from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation, pool_
 
 # ##GLOBAL VARIABLES
 
-"""
-class PoolPosts(JsonModel):
-    pool_id = db.Column(db.Integer, db.ForeignKey('pool.id'), primary_key=True)
-    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), primary_key=True)
-    position = db.Column(db.Integer)
-    post = db.relationship(Post, backref='_pools')
-
-@dataclass
-class Pool(JsonModel):
-    id: int
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    _posts = db.relationship(PoolPosts, order_by=PoolPosts.position, backref='pool', collection_class=ordering_list('position'))
-    posts = association_proxy('_posts', 'post', creator=lambda p: PoolPosts(post=p))
-"""
-
-###ADD UPDATED/CREATED TO POOLS
 
 @dataclass
 class Pool(JsonModel):
@@ -44,12 +27,12 @@ class Pool(JsonModel):
     element_count: int
     created: DateTimeOrNull
     updated: DateTimeOrNull
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255), nullable=False)
-    _elements = db.relationship(PoolElement, backref='pool', order_by=PoolElement.position, collection_class=ordering_list('position'), cascade='all,delete', lazy=True)
+    id = DB.Column(DB.Integer, primary_key=True)
+    name = DB.Column(DB.String(255), nullable=False)
+    _elements = DB.relationship(PoolElement, backref='pool', order_by=PoolElement.position, collection_class=ordering_list('position'), cascade='all,delete', lazy=True)
     elements = association_proxy('_elements', 'item', creator=lambda item: pool_element_create(item))
-    created = db.Column(db.DateTime(timezone=False), nullable=True)
-    updated = db.Column(db.DateTime(timezone=False), nullable=True)
+    created = DB.Column(DB.DateTime(timezone=False), nullable=True)
+    updated = DB.Column(DB.DateTime(timezone=False), nullable=True)
     
     @property
     def element_count(self):

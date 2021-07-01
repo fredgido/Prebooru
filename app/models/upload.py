@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from flask import url_for
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from ..logical.utility import UniqueObjects
 from .base import JsonModel, IntOrNone, StrOrNone
 from .upload_url import UploadUrl
@@ -19,20 +19,20 @@ from .illust_url import IllustUrl
 
 # Many-to-many tables
 
-UploadUrls = db.Table(
+UploadUrls = DB.Table(
     'upload_urls',
-    db.Column('upload_id', db.Integer, db.ForeignKey('upload.id'), primary_key=True),
-    db.Column('upload_url_id', db.Integer, db.ForeignKey('upload_url.id'), primary_key=True),
+    DB.Column('upload_id', DB.Integer, DB.ForeignKey('upload.id'), primary_key=True),
+    DB.Column('upload_url_id', DB.Integer, DB.ForeignKey('upload_url.id'), primary_key=True),
 )
-UploadErrors = db.Table(
+UploadErrors = DB.Table(
     'upload_errors',
-    db.Column('upload_id', db.Integer, db.ForeignKey('upload.id'), primary_key=True),
-    db.Column('error_id', db.Integer, db.ForeignKey('error.id'), primary_key=True),
+    DB.Column('upload_id', DB.Integer, DB.ForeignKey('upload.id'), primary_key=True),
+    DB.Column('error_id', DB.Integer, DB.ForeignKey('error.id'), primary_key=True),
 )
-UploadPosts = db.Table(
+UploadPosts = DB.Table(
     'upload_posts',
-    db.Column('upload_id', db.Integer, db.ForeignKey('upload.id'), primary_key=True),
-    db.Column('post_id', db.Integer, db.ForeignKey('post.id'), primary_key=True),
+    DB.Column('upload_id', DB.Integer, DB.ForeignKey('upload.id'), primary_key=True),
+    DB.Column('post_id', DB.Integer, DB.ForeignKey('post.id'), primary_key=True),
 )
 
 
@@ -58,22 +58,22 @@ class Upload(JsonModel):
     errors: List
     created: datetime.datetime.isoformat
 
-    id = db.Column(db.Integer, primary_key=True)
-    uploader_id = db.Column(db.Integer, nullable=False)
-    request_url = db.Column(db.String(255), nullable=True)
-    referrer_url = db.Column(db.String(255), nullable=True)
-    successes = db.Column(db.Integer, nullable=False)
-    failures = db.Column(db.Integer, nullable=False)
-    type = db.Column(db.String(255), nullable=False)
-    status = db.Column(db.String(255), nullable=False)
-    media_filepath = db.Column(db.String(255), nullable=True)
-    sample_filepath = db.Column(db.String(255), nullable=True)
-    illust_url_id = db.Column(db.Integer, db.ForeignKey('illust_url.id'), nullable=True)
-    subscription_id = db.Column(db.Integer, db.ForeignKey('subscription.id'), nullable=True)
-    image_urls = db.relationship(UploadUrl, secondary=UploadUrls, lazy='subquery', uselist=True, backref=db.backref('upload', lazy=True))
-    posts = db.relationship(Post, secondary=UploadPosts, lazy=True)
-    errors = db.relationship(Error, secondary=UploadErrors, lazy=True)
-    created = db.Column(db.DateTime(timezone=False), nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    uploader_id = DB.Column(DB.Integer, nullable=False)
+    request_url = DB.Column(DB.String(255), nullable=True)
+    referrer_url = DB.Column(DB.String(255), nullable=True)
+    successes = DB.Column(DB.Integer, nullable=False)
+    failures = DB.Column(DB.Integer, nullable=False)
+    type = DB.Column(DB.String(255), nullable=False)
+    status = DB.Column(DB.String(255), nullable=False)
+    media_filepath = DB.Column(DB.String(255), nullable=True)
+    sample_filepath = DB.Column(DB.String(255), nullable=True)
+    illust_url_id = DB.Column(DB.Integer, DB.ForeignKey('illust_url.id'), nullable=True)
+    subscription_id = DB.Column(DB.Integer, DB.ForeignKey('subscription.id'), nullable=True)
+    image_urls = DB.relationship(UploadUrl, secondary=UploadUrls, lazy='subquery', uselist=True, backref=DB.backref('upload', lazy=True))
+    posts = DB.relationship(Post, secondary=UploadPosts, lazy=True)
+    errors = DB.relationship(Error, secondary=UploadErrors, lazy=True)
+    created = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
     @property
     def post_ids(self):

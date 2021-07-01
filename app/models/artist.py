@@ -8,7 +8,7 @@ from flask import url_for
 from sqlalchemy.orm import aliased
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from ..sites import GetSiteDomain
 from .base import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
 from .artist_url import ArtistUrl
@@ -20,22 +20,22 @@ from .illust_url import IllustUrl
 
 # ##GLOBAL VARIABLES
 
-ArtistNames = db.Table(
+ArtistNames = DB.Table(
     'artist_names',
-    db.Column('label_id', db.Integer, db.ForeignKey('label.id'), primary_key=True),
-    db.Column('artist_id', db.Integer, db.ForeignKey('artist.id'), primary_key=True),
+    DB.Column('label_id', DB.Integer, DB.ForeignKey('label.id'), primary_key=True),
+    DB.Column('artist_id', DB.Integer, DB.ForeignKey('artist.id'), primary_key=True),
 )
 
-ArtistSiteAccounts = db.Table(
+ArtistSiteAccounts = DB.Table(
     'artist_site_accounts',
-    db.Column('label_id', db.Integer, db.ForeignKey('label.id'), primary_key=True),
-    db.Column('artist_id', db.Integer, db.ForeignKey('artist.id'), primary_key=True),
+    DB.Column('label_id', DB.Integer, DB.ForeignKey('label.id'), primary_key=True),
+    DB.Column('artist_id', DB.Integer, DB.ForeignKey('artist.id'), primary_key=True),
 )
 
-ArtistProfiles = db.Table(
+ArtistProfiles = DB.Table(
     'artist_profiles',
-    db.Column('description_id', db.Integer, db.ForeignKey('description.id'), primary_key=True),
-    db.Column('artist_id', db.Integer, db.ForeignKey('artist.id'), primary_key=True),
+    DB.Column('description_id', DB.Integer, DB.ForeignKey('description.id'), primary_key=True),
+    DB.Column('artist_id', DB.Integer, DB.ForeignKey('artist.id'), primary_key=True),
 )
 
 
@@ -54,20 +54,20 @@ class Artist(JsonModel):
     requery: DateTimeOrNull
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
-    id = db.Column(db.Integer, primary_key=True)
-    site_id = db.Column(db.Integer, nullable=False)
-    site_artist_id = db.Column(db.Integer, nullable=True)
-    current_site_account = db.Column(db.String(255), nullable=True)
-    site_created = db.Column(db.DateTime(timezone=False), nullable=True)
-    site_accounts = db.relationship(Label, secondary=ArtistSiteAccounts, lazy='subquery', backref=db.backref('account_artists', lazy=True))
-    names = db.relationship(Label, secondary=ArtistNames, lazy='subquery', backref=db.backref('name_artists', lazy=True))
-    profiles = db.relationship(Description, secondary=ArtistProfiles, lazy='subquery', backref=db.backref('artists', lazy=True))
-    illusts = db.relationship(Illust, lazy=True, backref=db.backref('artist', lazy=True), cascade="all, delete")
-    webpages = db.relationship(ArtistUrl, backref='artist', lazy=True, cascade="all, delete")
-    active = db.Column(db.Boolean, nullable=True)
-    requery = db.Column(db.DateTime(timezone=False), nullable=True)
-    created = db.Column(db.DateTime(timezone=False), nullable=False)
-    updated = db.Column(db.DateTime(timezone=False), nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    site_id = DB.Column(DB.Integer, nullable=False)
+    site_artist_id = DB.Column(DB.Integer, nullable=True)
+    current_site_account = DB.Column(DB.String(255), nullable=True)
+    site_created = DB.Column(DB.DateTime(timezone=False), nullable=True)
+    site_accounts = DB.relationship(Label, secondary=ArtistSiteAccounts, lazy='subquery', backref=DB.backref('account_artists', lazy=True))
+    names = DB.relationship(Label, secondary=ArtistNames, lazy='subquery', backref=DB.backref('name_artists', lazy=True))
+    profiles = DB.relationship(Description, secondary=ArtistProfiles, lazy='subquery', backref=DB.backref('artists', lazy=True))
+    illusts = DB.relationship(Illust, lazy=True, backref=DB.backref('artist', lazy=True), cascade="all, delete")
+    webpages = DB.relationship(ArtistUrl, backref='artist', lazy=True, cascade="all, delete")
+    active = DB.Column(DB.Boolean, nullable=True)
+    requery = DB.Column(DB.DateTime(timezone=False), nullable=True)
+    created = DB.Column(DB.DateTime(timezone=False), nullable=False)
+    updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
     @property
     def recent_posts(self):
@@ -91,8 +91,8 @@ class Artist(JsonModel):
         self.names.clear()
         self.profiles.clear()
         self.site_accounts.clear()
-        db.session.delete(self)
-        db.session.commit()
+        DB.session.delete(self)
+        DB.session.commit()
 
     _recent_posts = None
 

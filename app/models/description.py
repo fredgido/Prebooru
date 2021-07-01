@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from .base import JsonModel
 
 
@@ -15,8 +15,8 @@ from .base import JsonModel
 class Description(JsonModel):
     id: int
     body: str
-    id = db.Column(db.Integer, primary_key=True)
-    body = db.Column(db.UnicodeText, nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    body = DB.Column(DB.UnicodeText, nullable=False)
 
     @staticmethod
     def searchable_attributes():

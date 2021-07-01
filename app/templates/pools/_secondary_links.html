@@ -1,0 +1,9 @@
+<menu id="secondary-menu">
+    {{ helpers.base.SubnavLinkTo("Listing", 'pool.index_html') }}
+    {{ helpers.base.SubnavLinkTo("New", 'pool.new_html') }}
+    {% if pool != None %}
+        |
+        {{ helpers.base.SubnavLinkTo("Show", 'pool.show_html', id=pool.id) }}
+        {{ helpers.base.SubnavLinkTo("Edit", 'pool.edit_html', id=pool.id) }}
+    {% endif %}
+</menu>

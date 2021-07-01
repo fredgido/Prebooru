@@ -8,7 +8,7 @@ import datetime
 
 # ##LOCAL IMPORTS
 from . import base as BASE
-from .. import session as SESSION
+from .. import SESSION
 from ..models import ArtistUrl, Artist, Tag, IllustUrl, TwitterData, Illust, Label, Description
 from ..cache import ApiData
 from ..logical.utility import GetCurrentTime, DaysFromNow, SafeGet

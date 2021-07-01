@@ -6,7 +6,7 @@ from typing import List, _GenericAlias
 from flask import url_for
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 
 
 # ##FUNCTIONS
@@ -31,7 +31,7 @@ def RemoveKeys(data, keylist):
 # Classes
 
 
-class JsonModel(db.Model):
+class JsonModel(DB.Model):
     __abstract__ = True
 
     @classmethod

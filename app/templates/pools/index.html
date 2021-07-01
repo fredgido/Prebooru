@@ -1,5 +1,9 @@
 {% extends 'layouts/base.html' %}
 
+{% block title %}Pools{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.render_template("pools/_secondary_links.html", pool=pool) | safe }}{% endblock %}
+
 {% block content %}
     <table id="pools-table" class="striped" width="100%">
         <thead>

@@ -9,7 +9,7 @@ from sqlalchemy.orm import aliased
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from ..sites import GetSiteDomain
 from .base import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
 from .artist import Artist
@@ -22,16 +22,16 @@ from .illust_url import IllustUrl
 
 # ##GLOBAL VARIABLES
 
-BooruNames = db.Table(
+BooruNames = DB.Table(
     'booru_names',
-    db.Column('label_id', db.Integer, db.ForeignKey('label.id'), primary_key=True),
-    db.Column('booru_id', db.Integer, db.ForeignKey('booru.id'), primary_key=True),
+    DB.Column('label_id', DB.Integer, DB.ForeignKey('label.id'), primary_key=True),
+    DB.Column('booru_id', DB.Integer, DB.ForeignKey('booru.id'), primary_key=True),
 )
 
-BooruArtists = db.Table(
+BooruArtists = DB.Table(
     'booru_artists',
-    db.Column('artist_id', db.Integer, db.ForeignKey('artist.id'), primary_key=True),
-    db.Column('booru_id', db.Integer, db.ForeignKey('booru.id'), primary_key=True),
+    DB.Column('artist_id', DB.Integer, DB.ForeignKey('artist.id'), primary_key=True),
+    DB.Column('booru_id', DB.Integer, DB.ForeignKey('booru.id'), primary_key=True),
 )
 
 
@@ -44,13 +44,13 @@ class Booru(JsonModel):
     artist_ids: List
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
-    id = db.Column(db.Integer, primary_key=True)
-    danbooru_id = db.Column(db.Integer, nullable=False)
-    current_name = db.Column(db.String(255), nullable=False)
-    names = db.relationship(Label, secondary=BooruNames, lazy=True, backref=db.backref('boorus', lazy=True))
-    artists = db.relationship(Artist, secondary=BooruArtists, backref='boorus', lazy=True)
-    created = db.Column(db.DateTime(timezone=False), nullable=False)
-    updated = db.Column(db.DateTime(timezone=False), nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    danbooru_id = DB.Column(DB.Integer, nullable=False)
+    current_name = DB.Column(DB.String(255), nullable=False)
+    names = DB.relationship(Label, secondary=BooruNames, lazy=True, backref=DB.backref('boorus', lazy=True))
+    artists = DB.relationship(Artist, secondary=BooruArtists, backref='boorus', lazy=True)
+    created = DB.Column(DB.DateTime(timezone=False), nullable=False)
+    updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
     artist_ids = association_proxy('artists', 'id')
 
@@ -67,8 +67,8 @@ class Booru(JsonModel):
     def delete(self):
         self.names.clear()
         self.artists.clear()
-        db.session.delete(self)
-        db.session.commit()
+        DB.session.delete(self)
+        DB.session.commit()
 
     @staticmethod
     def searchable_attributes():

@@ -1,7 +1,10 @@
-from ..sites import GetSiteKey
-from ..sources import DICT as SOURCEDICT
-from .base_helper import SearchUrlFor
-from app.storage import CACHE_DATA_DIRECTORY, CACHE_NETWORK_URLPATH
+# APP\HELPERS\SIMILARITY_CONTROLLER.PY
+
+# ## LOCAL IMPORTS
+from ..storage import CACHE_DATA_DIRECTORY, CACHE_NETWORK_URLPATH
+
+
+# ## FUNCTIONS
 
 def CacheUrl(md5):
     return CACHE_NETWORK_URLPATH + md5 + '.jpg'

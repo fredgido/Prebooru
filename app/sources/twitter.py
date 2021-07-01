@@ -243,9 +243,10 @@ ARTIST_HREFURL = 'https://twitter.com/i/user/%d'
 def LoadGuestToken():
     try:
         data = LoadDefault(TOKEN_FILE, {"token": None})
-        return data['token']
+        print(data, type(data), type(data['token']))
+        return str(data['token'])
     except Exception:
-        return {"token": None}
+        return None
 
 
 def SaveGuestToken(guest_token):
@@ -476,7 +477,7 @@ def AuthenticateGuest(override=False):
         print("Authenticating as guest...")
         data = TwitterRequest('https://api.twitter.com/1.1/guest/activate.json', 'POST')
         #print(data)
-        guest_token = data['body']['guest_token']
+        guest_token = str(data['body']['guest_token'])
         SaveGuestToken(guest_token)
     else:
         print("Loaded guest token from file.")

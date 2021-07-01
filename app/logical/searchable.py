@@ -203,12 +203,3 @@ def ParseCast(value, type):
     if type == 'FLOAT':
         return float(value)
     return value
-
-"""
-Passing True in as one of the arguments is equivalent to ALL in rails
-Passing False in as one of the arguments is equivalent to NONE in rails
-"""
-
-"""
-app.models.Artist.query.filter(app.models.Artist.id.between(1,6)).all()
-"""

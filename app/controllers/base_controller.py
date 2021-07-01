@@ -1,4 +1,4 @@
-# APP\CONTROLLERS\BASE.PY
+# APP\CONTROLLERS\BASE_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
 import re
@@ -8,7 +8,6 @@ from wtforms import TextAreaField, IntegerField, Form
 from wtforms.meta import DefaultMeta
 
 # ## LOCAL IMPORTS
-
 from ..logical.searchable import AllAttributeFilters 
 
 # ## GLOBAL VARIABLES
@@ -21,6 +20,7 @@ class BindNameMeta(DefaultMeta):
 
 class CustomNameForm(Form):
     Meta = BindNameMeta
+
 
 # ## FUNCTIONS
 

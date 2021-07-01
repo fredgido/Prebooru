@@ -1,4 +1,4 @@
-from .. import db
+from .. import DB
 
 # ###Constants####
 
@@ -49,7 +49,7 @@ def GetBoxIndexes4(corner_index):
         box_indexes.append(corner_index + i * 4)
     return box_indexes
 
-class SimilarityResult3(db.Model):
+class SimilarityResult3(DB.Model):
     __bind_key__ = 'similarity'
     
     @property
@@ -64,13 +64,13 @@ class SimilarityResult3(db.Model):
         for i in range(0, NUM_CHUNKS):
             setattr(self, ChunkKey(i), HexChunk(image_hash, i))
     
-    id = db.Column(db.Integer, primary_key=True)
-    post_id = db.Column(db.Integer, nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    post_id = DB.Column(DB.Integer, nullable=False)
     
     chunk_columns = {}
     for i in range(0, NUM_CHUNKS):
         key = ChunkKey(i)
-        chunk_columns[key] = db.Column(db.String(CHARACTERS_PER_CHUNK), nullable=False)
+        chunk_columns[key] = DB.Column(DB.String(CHARACTERS_PER_CHUNK), nullable=False)
     locals().update(chunk_columns)
     del chunk_columns, i, key
     

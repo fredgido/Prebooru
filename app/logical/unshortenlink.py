@@ -4,7 +4,7 @@ import urllib.parse
 from functools import reduce
 from ..cache import Domain
 from ..models import Description, ArtistUrl
-from .. import session as SESSION
+from .. import SESSION
 
 SHORTLINK_DOMAINS = ['t.co', 'bit.ly']
 NONSHORTLINK_DOMAINS = ['pixiv.me']

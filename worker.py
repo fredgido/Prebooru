@@ -11,8 +11,8 @@ import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # ## LOCAL IMPORTS
-from app import database as DB, app as APP
-from app import session as SESSION
+from app import database
+from app import SESSION, PREBOORU_APP
 from app.cache import ApiData, MediaFile
 from app.models import Upload, Illust, Artist
 from app.sources import base as BASE_SOURCE
@@ -29,7 +29,7 @@ SEM = threading.Semaphore()
 
 # ### FUNCTIONS
 
-#print(APP)
+#print(PREBOORU_APP)
 
 @atexit.register
 def Cleanup():
@@ -45,7 +45,7 @@ def ExpireUploads():
         print("Found %d uploads to expire!" % len(expired_uploads))
     for upload in expired_uploads:
         upload.status = "complete"
-        DB.local.CreateAndAppendError('worker.ExpireUploads', "Upload has expired.", upload)
+        database.local.CreateAndAppendError('worker.ExpireUploads', "Upload has expired.", upload)
 
 
 def CheckPendingUploads():
@@ -165,14 +165,14 @@ def ExpungeCacheRecords():
 def CheckGlobals():
     print(ProcessUploads.processing, SEM._value)
 
-@APP.route('/check_uploads')
+@PREBOORU_APP.route('/check_uploads')
 def check_uploads():
     if SEM._value > 0:
         SCHED.add_job(ProcessUploads)
         return "Begin processing uploads..."
     return "Uploads already processing!"
 
-@APP.route('/requery_artist/<int:id>')
+@PREBOORU_APP.route('/requery_artist/<int:id>')
 def requery_artist(id):
     artist = Artist.query.filter_by(id=id).first()
     if artist is None:
@@ -180,7 +180,7 @@ def requery_artist(id):
     SCHED.add_job(ProcessArtist, args=[artist])
     return "Reprocessing artist #%d" % id
 
-@APP.route('/create_artist')
+@PREBOORU_APP.route('/create_artist')
 def create_artist():
     if 'site_id' not in request.values or 'artist_id' not in request.values:
         return "Must include site ID and artist ID."
@@ -192,7 +192,7 @@ def create_artist():
     SCHED.add_job(CreateNewArtist, args=[site_id, artist_id])
     return "Creating new artist..."
 
-@APP.route('/requery_illust')
+@PREBOORU_APP.route('/requery_illust')
 def requery_illust():
     pass
 
@@ -219,7 +219,7 @@ if __name__ == '__main__':
         SCHED.add_job(ProcessUploads)
         SCHED.start()
 
-    APP.run(threaded=True, port=4000)
+    PREBOORU_APP.run(threaded=True, port=4000)
 
 
     #while True:

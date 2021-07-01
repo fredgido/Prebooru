@@ -5,7 +5,7 @@ import datetime
 from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from .base import JsonModel, DateTimeOrNull
 
 
@@ -19,9 +19,9 @@ class Subscription(JsonModel):
     # user_id: int
     requery: DateTimeOrNull
     created: datetime.datetime.isoformat
-    id = db.Column(db.Integer, primary_key=True)
-    artist_id = db.Column(db.Integer, nullable=False)
-    # user_id = db.Column(db.Integer, nullable=True)
-    uploads = db.relationship('Upload', backref='subscription', lazy=True)
-    requery = db.Column(db.DateTime(timezone=False), nullable=True)
-    created = db.Column(db.DateTime(timezone=False), nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    artist_id = DB.Column(DB.Integer, nullable=False)
+    # user_id = DB.Column(DB.Integer, nullable=True)
+    uploads = DB.relationship('Upload', backref='subscription', lazy=True)
+    requery = DB.Column(DB.DateTime(timezone=False), nullable=True)
+    created = DB.Column(DB.DateTime(timezone=False), nullable=False)

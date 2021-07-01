@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from .base import JsonModel, IntOrNone
 
 
@@ -21,14 +21,14 @@ class IllustUrl(JsonModel):
     order: int
     illust_id: int
     active: bool
-    id = db.Column(db.Integer, primary_key=True)
-    site_id = db.Column(db.Integer, nullable=False)
-    url = db.Column(db.String(255), nullable=False)
-    width = db.Column(db.Integer, nullable=True)
-    height = db.Column(db.Integer, nullable=True)
-    order = db.Column(db.Integer, nullable=False)
-    illust_id = db.Column(db.Integer, db.ForeignKey('illust.id'), nullable=False)
-    active = db.Column(db.Boolean, nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    site_id = DB.Column(DB.Integer, nullable=False)
+    url = DB.Column(DB.String(255), nullable=False)
+    width = DB.Column(DB.Integer, nullable=True)
+    height = DB.Column(DB.Integer, nullable=True)
+    order = DB.Column(DB.Integer, nullable=False)
+    illust_id = DB.Column(DB.Integer, DB.ForeignKey('illust.id'), nullable=False)
+    active = DB.Column(DB.Boolean, nullable=False)
 
     @staticmethod
     def searchable_attributes():

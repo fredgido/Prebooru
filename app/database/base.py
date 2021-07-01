@@ -5,7 +5,7 @@ import datetime
 
 # ##LOCAL IMPORTS
 
-from .. import session as SESSION
+from .. import SESSION
 from ..models import ArtistUrl, Artist, Label, Description, Illust, IllustUrl, TwitterData, Tag
 
 # ##FUNCTIONS

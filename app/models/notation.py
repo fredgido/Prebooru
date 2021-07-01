@@ -7,7 +7,7 @@ from flask import url_for
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from .base import JsonModel
 from .pool_element import PoolNotation
 
@@ -20,11 +20,11 @@ class Notation(JsonModel):
     body: str
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
-    id = db.Column(db.Integer, primary_key=True)
-    body = db.Column(db.UnicodeText, nullable=False)
-    created = db.Column(db.DateTime(timezone=False), nullable=False)
-    updated = db.Column(db.DateTime(timezone=False), nullable=False)
-    _pools = db.relationship(PoolNotation, backref='item', lazy=True, cascade='all,delete')
+    id = DB.Column(DB.Integer, primary_key=True)
+    body = DB.Column(DB.UnicodeText, nullable=False)
+    created = DB.Column(DB.DateTime(timezone=False), nullable=False)
+    updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
+    _pools = DB.relationship(PoolNotation, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
 
     @property
@@ -33,12 +33,12 @@ class Notation(JsonModel):
 
     def delete(self):
         pools = self.pools
-        db.session.delete(self)
-        db.session.commit()
+        DB.session.delete(self)
+        DB.session.commit()
         for pool in pools:
             pool._elements.reorder()
         if len(pools) > 0:
-            db.session.commit()
+            DB.session.commit()
 
     @staticmethod
     def searchable_attributes():

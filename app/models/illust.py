@@ -8,7 +8,7 @@ from flask import url_for
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from ..sites import GetSiteDomain, GetSiteKey
 from .base import JsonModel, DateTimeOrNull, RemoveKeys, IntOrNone
 from .tag import Tag
@@ -23,22 +23,22 @@ from .pool_element import PoolIllust
 
 # Many-to-many tables
 
-IllustTags = db.Table(
+IllustTags = DB.Table(
     'illust_tags',
-    db.Column('tag_id', db.Integer, db.ForeignKey('tag.id'), primary_key=True),
-    db.Column('illust_id', db.Integer, db.ForeignKey('illust.id'), primary_key=True),
+    DB.Column('tag_id', DB.Integer, DB.ForeignKey('tag.id'), primary_key=True),
+    DB.Column('illust_id', DB.Integer, DB.ForeignKey('illust.id'), primary_key=True),
 )
 
-IllustDescriptions = db.Table(
+IllustDescriptions = DB.Table(
     'illust_descriptions',
-    db.Column('description_id', db.Integer, db.ForeignKey('description.id'), primary_key=True),
-    db.Column('illust_id', db.Integer, db.ForeignKey('illust.id'), primary_key=True),
+    DB.Column('description_id', DB.Integer, DB.ForeignKey('description.id'), primary_key=True),
+    DB.Column('illust_id', DB.Integer, DB.ForeignKey('illust.id'), primary_key=True),
 )
 
-IllustNotations = db.Table(
+IllustNotations = DB.Table(
     'illust_notations',
-    db.Column('illust_id', db.Integer, db.ForeignKey('illust.id'), primary_key=True),
-    db.Column('notation_id', db.Integer, db.ForeignKey('notation.id'), primary_key=True),
+    DB.Column('illust_id', DB.Integer, DB.ForeignKey('illust.id'), primary_key=True),
+    DB.Column('notation_id', DB.Integer, DB.ForeignKey('notation.id'), primary_key=True),
 )
 
 # Classes
@@ -61,25 +61,25 @@ class Illust(JsonModel):
     requery: DateTimeOrNull
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
-    id = db.Column(db.Integer, primary_key=True)
-    site_id = db.Column(db.Integer, nullable=False)
-    site_illust_id = db.Column(db.Integer, nullable=False)
-    site_created = db.Column(db.DateTime(timezone=False), nullable=True)
-    descriptions = db.relationship(Description, secondary=IllustDescriptions, lazy='subquery', backref=db.backref('illusts', lazy=True))
-    tags = db.relationship(Tag, secondary=IllustTags, lazy='subquery', backref=db.backref('illusts', lazy=True))
-    urls = db.relationship(IllustUrl, backref='illust', lazy=True, cascade="all, delete")
-    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
-    pages = db.Column(db.Integer, nullable=True)
-    score = db.Column(db.Integer, nullable=True)
-    site_data = db.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
-    notations = db.relationship(Notation, secondary=IllustNotations, lazy=True, backref=db.backref('illust', uselist=False, lazy=True), cascade='all,delete')
-    _pools = db.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
+    id = DB.Column(DB.Integer, primary_key=True)
+    site_id = DB.Column(DB.Integer, nullable=False)
+    site_illust_id = DB.Column(DB.Integer, nullable=False)
+    site_created = DB.Column(DB.DateTime(timezone=False), nullable=True)
+    descriptions = DB.relationship(Description, secondary=IllustDescriptions, lazy='subquery', backref=DB.backref('illusts', lazy=True))
+    tags = DB.relationship(Tag, secondary=IllustTags, lazy='subquery', backref=DB.backref('illusts', lazy=True))
+    urls = DB.relationship(IllustUrl, backref='illust', lazy=True, cascade="all, delete")
+    artist_id = DB.Column(DB.Integer, DB.ForeignKey('artist.id'), nullable=False)
+    pages = DB.Column(DB.Integer, nullable=True)
+    score = DB.Column(DB.Integer, nullable=True)
+    site_data = DB.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
+    notations = DB.relationship(Notation, secondary=IllustNotations, lazy=True, backref=DB.backref('illust', uselist=False, lazy=True), cascade='all,delete')
+    _pools = DB.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
     pools = association_proxy('_pools', 'pool')
     posts = association_proxy('urls', 'post')
-    active = db.Column(db.Boolean, nullable=True)
-    requery = db.Column(db.DateTime(timezone=False), nullable=True)
-    created = db.Column(db.DateTime(timezone=False), nullable=False)
-    updated = db.Column(db.DateTime(timezone=False), nullable=False)
+    active = DB.Column(DB.Boolean, nullable=True)
+    requery = DB.Column(DB.DateTime(timezone=False), nullable=True)
+    created = DB.Column(DB.DateTime(timezone=False), nullable=False)
+    updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
     @property
     def site_domain(self):
@@ -122,12 +122,12 @@ class Illust(JsonModel):
 
     def delete(self):
         pools = self.pools
-        db.session.delete(self)
-        db.session.commit()
+        DB.session.delete(self)
+        DB.session.commit()
         for pool in pools:
             pool._elements.reorder()
         if len(pools) > 0:
-            db.session.commit()
+            DB.session.commit()
     
     @staticmethod
     def searchable_attributes():

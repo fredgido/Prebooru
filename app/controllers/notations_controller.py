@@ -119,6 +119,7 @@ def create_html():
         pool=Pool.find(dataparams['pool_id'])
         if pool is None:
             flash('Unable to add to pool; pool #%d does not exist.' % dataparams['pool_id'])
-        pool.elements.append(notation)
-        DBLOCAL.SaveData()
+        else:
+            pool.elements.append(notation)
+            DBLOCAL.SaveData()
     return redirect(url_for('notation.show_html', id=notation.id))

@@ -7,7 +7,7 @@ import datetime
 
 
 # ##LOCAL IMPORTS
-from .. import session as SESSION
+from .. import SESSION
 from ..models import ArtistUrl, Artist, Tag, IllustUrl, PixivData, Illust
 from ..logical.utility import ProcessTimestamp, GetCurrentTime
 from ..sites import Site, GetSiteId, GetSiteDomain

@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
-from .. import db
+from .. import DB
 from .base import JsonModel
 
 
@@ -15,8 +15,8 @@ from .base import JsonModel
 class UploadUrl(JsonModel):
     id: int
     url: str
-    id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.String(255), nullable=False)
+    id = DB.Column(DB.Integer, primary_key=True)
+    url = DB.Column(DB.String(255), nullable=False)
 
     @staticmethod
     def searchable_attributes():

@@ -17,8 +17,7 @@ import threading
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # ## LOCAL IMPORTS
-from app import app as APP
-from app import session as SESSION
+from app import PREBOORU_APP, SESSION
 import app.models
 from app.models import Post
 from app.cache import MediaFile
@@ -40,7 +39,7 @@ SEM = threading.Semaphore()
 
 #### FUNCTIONS
 
-@APP.route('/check_similarity.json', methods=['GET'])
+@PREBOORU_APP.route('/check_similarity.json', methods=['GET'])
 def check_similarity():
     request_urls = request.args.getlist('urls[]')
     include_posts = request.args.get('include_posts', type=bool, default=False)
@@ -98,14 +97,14 @@ def check_similarity():
         similar_results.append({'image_url': normalized_url, 'post_results': score_results, 'cache': media.file_url})
     return {'error': False, 'similar_results': similar_results}
 
-@APP.route('/check_posts', methods=['GET'])
+@PREBOORU_APP.route('/check_posts', methods=['GET'])
 def check_posts():
     if SEM._value > 0:
         SCHED.add_job(ProcessSimilarity)
         return "Begin processing similarity..."
     return "Similarity already processing!"
 
-@APP.route('/generate_similarity.json', methods=['POST'])
+@PREBOORU_APP.route('/generate_similarity.json', methods=['POST'])
 def generate_similarity():
     post_ids = request.args.getlist('post_ids[]', type=int)
     if post_ids is None:
@@ -380,7 +379,7 @@ def StartServer(args):
         #SCHED.add_job(CheckMissingSimilarity, 'interval', minutes=5)
         SCHED.add_job(ProcessSimilarity)
         SCHED.start()
-    APP.run(threaded=True, port=3000)
+    PREBOORU_APP.run(threaded=True, port=3000)
 
 # ##EXECUTION START
 

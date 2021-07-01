@@ -2,6 +2,8 @@
 
 {% block title %}Pool # {{ pool.id }}{% endblock %}
 
+{% block secondary_links %}{{ helpers.base.render_template("pools/_secondary_links.html", pool=pool) | safe }}{% endblock %}
+
 {% block content %}
     <div id="pool-content">
         <div class="heading" style="font-size: 32px">Pool #{{ pool.id }}</div>
