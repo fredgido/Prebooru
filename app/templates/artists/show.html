@@ -5,83 +5,14 @@
 {% block secondary_links %}{{ helpers.base.render_template("artists/_secondary_links.html", artist=artist) | safe }}{% endblock %}
 
 {% block content %}
-    <div id="artist-content">
-        <div class="heading" style="font-size: 32px">Artist #{{ artist.id }}</div>
-        <div style="display: flex; margin-top: 2em;">
-            <div style="width: 20%; margin-left: 1em;">
-                <h5><u>Site</u></h5>
-                <ul style="margin-left: 1.5em;">
-                    <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
-                    <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
-                    <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
-                    <li><strong>Artist ID:</strong> {{ artist.site_artist_id }}</li>
-                    <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
-                    <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.site_created) }}</li>
-                    <li><strong>Active:</strong> {{ artist.active }}</li>
-                </ul>
-            </div>
-            <div style="width: 20%; margin-left: 1em;">
-                <h5><u>Labels</u></h5>
-                <ul style="margin-left: 1.5em;">
-                    <li><strong>Names:</strong>
-                        {% for artist_name in artist.names %}
-                            {% if loop.first %}
-                                <ul style="margin-left: 1.5em;">
-                            {% endif %}
-                                <li>{{ artist_name.name }}</li>
-                            {% if loop.last %}
-                                </ul>
-                            {% endif %}
-                        {% else %}
-                            <em>none</em>
-                        {% endfor %}
-                    </li>
-                    <li><strong>Accounts:</strong>
-                        {% for site_account in artist.site_accounts %}
-                            {% if loop.first %}
-                                <ul style="margin-left: 1.5em;">
-                            {% endif %}
-                                <li>{{ site_account.name }}</li>
-                            {% if loop.last %}
-                                </ul>
-                            {% endif %}
-                        {% else %}
-                            <em>none</em>
-                        {% endfor %}
-                    </li>
-                </ul>
-            </div>
-            <div style="width: 35%; margin-left: 1em; line-height: 90%; word-break: break-word;">
-                <h5><u>Webpages</u></h5>
-                {% for webpage in artist.webpages %}
-                    <div>
-                        <ul style="margin-left: 1.5em; padding-right: 0.5em;">
-                            <li><strong>URL:</strong> {{ helpers.artist.WebpageLink(webpage.url) | safe }}</li>
-                            <li><strong>Active:</strong> {{ webpage.active | tojson }}</li>
-                        </ul>
-                    </div>
-                    {% if not loop.last %}
-                        <br>
-                    {% endif %}
-                {% else %}
-                    <ul><li><em>none</em></li></ul>
-                {% endfor %}
-            </div>
-            <div style="width: 15%; margin-left: 1em;">
-                <h5><u>Timestamps</u></h5>
-                <ul style="margin-left: 1.5em;">
-                    <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(artist.requery) }}</li>
-                    <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.created) }}</li>
-                    <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(artist.updated) }}</li>
-                </ul>
-            </div>
-        </div>
-        <div style="margin-top: 2em; display: flex;">
-            <div style="width: 20%; margin-left: 1em;">
-                <h4><u>Boorus</u></h4>
+    <div class="heading" style="font-size: 32px">Artist #{{ artist.id }}</div>
+    <div id="artist-content" style="margin-top: 2em; display: flex">
+        <div style="width: 20%; border: 2px solid #DDD; background: #F8F8F8; padding: 0.5em;">
+            <section style="margin-bottom: 1em;">
+                <h4>Boorus</h4>
                 <ul style="margin-left: 1.5em;">
                     {% for booru in artist.boorus %}
-                        <li><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a>
+                        <li><span style="font-size: 125%; font-weight: bold;"><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></span>
                             <ul style="margin-left: 1.5em;">
                                 <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
                                 <li><strong>Current name:</strong> <a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a></li>
@@ -91,35 +22,135 @@
                         <li><em>none</em></li>
                     {% endfor %}
                 </ul>
-            </div>
-            <div style="margin-left: 1em; width: 70%;">
-                <h5><u>Profiles</u></h5>
-                <div style="border: 1px solid lightgrey; padding: 5px; max-height: 200px; overflow-y: auto;">
-                    {% for profile in artist.profiles %}
-                        {{ helpers.base.ConvertStrToHTML(profile.body) }}
+            </section>
+            <section style="margin-bottom: 1em;">
+                <h5>Timestamps</h5>
+                <ul style="margin-left: 1.5em;">
+                    <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(artist.requery) }}</li>
+                    <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.created) }}</li>
+                    <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(artist.updated) }}</li>
+                </ul>
+            </section>
+            <section style="margin-bottom: 1em;">
+                <h4>Notations</h4>
+                <div style="max-height: 250px; overflow-y: auto;">
+                    <ul style="margin-left: 1.5em;">
+                        {% for notation in artist.notations %}
+                            <li>
+                                <a href="{{ url_for('notation.show_html', id=notation.id) }}">notation #{{ notation.id }}</a>
+                                <div style="border: 1px solid #EEE;">
+                                    {{ helpers.notation.ConvertToHTML(notation) }}<br><br>
+                                    <span style="font-size: 75%; color: #888;">{{ helpers.base.FormatTimestamps(notation) }}</span>
+                                </div>
+                            </li>
+                        {% else %}
+                            <li><em>none</em></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </section>
+            <section id="artist-options" style="margin-top: 1em;">
+                <h2>Options</h2>
+                <ul style="margin-left: 1em;">
+                    <li><a href="{{ url_for('artist.update_html', id=artist.id) }}">Update from source</a></li>
+                    <li><a href="{{ url_for('artist.query_booru_html', id=artist.id) }}">Query for booru</a></li>
+                    <li><a href="{{ url_for('illust.new_html', artist_id=artist.id) }}">Add illust</a></li>
+                    <li><a href="{{ url_for('notation.new_html', artist_id=artist.id) }}">Add notation</a></li>
+                </ul>
+            </section>
+        </div>
+        <div style="width: 70%">
+            <div style="display: flex;">
+                <div style="width: 25%; margin-left: 1em;">
+                    <h5><u>Site</u></h5>
+                    <ul style="margin-left: 1.5em;">
+                        <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
+                        <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
+                        <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
+                        <li><strong>Artist ID:</strong> {{ artist.site_artist_id }}</li>
+                        <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
+                        <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.site_created) }}</li>
+                        <li><strong>Active:</strong> {{ artist.active }}</li>
+                    </ul>
+                </div>
+                <div style="width: 25%; margin-left: 1em;">
+                    <h5><u>Labels</u></h5>
+                    <ul style="margin-left: 1.5em;">
+                        <li><strong>Names:</strong>
+                            {% for artist_name in artist.names %}
+                                {% if loop.first %}
+                                    <ul style="margin-left: 1.5em;">
+                                {% endif %}
+                                    <li>{{ artist_name.name }}</li>
+                                {% if loop.last %}
+                                    </ul>
+                                {% endif %}
+                            {% else %}
+                                <em>none</em>
+                            {% endfor %}
+                        </li>
+                        <li><strong>Accounts:</strong>
+                            {% for site_account in artist.site_accounts %}
+                                {% if loop.first %}
+                                    <ul style="margin-left: 1.5em;">
+                                {% endif %}
+                                    <li>{{ site_account.name }}</li>
+                                {% if loop.last %}
+                                    </ul>
+                                {% endif %}
+                            {% else %}
+                                <em>none</em>
+                            {% endfor %}
+                        </li>
+                    </ul>
+                </div>
+                <div style="width: 50%; margin-left: 1em; line-height: 90%; word-break: break-word;">
+                    <h5><u>Webpages</u></h5>
+                    {% for webpage in artist.webpages %}
+                        <div>
+                            <ul style="margin-left: 1.5em; padding-right: 0.5em;">
+                                <li><strong>URL:</strong> {{ helpers.artist.WebpageLink(webpage.url) | safe }}</li>
+                                <li><strong>Active:</strong> {{ webpage.active | tojson }}</li>
+                            </ul>
+                        </div>
                         {% if not loop.last %}
-                            <br><hr><br>
+                            <br>
                         {% endif %}
                     {% else %}
-                        There are no profiles!
+                        <ul><li><em>none</em></li></ul>
                     {% endfor %}
                 </div>
             </div>
-        </div>
-        <div style="margin-top: 2em;">
-            <div class="heading">
-                <span style="font-size: 24px;"><u>Posts</u></span>
-                <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; margin-top: 1em;">
-                 {% for post in artist.recent_posts %}
-                    <div style="width: 340px;">
-                        {{ helpers.post.Preview(post) | safe }}
+            <div style="margin-top: 2em;">
+                <div style="margin-left: 1em; width: 90%;">
+                    <h5><u>Profiles</u></h5>
+                    <div style="border: 1px solid #EEE; padding: 0.5em; max-height: 200px; overflow-y: auto;">
+                        {% for profile in artist.profiles %}
+                            {{ helpers.base.ConvertStrToHTML(profile.body) }}
+                            {% if not loop.last %}
+                                <br><hr><br>
+                            {% endif %}
+                        {% else %}
+                            There are no profiles!
+                        {% endfor %}
                     </div>
-                {% else %}
-                    <em>none</em>
-                {% endfor %}
+                </div>
             </div>
+        </div>
+    </div>
+    <div id="artist-posts" style="margin-top: 2em;">
+        <div class="heading">
+            <span style="font-size: 24px;"><u>Posts</u></span>
+            <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; margin-top: 1em;">
+             {% for post in artist.recent_posts %}
+                <div style="width: 340px;">
+                    {{ helpers.post.Preview(post) | safe }}
+                </div>
+            {% else %}
+                <em>none</em>
+            {% endfor %}
         </div>
     </div>
 {% endblock %}

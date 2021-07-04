@@ -29,8 +29,8 @@ IllustTags = DB.Table(
     DB.Column('illust_id', DB.Integer, DB.ForeignKey('illust.id'), primary_key=True),
 )
 
-IllustDescriptions = DB.Table(
-    'illust_descriptions',
+IllustCommentaries = DB.Table(
+    'illust_commentaries',
     DB.Column('description_id', DB.Integer, DB.ForeignKey('description.id'), primary_key=True),
     DB.Column('illust_id', DB.Integer, DB.ForeignKey('illust.id'), primary_key=True),
 )
@@ -50,7 +50,7 @@ class Illust(JsonModel):
     site_id: int
     site_illust_id: int
     site_created: DateTimeOrNull
-    descriptions: List[lambda x: x['body']]
+    commentaries: List[lambda x: x['body']]
     tags: List[lambda x: x['name']]
     urls: List[lambda x: RemoveKeys(x, ['id', 'illust_id'])]
     artist_id: int
@@ -65,7 +65,7 @@ class Illust(JsonModel):
     site_id = DB.Column(DB.Integer, nullable=False)
     site_illust_id = DB.Column(DB.Integer, nullable=False)
     site_created = DB.Column(DB.DateTime(timezone=False), nullable=True)
-    descriptions = DB.relationship(Description, secondary=IllustDescriptions, lazy='subquery', backref=DB.backref('illusts', lazy=True))
+    commentaries = DB.relationship(Description, secondary=IllustCommentaries, lazy='subquery', backref=DB.backref('illusts', lazy=True))
     tags = DB.relationship(Tag, secondary=IllustTags, lazy='subquery', backref=DB.backref('illusts', lazy=True))
     urls = DB.relationship(IllustUrl, backref='illust', lazy=True, cascade="all, delete")
     artist_id = DB.Column(DB.Integer, DB.ForeignKey('artist.id'), nullable=False)
@@ -132,5 +132,5 @@ class Illust(JsonModel):
     @staticmethod
     def searchable_attributes():
         basic_attributes = ['id', 'site_id', 'site_illust_id', 'site_created', 'artist_id', 'pages', 'score', 'active', 'created', 'updated', 'requery']
-        relation_attributes = ['artist', 'urls', 'tags', 'descriptions', 'notations']
+        relation_attributes = ['artist', 'urls', 'tags', 'commentaries', 'notations']
         return basic_attributes + relation_attributes

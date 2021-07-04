@@ -36,8 +36,8 @@ def danbooru_upload():
     params = {
         'tag_string': 'source:' + post_url,
     }
-    if len(illust.descriptions[0].body):
-        params['artist_commentary_title'] = illust.descriptions[0].body
+    if len(illust.commentaries[0].body):
+        params['artist_commentary_title'] = illust.commentaries[0].body
     #return params
     resp = requests.get('https://danbooru.donmai.us/uploads/new', params=params, auth=(DANBOORU_USERNAME, DANBOORU_APIKEY))
     if resp.status_code != 200:
@@ -47,7 +47,7 @@ def danbooru_upload():
     #base['href'] = 'https://danbooru.donmai.us'
     base['href'] = 'http://127.0.0.1:2000/'
     soup.head.insert(0, base)
-    if len(illust.descriptions[0].body):
+    if len(illust.commentaries[0].body):
         try:
             soup.select('.artist-commentary')[0]['style'] = None
         except Exception:

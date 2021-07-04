@@ -9,7 +9,6 @@ from flask import Blueprint, request, render_template, abort, Markup, jsonify, r
 from ..logical.file import PutGetRaw
 from ..sources import base as BASE_SOURCE
 from ..models import Post
-from .base_controller import GetDataParams
 from ..config import DANBOORU_USERNAME, DANBOORU_APIKEY
 
 bp = Blueprint("similarity", __name__)

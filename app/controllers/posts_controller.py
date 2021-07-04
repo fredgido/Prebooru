@@ -11,7 +11,7 @@ from ..logical.file import PutGetRaw
 from ..logical.utility import GetCurrentTime, GetBufferChecksum
 from ..database import local as DBLOCAL
 from ..models import Artist, Illust, IllustUrl, Notation, Post
-from .base_controller import GetSearch, ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, IdFilter, Paginate, DefaultOrder, PageNavigation, GetDataParams
+from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams
 
 
 # ## GLOBAL VARIABLES
@@ -64,12 +64,10 @@ def index_html():
 def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
-    #search = GetSearch(request)
     print("Params:", params, flush=True)
     print("Search:", search, flush=True)
     q = Post.query
     q = q.options(lazyload('*'))
-    #q = IdFilter(q, search)
     q = SearchFilter(q, search)
     """
     if 'artist_id' in search:
@@ -119,7 +117,7 @@ def add_notation(id):
     if post is None:
         return {'error': True, 'message': "Post #%d not found." % id}
     dataparams = GetDataParams(request, 'post')
-    if 'notation' not in dataparams:
+    if 'notation' not in dataparams or len(dataparams['notation'].strip()) == 0:
         return {'error': True, 'message': "Must include notation.", 'params': dataparams}
     current_time = GetCurrentTime()
     note = Notation(body=dataparams['notation'], created=current_time, updated=current_time)

@@ -54,20 +54,7 @@ def DanbooruPostBookmarkletLinks(post):
         post_url = source.GetPostUrl(illust)
         query_string = urllib.parse.urlencode({'url': media_url, 'ref': post_url})
         href_url = 'https://danbooru.donmai.us/uploads/new?' + query_string
-        html = '<a href="%s">illust #%d</a>' % (href_url, illust.id)
+        html = '<a href="%s" target="_blank">illust #%d</a>' % (href_url, illust.id)
         image_links.append(html)
-    image_links.append('<a href="https://danbooru.donmai.us/uploads/new?prebooru_post_id=%d">file</a>' % post.id)
-    return ' | '.join(image_links)
-
-def DanboooruBatchBookmarkletLinks(post):
-    image_links = []
-    for illust in post.illusts:
-        if not illust.active:
-            continue
-        source = BASE_SOURCE._Source(illust.site_id)
-        post_url = source.GetPostUrl(illust)
-        query_string = urllib.parse.urlencode({'url': post_url})
-        href_url = 'https://danbooru.donmai.us/uploads/batch?' + query_string
-        html = '<a href="%s">illust #%d</a>' % (href_url, illust.id)
-        image_links.append(html)
+    image_links.append('<a href="https://danbooru.donmai.us/uploads/new?prebooru_post_id=%d" target="_blank">file</a>' % post.id)
     return ' | '.join(image_links)

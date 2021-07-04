@@ -89,12 +89,12 @@ def SafeGet(input_dict, *keys):
 
 
 def IsTruthy(string):
-    truth_match = re.match(r'^(?:t(?:rue)?|y(?:es)|1)$', string, re.IGNORECASE)
+    truth_match = re.match(r'^(?:t(?:rue)?|y(?:es)?|1)$', string, re.IGNORECASE)
     return truth_match is not None
 
 
 def IsFalsey(string):
-    false_match = re.match(r'^(?:f(?:alse)?|n(?:o)|0)$', string, re.IGNORECASE)
+    false_match = re.match(r'^(?:f(?:alse)?|n(?:o)?|0)$', string, re.IGNORECASE)
     return false_match is not None
 
 
@@ -121,6 +121,27 @@ def UniqueObjects(objs):
             seen.add(obj.id)
             output.append(obj)
     return output
+
+def SetPrecision(number,precision):
+    placenum = 10**precision
+    return (int(number*placenum))/placenum
+
+def TimeAgo(timeval, precision=2):
+    delta = GetCurrentTime() - timeval
+    if delta.days == 0:
+        if delta.seconds < 60:
+            return "%d seconds ago" % delta.seconds
+        if delta.seconds < 3600:
+            return "%t minutes ago" % SetPrecision(delta.seconds / 60, 2)
+        return "%f hours ago" % SetPrecision(delta.seconds / 3600, 2)
+    days = delta.days + (delta.seconds / 86400)
+    if days < 7:
+        return "%f days ago" % SetPrecision(days, 2)
+    if days < 30:
+        return "%f weeks ago" % SetPrecision(days / 7, 2)
+    if days < 365:
+        return "%f months ago" % SetPrecision(days / 30, 2)
+    return "%f years ago" % SetPrecision(days / 365, 2)
 
 '''
 DOESN'T WORK

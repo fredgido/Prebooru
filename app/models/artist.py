@@ -17,6 +17,7 @@ from .label import Label
 from .description import Description
 from .post import Post
 from .illust_url import IllustUrl
+from .notation import Notation
 
 # ##GLOBAL VARIABLES
 
@@ -38,6 +39,11 @@ ArtistProfiles = DB.Table(
     DB.Column('artist_id', DB.Integer, DB.ForeignKey('artist.id'), primary_key=True),
 )
 
+ArtistNotations = DB.Table(
+    'artist_notations',
+    DB.Column('notation_id', DB.Integer, DB.ForeignKey('notation.id'), primary_key=True),
+    DB.Column('artist_id', DB.Integer, DB.ForeignKey('artist.id'), primary_key=True),
+)
 
 @dataclass
 class Artist(JsonModel):
@@ -64,6 +70,7 @@ class Artist(JsonModel):
     profiles = DB.relationship(Description, secondary=ArtistProfiles, lazy='subquery', backref=DB.backref('artists', lazy=True))
     illusts = DB.relationship(Illust, lazy=True, backref=DB.backref('artist', lazy=True), cascade="all, delete")
     webpages = DB.relationship(ArtistUrl, backref='artist', lazy=True, cascade="all, delete")
+    notations = DB.relationship(Notation, secondary=ArtistNotations, lazy=True, backref=DB.backref('artist', uselist=False, lazy=True))
     active = DB.Column(DB.Boolean, nullable=True)
     requery = DB.Column(DB.DateTime(timezone=False), nullable=True)
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)

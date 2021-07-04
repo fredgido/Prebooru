@@ -3,6 +3,8 @@ import html
 import datetime
 from flask import Markup, request, render_template, url_for, Markup
 
+from ..logical.utility import TimeAgo
+
 def HasItems(items):
     return len(items) > 0
 
@@ -33,6 +35,13 @@ def StrOrNone(val):
 def FormatTimestamp(timeval):
     return datetime.datetime.isoformat(timeval) if timeval is not None else Markup('<em>none</em>')
 
+def FormatTimestamps(item):
+    text = FormatTimestamp(item.created)
+    delta = item.updated - item.created
+    print(delta)
+    if delta.days > 0 or delta.seconds > 3600:
+        text += " ( %s )" % TimeAgo(item.updated)
+    return text
 
 def NavLinkTo(text, endpoint):
     link_blueprint = endpoint.split('.')[0]
@@ -42,9 +51,9 @@ def NavLinkTo(text, endpoint):
     html_text = text.lower().replace(" ", "-")
     return Markup(render_template("layouts/_nav_link.html", text=text, html_text=html_text, endpoint=endpoint, klass=klass))
 
-def SubnavLinkTo(text, endpoint, id=None):
+def SubnavLinkTo(text, endpoint, id=None, **kwargs):
     html_text = text.lower().replace(" ", "-")
-    return Markup(render_template("layouts/_subnav_link.html", text=text, html_text=html_text, endpoint=endpoint, id=id))
+    return Markup(render_template("layouts/_subnav_link.html", text=text, html_text=html_text, endpoint=endpoint, id=id, kwargs=kwargs))
 
 def PageNavigation(paginate):
     #print("PageNavigation-1:", paginate.page, paginate.prev_num, paginate.next_num, paginate.pages)

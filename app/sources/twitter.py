@@ -389,8 +389,13 @@ def ArtistProfileUrls(artist):
         profile_urls += ['https://twitter.com/%s' % site_account.name]
     return profile_urls
 
+def ArtistBooruSearchUrl(artist):
+    return 'https://twitter.com/intent/user?user_id=%d' % artist.site_artist_id
+
 def IllustCommentaries(illust):
-    commentary = illust.descriptions[0].body # Twitter descriptions are unchangable.
+    if len(illust.commentaries) == 0:
+        return []
+    commentary = illust.commentaries[0].body # Twitter commentaries are unchangable.
     for tag in illust.tags:
         hashtag = '#' + tag.name
         hashtag_link = r'"%s":[https://twitter.com/hashtag/%s]' % (hashtag, tag.name)
@@ -616,6 +621,9 @@ def CreateDBArtistFromParams(params):
 
 def CreateDBIllustFromParams(params):
     return DB.CreateIllustFromParameters(params)
+
+def CreateDBIllustUrlFromParams(params, illust):
+    return DB.CreateIllustUrlFromParameters(params, illust)
 
 def CreateIllust(site_illust_id, timeline=False):
     ### INCLUDED ONLY DURING TESTING PHASE ###

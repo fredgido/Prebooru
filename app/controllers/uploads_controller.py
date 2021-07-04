@@ -12,7 +12,7 @@ from ..logical.utility import EvalBoolString, IsTruthy, IsFalsey
 from ..logical.logger import LogError
 from ..models import Upload, Post
 from ..sources import base as BASE_SOURCE
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder
+from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder
 
 
 # ## GLOBAL VARIABLES
@@ -66,12 +66,10 @@ def index_html():
 def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
-    #search = GetSearch(request)
     print("Params:", params, flush=True)
     print("Search:", search, flush=True)
     q = Upload.query
     q = q.options(selectinload(Upload.image_urls), selectinload(Upload.posts).lazyload(Post.illust_urls),selectinload(Upload.errors))
-    #q = IdFilter(q, search)
     q = SearchFilter(q, search)
     #if 'request_url' in search:
     #    q = q.filter_by(request_url=search['request_url'])
@@ -92,6 +90,13 @@ def index():
     q = DefaultOrder(q, search)
     return q
 
+
+@bp.route('/uploads/new', methods=['GET'])
+def new_html():
+    illust_url_id = request.args.get('illust_url_id', type=int)
+    return {'illust_url_id': illust_url_id}
+    #form = GetIllustForm(artist_id=artist_id)
+    #return render_template("illusts/new.html", form=form, illust=None)
 
 @bp.route('/uploads.json', methods=['POST'])
 def create():

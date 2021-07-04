@@ -77,7 +77,7 @@ def CreateIllustFromTweet(tweet, artist_id, commit=True):
         SESSION.add(illust)
         SESSION.commit()
         AddSiteData(illust, tweet)
-        AddIllustDescription(illust, tweet)
+        AddIllustCommentary(illust, tweet)
         AddIllustTags(illust, tweet)
         AddIllustUrls(illust, tweet)
         AddVideoUrls(illust, tweet)
@@ -92,16 +92,24 @@ def CreateIllustFromParameters(params):
             del params['site_created']
     return BASE.CreateIllustFromParameters(params, Site.TWITTER.value)
 
+def CreateIllustUrlFromParameters(params, illust):
+    parse = urllib.parse.urlparse(params['url'])
+    site_id = GetSiteId(parse.netloc)
+    params['url'] = parse.path + parse.query if site_id != 0 else parse.geturl()
+    return BASE.CreateIllustUrlFromParameters(params, site_id, illust)
 
-def AddIllustDescription(illust, tweet):
-    description_text = GetTweetText(tweet)
-    current_descriptions = [descr.body for descr in illust.descriptions]
-    if description_text in current_descriptions:
+def AddIllustCommentary(illust, tweet):
+    print("AddIllustCommentary")
+    commentary_text = GetTweetText(tweet)
+    if commentary_text == "":
         return
-    descr = Description.query.filter_by(body=description_text).first()
-    if descr is None:
-        descr = Description(body=description_text)
-    illust.descriptions.append(descr)
+    current_commentaries = [commentary.body for commentary in illust.commentaries]
+    if commentary_text in current_commentaries:
+        return
+    commentary = Description.query.filter_by(body=commentary_text).first()
+    if commentary is None:
+        commentary = Description(body=commentary_text)
+    illust.commentaries.append(commentary)
     SESSION.add(illust)
     SESSION.commit()
 
@@ -229,6 +237,8 @@ def AddVideoUrls(illust, tweet, commit=True):
 
 def AddArtistName(artist, name_text):
     print("AddArtistName")
+    if name_text == "":
+        return False
     current_names = [label.name for label in artist.names]
     if name_text in current_names:
         return False
@@ -243,6 +253,8 @@ def AddArtistName(artist, name_text):
 
 def AddArtistSiteAccount(artist, site_account_text):
     print("AddArtistSiteAccount")
+    if site_account_text == "":
+        return False
     current_site_accounts = [label.name for label in artist.site_accounts]
     if site_account_text in current_site_accounts:
         return False
@@ -257,6 +269,8 @@ def AddArtistSiteAccount(artist, site_account_text):
 
 def AddArtistProfile(artist, profile_text):
     print("AddArtistProfile")
+    if profile_text == "":
+        return False
     current_profiles = [descr.body for descr in artist.profiles]
     if profile_text in current_profiles:
         return False

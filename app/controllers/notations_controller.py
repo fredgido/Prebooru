@@ -12,10 +12,10 @@ from wtforms.validators import DataRequired
 
 from ..logical.utility import EvalBoolString, IsTruthy, IsFalsey, GetCurrentTime
 from ..logical.logger import LogError
-from ..models import Notation, Pool
+from ..models import Notation, Pool, Artist, Illust, Post
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from .base_controller import GetSearch, ShowJson, IndexJson, IdFilter, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, CustomNameForm
+from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, CustomNameForm
 
 
 # ## GLOBAL VARIABLES
@@ -29,6 +29,9 @@ def GetNotationForm(**kwargs):
     class NotationForm(CustomNameForm):
         body = TextAreaField('Body', id='notation-body', custom_name='notation[body]', validators=[DataRequired()])
         pool_id = IntegerField('Pool ID', id='notation-pool-id', custom_name='notation[pool_id]')
+        artist_id = IntegerField('Artist ID', id='notation-artist-id', custom_name='notation[artist_id]')
+        illust_id = IntegerField('Illust ID', id='notation-illust-id', custom_name='notation[illust_id]')
+        post_id = IntegerField('Post ID', id='notation-pool-id', custom_name='notation[post_id]')
     return NotationForm(**kwargs)
 
 # ## FUNCTIONS
@@ -59,18 +62,21 @@ def index_html():
 def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
-    #search = GetSearch(request)
     print("Params:", params, flush=True)
     print("Search:", search, flush=True)
     q = Notation.query
-    #q = IdFilter(q, search)
     q = SearchFilter(q, search)
     q = DefaultOrder(q, search)
     return q
 
 @bp.route('/notations/new', methods=['GET'])
 def new_html():
-    form = GetNotationForm()
+    pool_id=request.args.get('pool_id', type=int)
+    artist_id=request.args.get('artist_id', type=int)
+    illust_id=request.args.get('illust_id', type=int)
+    post_id=request.args.get('illust_id', type=int)
+    print(request.args, pool_id, artist_id, illust_id, post_id)
+    form = GetNotationForm(pool_id=pool_id, artist_id=artist_id, illust_id=illust_id, post_id=post_id)
     return render_template("notations/new.html", form=form, notation=None)
 
 @bp.route('/notations/<int:id>/edit', methods=['GET'])
@@ -103,23 +109,46 @@ def update_html(id):
         DBLOCAL.SaveData()
     return redirect(url_for('notation.show_html', id=notation.id))
 
+APPEND_KEYS = ['pool_id', 'artist_id', 'illust_id', 'post_id']
+ID_MODEL_DICT = {
+    'pool_id': Pool,
+    'artist_id': Artist,
+    'illust_id': Illust,
+    'post_id': Post,
+}
+
+def FormatParams(dataparams):
+    for key in APPEND_KEYS:
+        dataparams[key] = int(dataparams[key]) if (key in dataparams) and dataparams[key].isdigit() else None
+
+
 @bp.route('/notations', methods=['POST'])
 def create_html():
     print("create_html")
     dataparams = GetDataParams(request, 'notation')
     if 'body' not in dataparams:
         abort(405, "Must include body.")
-    dataparams['pool_id'] = int(dataparams['pool_id']) if dataparams['pool_id'].isdigit() else None
+    FormatParams(dataparams)
     print(dataparams)
-    #return redirect(url_for('notation.new_html'))
+    append_key = [key for key in APPEND_KEYS if dataparams[key] is not None]
+    if len(append_key) > 1:
+        flash("May only append using the ID of a single entity; multiple values found: %s" % append_key, 'error')
+        # Figure out how to send the data params back to the new form
+        return redirect(url_for('notation.new_html'))
     current_time = GetCurrentTime()
     notation = Notation(body=dataparams['body'], created=current_time, updated=current_time)
     DBLOCAL.SaveData(notation)
-    if dataparams['pool_id'] is not None:
-        pool=Pool.find(dataparams['pool_id'])
-        if pool is None:
-            flash('Unable to add to pool; pool #%d does not exist.' % dataparams['pool_id'])
+    if len(append_key) == 1:
+        append_key = append_key[0]
+        model = ID_MODEL_DICT[append_key]
+        item=model.find(dataparams[append_key])
+        table_name = model.__table__.name
+        if item is None:
+            flash('Unable to add to %s; %s #%d does not exist.' % (mdataparams['pool_id'], table_name, table_name), 'error')
         else:
-            pool.elements.append(notation)
+            if table_name == 'pool':
+                item.elements.append(notation)
+            else:
+                item.notations.append(notation)
             DBLOCAL.SaveData()
     return redirect(url_for('notation.show_html', id=notation.id))

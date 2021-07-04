@@ -1,0 +1,18 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}New Illust URL for Illust #{{ illust.id }}{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=illust) | safe }}{% endblock %}
+
+{% block content %}
+    <div class="heading" style="font-size: 28px">New Illust URL: <a href="{{ url_for('illust.show_html', id=illust.id) }}">{{ illust.shortlink }}</a></div>
+    <form method="POST" action="/illusts/{{ illust.id }}/illust_url/new">
+        {{ form.csrf_token }}
+        {{ form.url.label(style="display: block; font-weight: bold; font-size: 20px;") }} {{ form.url(style="display: block; width: 50em;") }}
+        {{ form.width.label(style="display: block; font-weight: bold; font-size: 20px;") }} {{ form.width(style="display: block;") }}
+        {{ form.height.label(style="display: block; font-weight: bold; font-size: 20px;") }} {{ form.height(style="display: block;") }}
+        {{ form.order.label(style="display: block; font-weight: bold; font-size: 20px;") }} {{ form.order(style="display: block;") }}
+        {{ form.active.label(style="display: block; font-weight: bold; font-size: 20px;") }} {{ form.active(style="display: block;") }}
+        <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
+    </form>
+{% endblock %}

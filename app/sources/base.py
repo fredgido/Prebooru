@@ -5,11 +5,11 @@ import sys
 
 
 from ..sites import GetSiteKey
-from ..sources import SOURCES, DICT as SOURCEDICT
-from ..models import Upload, IllustUrl
+from ..sources import SOURCES, DICT as SOURCEDICT, danbooru
+from ..models import Upload, IllustUrl, Booru, Label
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.uploader import UploadIllustUrl
-from ..logical.utility import GetHTTPFilename, GetFileExtension
+from ..logical.utility import GetHTTPFilename, GetFileExtension, GetCurrentTime
 from ..database import local as DBLOCAL
 
 CURRENT_MODULE = sys.modules[__name__]
@@ -125,6 +125,38 @@ def _Source(site_id):
     site_key = GetSiteKey(site_id)
     return SOURCEDICT[site_key]
 
+def QueryArtistBoorus(artist):
+    source = _Source(artist.site_id)
+    search_url = source.ArtistBooruSearchUrl(artist)
+    artist_data = danbooru.GetArtistsByUrl(search_url)
+    if artist_data['error']:
+        return artist_data
+    existing_booru_ids = [booru.id for booru in artist.boorus]
+    boorus = []
+    for danbooru_artist in artist_data['artists']:
+        dirty = False
+        current_time = GetCurrentTime()
+        booru = Booru.query.filter_by(danbooru_id=danbooru_artist['id']).first()
+        if booru is None:
+            booru = Booru(danbooru_id=danbooru_artist['id'], current_name=danbooru_artist['name'], created=current_time, updated=current_time)
+            DBLOCAL.SaveData(booru)
+        existing_names = [booru_name.name for booru_name in booru.names]
+        if danbooru_artist['name'] not in existing_names:
+            dirty = True
+            label = Label.query.filter_by(name=danbooru_artist['name']).first()
+            if label is None:
+                label = Label(name=danbooru_artist['name'])
+                DBLOCAL.SaveData(label)
+            booru.names.append(label)
+        if booru.id not in existing_booru_ids:
+            dirty = True
+            booru.artists.append(artist)
+        if dirty:
+            booru.updated = current_time
+            DBLOCAL.SaveData()
+        boorus.append(booru)
+    return {'error': False, 'artist': artist, 'boorus': boorus}
+
 def ProcessArtist(artist):
     source = _Source(artist.site_id)
     source.UpdateDBArtist(artist)
@@ -153,3 +185,7 @@ def CreateDBArtistFromParams(params):
 def CreateDBIllustFromParams(params):
     source = _Source(params['site_id'])
     return source.CreateDBIllustFromParams(params)
+
+def CreateDBIllustUrlFromParams(params, illust):
+    source = _Source(illust.site_id)
+    return source.CreateDBIllustUrlFromParams(params, illust)

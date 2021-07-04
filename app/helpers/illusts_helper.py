@@ -52,9 +52,8 @@ def PostPreviews(illust):
     #return render_template("illusts\_post_previews.html", posts=posts)
     return Markup(render_template("pools/_post_previews.html", posts=posts))
 
-def DanbooruBatchUpload(illust):
+def DanbooruBatchUrl(illust):
     source = BASE_SOURCE._Source(illust.site_id)
     post_url = source.GetPostUrl(illust)
     query_string = urllib.parse.urlencode({'url': post_url})
-    href_url = 'https://danbooru.donmai.us/uploads/batch?' + query_string
-    return '<li id="subnav-batch-bookmarklet"><a id="subnav-batch-bookmarklet-link" href="%s">Batch bookmarklet</a></li>' % href_url
+    return 'https://danbooru.donmai.us/uploads/batch?' + query_string

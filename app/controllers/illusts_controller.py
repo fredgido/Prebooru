@@ -4,17 +4,17 @@
 import json
 from flask import Blueprint, request, render_template, abort, jsonify, redirect, url_for, flash
 from sqlalchemy.orm import selectinload, lazyload
-from wtforms import TextAreaField, IntegerField, BooleanField, SelectField
+from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
 
-from ..logical.utility import GetCurrentTime
+from ..logical.utility import GetCurrentTime, EvalBoolString
 from ..logical.logger import LogError
 from ..models import IllustUrl, Illust, Artist, Notation
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from .base_controller import GetSearch, GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, IdFilter, SearchFilter, DefaultOrder, Paginate, GetDataParams, CustomNameForm
+from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate, GetDataParams, CustomNameForm
 
 
 # ## GLOBAL VARIABLES
@@ -32,10 +32,27 @@ def GetIllustForm(**kwargs):
         pages = IntegerField('Pages', id='illust-pages', custom_name='illust[pages]')
         score = IntegerField('Score', id='illust-score', custom_name='illust[score]')
         active = BooleanField('Active', id='illust-active', custom_name='illust[active]')
+        tag_string = StringField('Tag string', id='illust-tag-string', custom_name='illust[tag_string]')
+        commentary = TextAreaField('Commentary', id='illust-commentary', custom_name='illust[commentary]')
     return IllustForm(**kwargs)
+
+def GetIllustUrlForm(**kwargs):
+    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
+    class IllustUrlForm(CustomNameForm):
+        url = StringField('URL', id='illust-url-url', custom_name='illust_url[url]', validators=[DataRequired()])
+        width = IntegerField('Width', id='illust-width', custom_name='illust_url[width]')
+        height = IntegerField('Height', id='illust-site-height', custom_name='illust_url[height]')
+        order = IntegerField('Order', id='illust-site-order', custom_name='illust_url[order]')
+        active = BooleanField('Active', id='illust-active', custom_name='illust_url[active]')
+    return IllustUrlForm(**kwargs)
 
 # ## FUNCTIONS
 
+def ParseType(params, key, parser):
+    try:
+        return parser(params[key])
+    except Exception as e:
+        return None
 
 def CheckDataParams(dataparams):
     if 'site_id' not in dataparams or not dataparams['site_id'].isdigit():
@@ -58,6 +75,38 @@ def ConvertDataParams(dataparams):
     if 'videos' in dataparams:
         dataparams['videos'] = [json.loads(url_json) for url_json in dataparams['videos']]
 
+def CheckCreateParams(dataparams):
+    if dataparams['site_id'] is None:
+        return "No site ID present!"
+    if dataparams['site_illust_id'] is None:
+        return "No site illust ID present!"
+    if dataparams['artist_id'] is None:
+        return "No artist ID present!"
+
+def ConvertCreateParams(dataparams):
+    params = {}
+    params['site_id'] = ParseType(dataparams, 'site_id', int)
+    params['site_illust_id'] = ParseType(dataparams, 'site_illust_id', int)
+    params['artist_id'] = ParseType(dataparams, 'artist_id', int)
+    params['score'] = ParseType(dataparams, 'score', int)
+    params['pages'] = ParseType(dataparams, 'pages', int)
+    params['active'] = ParseType(dataparams, 'active', EvalBoolString) or False
+    params['commentary'] = dataparams['commentary'] if len(dataparams['commentary'].strip()) > 0 else None
+    params['tags'] = dataparams['tag_string'].split() if len(dataparams['tag_string']) > 0 else []
+    return params
+
+def CheckCreateUrlParams(dataparams):
+    if dataparams['url'] is None:
+        return "No URL present!"
+
+def ConvertCreateUrlParams(dataparams):
+    params = {}
+    params['url'] = dataparams['url'] if len(dataparams['url'].strip()) > 0 else None
+    params['width'] = ParseType(dataparams, 'width', int)
+    params['height'] = ParseType(dataparams, 'height', int)
+    params['order'] = ParseType(dataparams, 'order', int)
+    params['active'] = ParseType(dataparams, 'active', EvalBoolString) or False
+    return params
 
 @bp.route('/illusts/<int:id>.json', methods=['GET'])
 def show_json(id):
@@ -101,12 +150,10 @@ def index_html():
 def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
-    #search = GetSearch(request)
     print("Params:", params, flush=True)
     print("Search:", search, flush=True)
     q = Illust.query
     q = q.options(selectinload(Illust.site_data), lazyload('*'))
-    #q = IdFilter(q, search)
     q = SearchFilter(q, search)
     #if 'site_illust_id' in search:
     #    q = q.filter_by(site_illust_id=search['site_illust_id'])
@@ -120,7 +167,8 @@ def index():
 
 @bp.route('/illusts/new', methods=['GET'])
 def new_html():
-    form = GetIllustForm()
+    artist_id = request.args.get('artist_id', type=int)
+    form = GetIllustForm(artist_id=artist_id)
     return render_template("illusts/new.html", form=form, illust=None)
 
 @bp.route('/illusts/<int:id>/edit', methods=['GET'])
@@ -139,6 +187,24 @@ def update_html(id):
     BASE_SOURCE.UpdateIllust(illust)
     flash("Illust updated.")
     return redirect(url_for('illust.show_html', id=id))
+
+@bp.route('/illusts', methods=['POST'])
+def create_html():
+    dataparams = GetDataParams(request, 'illust')
+    createparams = ConvertCreateParams(dataparams)
+    print(dataparams, createparams, request.values)
+    error = CheckCreateParams(createparams)
+    if error is not None:
+        return {'error': True, 'message': error, 'params': createparams}
+    artist = Artist.find(createparams['artist_id'])
+    if artist is None:
+        return {'error': True, 'message': "Artist does not exist.", 'params': createparams}
+    illust = Illust.query.filter_by(site_id=createparams['site_id'], site_illust_id=createparams['site_illust_id']).first()
+    if illust is not None:
+        return {'error': True, 'message': "Illust already exists.", 'params': createparams, 'illust': illust.to_json()}
+    #return createparams
+    illust = BASE_SOURCE.CreateDBIllustFromParams(createparams)
+    return redirect(url_for('illust.show_html', id=illust.id))
 
 @bp.route('/illusts.json', methods=['POST'])
 def create():
@@ -166,6 +232,30 @@ def create():
         return {'error': True, 'message': 'Database exception! Check log file.'}
     illust_json = illust.to_json() if illust is not None else illust
     return {'error': False, 'illust': illust_json}
+
+
+@bp.route('/illusts/<int:id>/illust_url/new', methods=['GET'])
+def new_illust_url_html(id):
+    illust = Illust.find(id)
+    if illust is None:
+        abort(404)
+    form = GetIllustUrlForm()
+    return render_template("illusts/new_illust_url.html", form=form, illust=illust)
+
+@bp.route('/illusts/<int:id>/illust_url/new', methods=['POST'])
+def create_illust_url_html(id):
+    illust = Illust.find(id)
+    if illust is None:
+        abort(404)
+    dataparams = GetDataParams(request, 'illust_url')
+    createparams = ConvertCreateUrlParams(dataparams)
+    print(dataparams, createparams, request.values)
+    error = CheckCreateUrlParams(createparams)
+    if error is not None:
+        return {'error': True, 'message': error, 'params': createparams}
+    createparams['illust_id'] = illust.id
+    illust_url = BASE_SOURCE.CreateDBIllustUrlFromParams(createparams, illust)
+    return redirect(url_for('illust.show_html', id=illust.id))
 
 
 @bp.route('/illusts/<int:id>/notation.json', methods=['POST'])
