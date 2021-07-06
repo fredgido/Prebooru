@@ -56,6 +56,7 @@
                     <li><a href="{{ url_for('illust.update_html', id=illust.id) }}">Update from source</a></li>
                     <li><a href="{{ helpers.illust.DanbooruBatchUrl(illust) }}" target="_blank">Batch bookmarklet</a></li>
                     <li><a href="{{ url_for('illust.new_illust_url_html', id=illust.id) }}">Add media URL</a></li>
+                    <li><a href="{{ url_for('illust.add_new_pool_html', id=illust.id) }}">Add pool</a></li>
                     <li><a href="{{ url_for('notation.new_html', illust_id=illust.id) }}">Add notation</a></li>
                 </ul>
             </section>

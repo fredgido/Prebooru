@@ -113,6 +113,51 @@ def GetDataParams(request, key):
     return GetParamsValue(params, key, True)
 
 
+def ParseType(params, key, parser):
+    try:
+        return parser(params[key])
+    except Exception as e:
+        return None
+
+
+# #### Model helper
+
+
+def UpdateColumnAttributes(item, attrs, dataparams, updateparams):
+    is_dirty = False
+    for attr in attrs:
+        if attr in dataparams and getattr(item, attr) != updateparams[attr]:
+            print("Setting basic attr:", attr, updateparams[attr])
+            setattr(item, attr, updateparams[attr])
+            is_dirty = True
+    return is_dirty
+
+
+def UpdateRelationshipCollections(item, rellationships, dataparams, updateparams):
+    """For simple collection relationships with scalar values"""
+    is_dirty = False
+    for attr, subattr, model in relationships:
+        if attr not in dataparams:
+            continue
+        collection = getattr(item, attr)
+        current_values = [getattr(subitem, subattr) for subitem in collection]
+        add_values = set(updateparams[attr]).difference(current_values)
+        for value in add_values:
+            print("Adding collection item:", attr, value)
+            add_item = model.query.filter_by(**{subattr: value}).first()
+            if add_item is None:
+                add_item = model(**{subattr: value})
+            collection.append(add_item)
+            is_dirty = True
+        remove_values = set(current_values).difference(updateparams[attr])
+        for value in remove_values:
+            print("Removing collection item:", attr, value)
+            remove_item = next(filter(lambda x: getattr(x, subattr) == value, collection))
+            collection.remove(remove_item)
+            is_dirty = True
+    return is_dirty
+
+
 # #### Private functions
 
 

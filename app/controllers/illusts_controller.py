@@ -11,10 +11,10 @@ from wtforms.validators import DataRequired
 
 from ..logical.utility import GetCurrentTime, EvalBoolString
 from ..logical.logger import LogError
-from ..models import IllustUrl, Illust, Artist, Notation
+from ..models import IllustUrl, Illust, Artist, Notation, Pool
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate, GetDataParams, CustomNameForm
+from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate, GetDataParams, CustomNameForm, ParseType
 
 
 # ## GLOBAL VARIABLES
@@ -46,13 +46,19 @@ def GetIllustUrlForm(**kwargs):
         active = BooleanField('Active', id='illust-active', custom_name='illust_url[active]')
     return IllustUrlForm(**kwargs)
 
+def GetAddPoolIllustForm(**kwargs):
+    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
+    class AddPoolIllustForm(CustomNameForm):
+        pool_id = IntegerField('Pool ID', id='illust-pool-id', custom_name='illust[pool_id]', validators=[DataRequired()])
+    return AddPoolIllustForm(**kwargs)
+
 # ## FUNCTIONS
 
-def ParseType(params, key, parser):
-    try:
-        return parser(params[key])
-    except Exception as e:
-        return None
+def HTMLIllustExistenceCheck(id):
+    illust = Illust.find(id)
+    if illust is None:
+        abort(404, "Illust not found.")
+    return illust
 
 def CheckDataParams(dataparams):
     if 'site_id' not in dataparams or not dataparams['site_id'].isdigit():
@@ -167,8 +173,9 @@ def index():
 
 @bp.route('/illusts/new', methods=['GET'])
 def new_html():
+    site_id = request.args.get('site_id', type=int)
     artist_id = request.args.get('artist_id', type=int)
-    form = GetIllustForm(artist_id=artist_id)
+    form = GetIllustForm(site_id=site_id, artist_id=artist_id)
     return render_template("illusts/new.html", form=form, illust=None)
 
 @bp.route('/illusts/<int:id>/edit', methods=['GET'])
@@ -234,7 +241,7 @@ def create():
     return {'error': False, 'illust': illust_json}
 
 
-@bp.route('/illusts/<int:id>/illust_url/new', methods=['GET'])
+@bp.route('/illusts/<int:id>/illust_urls/new', methods=['GET'])
 def new_illust_url_html(id):
     illust = Illust.find(id)
     if illust is None:
@@ -242,7 +249,7 @@ def new_illust_url_html(id):
     form = GetIllustUrlForm()
     return render_template("illusts/new_illust_url.html", form=form, illust=illust)
 
-@bp.route('/illusts/<int:id>/illust_url/new', methods=['POST'])
+@bp.route('/illusts/<int:id>/illust_urls', methods=['POST'])
 def create_illust_url_html(id):
     illust = Illust.find(id)
     if illust is None:
@@ -259,7 +266,7 @@ def create_illust_url_html(id):
 
 
 @bp.route('/illusts/<int:id>/notation.json', methods=['POST'])
-def add_notation(id):
+def add_notation_json(id):
     illust = Illust.find(id)
     if illust is None:
         return {'error': True, 'message': "Illust #%d not found." % id}
@@ -272,3 +279,30 @@ def add_notation(id):
     illust.notations.append(note)
     DBLOCAL.SaveData()
     return {'error': False, 'note': note, 'illust': illust, 'params': dataparams}
+
+@bp.route('/illusts/<int:id>/pools/new', methods=['GET'])
+def add_new_pool_html(id):
+    illust = HTMLIllustExistenceCheck(id)
+    form = GetAddPoolIllustForm()
+    return render_template("illusts/add_pool.html", form=form, illust=illust)
+
+@bp.route('/illusts/<int:id>/pools', methods=['POST'])
+def add_pool_html(id):
+    illust = HTMLIllustExistenceCheck(id)
+    dataparams = GetDataParams(request, 'illust')
+    pool_id = ParseType(dataparams, 'pool_id', int)
+    if pool_id is None:
+        flash("Must include valid pool ID.", 'error')
+        redirect(url_for('illust.add_new_pool_html', id=id))
+    pool = Pool.find(pool_id)
+    if pool is None:
+        flash("Pool #%d not found." % pool_id, 'error')
+        redirect(url_for('illust.add_new_pool_html', id=id))
+    pool_ids = [pool.id for pool in illust.pools]
+    if pool.id in pool_ids:
+        flash("Illust #%d already in pool #%d." % (illust.id, pool.id), 'error')
+        redirect(url_for('illust.add_new_pool_html', id=id))
+    pool.updated = GetCurrentTime()
+    pool.elements.append(illust)
+    DBLOCAL.SaveData()
+    return redirect(url_for('illust.show_html', id=id))

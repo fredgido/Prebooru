@@ -46,7 +46,7 @@ def GetImageExtension(image_url):
 def GetMediaExtension(media_url):
     return GetImageExtension(media_url)
 
-def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
+def CreateUpload(request_url, referrer_url, image_urls, force):
     source = GetSource(request_url, referrer_url)
     if source is None:
         return {'error': True, 'message': "Not a valid URL."}
@@ -57,19 +57,19 @@ def CreateUpload(request_url, referrer_url, image_urls, uploader_id, force):
     if not force:
         upload = Upload.query.filter_by(type=type, request_url=request_url, referrer_url=referrer_url).order_by(Upload.id.desc()).first()
     if upload is None:
-        return {'error': False, 'data': DBLOCAL.CreateUploadFromRequest(type, request_url, image_urls, uploader_id).to_json()}
+        return {'error': False, 'data': DBLOCAL.CreateUploadFromRequest(type, request_url, image_urls).to_json()}
     else:
         return {'error': True, 'message': 'Already uploaded on upload #%d' % upload.id, 'data': upload.to_json()}
 
 
-def CreateFileUpload(uploader_id, media_filepath, sample_filepath, illust_url_id):
+def CreateFileUpload(media_filepath, sample_filepath, illust_url_id):
     illust_url = IllustUrl.query.filter_by(id=illust_url_id).first()
     if illust_url is None:
         return {'error': True, 'message': "Illust Url #%d does not exist." % (illust_url_id)}
     elif illust_url.post is not None:
         return {'error': True, 'message': "Illust Url #%d already uploaded as post #%d." % (illust_url.id, illust_url.post.id)}
     else:
-        return {'error': False, 'data': DBLOCAL.CreateFileUploadFromRequest(uploader_id, media_filepath, sample_filepath, illust_url_id)}
+        return {'error': False, 'data': DBLOCAL.CreateFileUploadFromRequest(media_filepath, sample_filepath, illust_url_id)}
 
 
 def ProcessUpload(upload):

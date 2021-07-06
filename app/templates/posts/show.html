@@ -11,22 +11,40 @@
         <aside id="sidebar" style="width: 25em;">
             <section id="tag-list"><!-- placeholder for user tags --></section>
             <section id="artist-info">
+                <h3>Boorus</h3>
+                <ul style="margin-left: 1em;">
+                    {% for booru in post.boorus %}
+                        {% set outer_loop = loop %}
+                        <li><strong><a href="{{url_for('booru.show_html', id=booru.id)}}">{{ booru.shortlink }}</strong></a>
+                            <ul style="margin-left: 1em;">
+                                <li><strong><a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a></strong></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li><em>none</em></li>
+                    {% endfor %}
+                </ul>
+            </section>
+            <section id="artist-info" style="margin-top: 1em;">
                 <h3>Artists</h3>
                 <ul style="margin-left: 1em;">
                     {% for artist in post.artists %}
                         {% set outer_loop = loop %}
-                        <li><strong>ID:</strong> <a href="{{url_for('artist.show_html', id=artist.id)}}">artist #{{ artist.id }}</a></li>
-                        <li><strong>Site ID:</strong> {{ artist.site_artist_id }}</li>
-                        <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
-                        <li><strong>Names:</strong>
-                            {% for artist_name in artist.names %}
-                                <span>{{ artist_name.name }}</span>&emsp;
-                            {% endfor %}
-                        </li>
-                        <li><strong>Accounts:</strong>
-                            {% for site_account in artist.site_accounts %}
-                                <span>{{ site_account.name }}</span>&emsp;
-                            {% endfor %}
+                        <li><strong><a href="{{url_for('artist.show_html', id=artist.id)}}">{{ artist.shortlink }}</a></strong>
+                            <ul style="margin-left: 1em;">
+                                <li><strong>Site ID:</strong> {{ artist.site_artist_id }}</li>
+                                <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
+                                <li><strong>Names:</strong>
+                                    {% for artist_name in artist.names %}
+                                        <span>{{ artist_name.name }}</span>&emsp;
+                                    {% endfor %}
+                                </li>
+                                <li><strong>Accounts:</strong>
+                                    {% for site_account in artist.site_accounts %}
+                                        <span>{{ site_account.name }}</span>&emsp;
+                                    {% endfor %}
+                                </li>
+                            </ul>
                         </li>
                     {% endfor %}
                 </ul>
@@ -36,16 +54,19 @@
                 <ul style="margin-left: 1em;">
                     {% for illust in post.illusts %}
                         {% set outer_loop = loop %}
-                        <li><strong>ID:</strong> <a href="{{url_for('illust.show_html', id=illust.id)}}">illust #{{ illust.id }}</a></li>
-                        <li><strong>Site ID:</strong> {{ illust.site_illust_id }}</li>
-                        <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
-                        <li><strong>Tags:</strong>
+                        <li><strong><a href="{{url_for('illust.show_html', id=illust.id)}}">illust #{{ illust.id }}</a></strong>
                             <ul style="margin-left: 1em;">
-                            {% for tag in illust.tags %}
-                                <li>{{ tag.name }}</li>
-                            {% else %}
-                                <li><em>none</em></li>
-                            {% endfor %}
+                                <li><strong>Site ID:</strong> {{ illust.site_illust_id }}</li>
+                                <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
+                                <li><strong>Tags:</strong>
+                                    <ul style="margin-left: 1em;">
+                                    {% for tag in illust.tags %}
+                                        <li>{{ tag.name }}</li>
+                                    {% else %}
+                                        <li><em>none</em></li>
+                                    {% endfor %}
+                                    </ul>
+                                </li>
                             </ul>
                         </li>
                     {% endfor %}
@@ -130,6 +151,8 @@
                 <ul style="margin-left: 1em;">
                     <li><a href="{{ post.file_url }}">Original file</a></li>
                     <li><a href="javascript:prompt('Copy file link:', '{{ post.file_path.encode('unicode-escape').decode() }}');false;">File link</a></li>
+                    <li><a href="{{ url_for('post.add_new_pool_html', id=post.id) }}">Add pool</a></li>
+                    <li><a href="{{ url_for('notation.new_html', post_id=post.id) }}">Add notation</a></li>
                 </ul>
             </section>
         </aside>
@@ -144,13 +167,13 @@
                 {% for illust in post.illusts %}
                     {% set outer_loop = loop %}
                     <div><strong>Illust #{{ illust.id }}:</strong><br>
-                        {% for description in illust.descriptions %}
-                            {{ helpers.base.ConvertStrToHTML(description.body) }}
+                        {% for commentary in illust.commentaries %}
+                            {{ helpers.base.ConvertStrToHTML(commentary.body) }}
                             {% if not loop.last %}
                                 <br><hr><br>
                             {% endif %}
                         {% else %}
-                            There are no commentaries!
+                            <span style="color: #888; font-style: italic;">There are no commentaries!</span>
                         {% endfor %}
                     </div>
                 {% endfor %}

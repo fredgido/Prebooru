@@ -1,25 +1,37 @@
 # APP\CONTROLLERS\POSTS.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort, url_for, jsonify
+from flask import Blueprint, request, render_template, abort, url_for, jsonify, redirect
 from sqlalchemy.orm import selectinload, lazyload
-
+from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
+from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
 
 from ..logical.file import PutGetRaw
 from ..logical.utility import GetCurrentTime, GetBufferChecksum
 from ..database import local as DBLOCAL
-from ..models import Artist, Illust, IllustUrl, Notation, Post
-from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams
+from ..models import Artist, Illust, IllustUrl, Notation, Post, Pool
+from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, ParseType, CustomNameForm
 
 
 # ## GLOBAL VARIABLES
 
 bp = Blueprint("post", __name__)
 
+def GetAddPoolForm(**kwargs):
+    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
+    class AddPoolForm(CustomNameForm):
+        pool_id = IntegerField('Pool ID', id='post-pool-id', custom_name='post[pool_id]', validators=[DataRequired()])
+    return AddPoolForm(**kwargs)
+
 # ## FUNCTIONS
 
+def HTMLPostExistenceCheck(id):
+    post = Post.find(id)
+    if post is None:
+        abort(404, "Post not found.")
+    return post
 
 @bp.route('/posts/<int:id>.json', methods=['GET'])
 def show_json(id):
@@ -112,7 +124,7 @@ def check_json(id):
     return {'current_md5': current_md5, 'data_md5': data_md5}
 
 @bp.route('/posts/<int:id>/notation.json', methods=['POST'])
-def add_notation(id):
+def add_notation_json(id):
     post = Post.find(id)
     if post is None:
         return {'error': True, 'message': "Post #%d not found." % id}
@@ -125,3 +137,30 @@ def add_notation(id):
     post.notations.append(note)
     DBLOCAL.SaveData()
     return {'error': False, 'note': note, 'post': post, 'params': dataparams}
+
+@bp.route('/posts/<int:id>/pools/new', methods=['GET'])
+def add_new_pool_html(id):
+    post = HTMLPostExistenceCheck(id)
+    form = GetAddPoolForm()
+    return render_template("posts/add_pool.html", form=form, post=post)
+
+@bp.route('/posts/<int:id>/pools', methods=['POST'])
+def add_pool_html(id):
+    post = HTMLPostExistenceCheck(id)
+    dataparams = GetDataParams(request, 'post')
+    pool_id = ParseType(dataparams, 'pool_id', int)
+    if pool_id is None:
+        flash("Must include valid pool ID.", 'error')
+        redirect(url_for('post.add_new_pool_html', id=id))
+    pool = Pool.find(pool_id)
+    if pool is None:
+        flash("Pool #%d not found." % pool_id, 'error')
+        redirect(url_for('post.add_new_pool_html', id=id))
+    pool_ids = [pool.id for pool in post.pools]
+    if pool.id in pool_ids:
+        flash("Post #%d already in pool #%d." % (post.id, pool.id), 'error')
+        redirect(url_for('post.add_new_pool_html', id=id))
+    pool.updated = GetCurrentTime()
+    pool.elements.append(post)
+    DBLOCAL.SaveData()
+    return redirect(url_for('post.show_html', id=id))

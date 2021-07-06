@@ -6,7 +6,7 @@
 
 {% block content %}
     <div class="heading" style="font-size: 28px">New Illust URL: <a href="{{ url_for('illust.show_html', id=illust.id) }}">{{ illust.shortlink }}</a></div>
-    <form method="POST" action="/illusts/{{ illust.id }}/illust_url/new">
+    <form method="POST" action="/illusts/{{ illust.id }}/illust_urls">
         {{ form.csrf_token }}
         {{ form.url.label(style="display: block; font-weight: bold; font-size: 20px;") }} {{ form.url(style="display: block; width: 50em;") }}
         {{ form.width.label(style="display: block; font-weight: bold; font-size: 20px;") }} {{ form.width(style="display: block;") }}

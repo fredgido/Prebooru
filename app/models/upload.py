@@ -42,7 +42,6 @@ UploadPosts = DB.Table(
 @dataclass
 class Upload(JsonModel):
     id: int
-    uploader_id: int
     subscription_id: IntOrNone
     request_url: StrOrNone
     referrer_url: StrOrNone
@@ -59,7 +58,6 @@ class Upload(JsonModel):
     created: datetime.datetime.isoformat
 
     id = DB.Column(DB.Integer, primary_key=True)
-    uploader_id = DB.Column(DB.Integer, nullable=False)
     request_url = DB.Column(DB.String(255), nullable=True)
     referrer_url = DB.Column(DB.String(255), nullable=True)
     successes = DB.Column(DB.Integer, nullable=False)
@@ -123,6 +121,6 @@ class Upload(JsonModel):
 
     @staticmethod
     def searchable_attributes():
-        basic_attributes = ['id', 'uploader_id', 'successes', 'failures', 'subscription_id', 'illust_url_id', 'request_url', 'referrer_url', 'type', 'status', 'media_filepath', 'sample_filepath', 'created']
+        basic_attributes = ['id', 'successes', 'failures', 'subscription_id', 'illust_url_id', 'request_url', 'referrer_url', 'type', 'status', 'media_filepath', 'sample_filepath', 'created']
         relation_attributes = ['image_urls', 'posts', 'errors']
         return basic_attributes + relation_attributes

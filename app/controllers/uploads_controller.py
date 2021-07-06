@@ -3,8 +3,9 @@
 # ## PYTHON IMPORTS
 import requests
 from sqlalchemy.orm import selectinload
-from flask import Blueprint, request, render_template, abort
-
+from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
+from wtforms import StringField, IntegerField
+from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
 
@@ -12,7 +13,7 @@ from ..logical.utility import EvalBoolString, IsTruthy, IsFalsey
 from ..logical.logger import LogError
 from ..models import Upload, Post
 from ..sources import base as BASE_SOURCE
-from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder
+from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams, ParseType
 
 
 # ## GLOBAL VARIABLES
@@ -21,20 +22,37 @@ bp = Blueprint("upload", __name__)
 
 # ## FUNCTIONS
 
+def GetUploadForm(**kwargs):
+    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
+    class UploadForm(CustomNameForm):
+        illust_url_id = IntegerField('Illust URL ID', id='upload-illust-url-id', custom_name='upload[illust_url_id]', validators=[DataRequired()])
+        media_filepath = StringField('Media filepath', id='illust-media-filepath', custom_name='upload[media_filepath]', validators=[DataRequired()])
+        sample_filepath = StringField('Sample filepath', id='illust-sample-filepath', custom_name='upload[sample_filepath]')
+    return UploadForm(**kwargs)
+
 #    Auxiliary
 
 
 def CheckParams(request):
     messages = []
-    user_id = request.values.get('user_id')
-    if user_id is None or not user_id.isdigit():
-        return "No user ID present!"
     if request.values.get('url') is not None:
         return
     if request.values.get('media') is not None and request.values.get('url_id') is not None:
         return
     return "No URL or media information present!"
 
+def ConvertCreateParams(dataparams):
+    params = {}
+    params['illust_url_id'] = ParseType(dataparams, 'illust_url_id', int)
+    params['media_filepath'] = dataparams['media_filepath'] or None
+    params['sample_filepath'] = dataparams['sample_filepath'] or None
+    return params
+
+def CheckCreateParams(dataparams):
+    if dataparams['illust_url_id'] is None:
+        return "No illust URL ID present!"
+    if dataparams['media_filepath'] is None:
+        return "No media filepath present!"
 
 #   Routes
 
@@ -94,16 +112,34 @@ def index():
 @bp.route('/uploads/new', methods=['GET'])
 def new_html():
     illust_url_id = request.args.get('illust_url_id', type=int)
-    return {'illust_url_id': illust_url_id}
-    #form = GetIllustForm(artist_id=artist_id)
-    #return render_template("illusts/new.html", form=form, illust=None)
+    form = GetUploadForm(illust_url_id=illust_url_id)
+    return render_template("uploads/new.html", form=form, upload=None)
+
+@bp.route('/uploads', methods=['POST'])
+def create_html():
+    dataparams = GetDataParams(request, 'upload')
+    createparams = ConvertCreateParams(dataparams)
+    print(dataparams, createparams, request.values)
+    error = CheckCreateParams(createparams)
+    if error is not None:
+        return {'error': True, 'message': error, 'params': createparams}
+    upload_results = BASE_SOURCE.CreateFileUpload(createparams['media_filepath'], createparams['sample_filepath'], createparams['illust_url_id'])
+    if upload_results['error']:
+        flash(upload_results['message'], 'error')
+        form = GetUploadForm(**createparams)
+        return render_template("uploads/new.html", form=form, upload=None)
+    try:
+        requests.get('http://127.0.0.1:4000/check_uploads', timeout=2)
+    except Exception as e:
+        print("Unable to contact worker:", e)
+        flash("Unable to contact worker.")
+    return redirect(url_for('upload.show_html', id=upload_results['data'].id))
 
 @bp.route('/uploads.json', methods=['POST'])
-def create():
+def create_json():
     error = CheckParams(request)
     if error is not None:
         return {'error': error}
-    user_id = int(request.values['user_id'])
     request_url = request.values.get('url')
     referrer_url = request.values.get('ref')
     media_filepath = request.values.get('media')
@@ -111,12 +147,12 @@ def create():
     illust_url_id = request.values.get('url_id', type=int)
     image_urls = request.values.getlist('image_urls[]')
     force = request.values.get('force', type=EvalBoolString)
-    print("Create upload:", user_id, request_url, referrer_url, media_filepath, sample_filepath, illust_url_id, image_urls, force)
+    print("Create upload:", request_url, referrer_url, media_filepath, sample_filepath, illust_url_id, image_urls, force)
     try:
         if request_url is not None:
-            upload = BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, user_id, force)
+            upload = BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, force)
         else:
-            upload = BASE_SOURCE.CreateFileUpload(user_id, media_filepath, sample_filepath, illust_url_id)
+            upload = BASE_SOURCE.CreateFileUpload(media_filepath, sample_filepath, illust_url_id)
     except Exception as e:
         print("Database exception!", e)
         LogError('controllers.uploads.create', "Unhandled exception occurred creating upload: %s" % (str(e)))

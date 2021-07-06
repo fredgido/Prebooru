@@ -16,18 +16,40 @@
                 </ul>
             </div>
         </div>
-         <div style="margin-top: 2em;">
-            <div>
+        {% if helpers.base.HasItems(notation.pools) %}
+            <div style="margin-top: 2em;">
                 <h5><u>Pools</u></h5>
                 <ul style="margin-left: 1.5em;">
                     {% for pool in notation.pools %}
                         <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
-                    {% else %}
-                        <li><em>No pools.</em></li>
                     {% endfor %}
                 </ul>
             </div>
-        </div>
+        {% endif %}
+        {% if notation.artist != None %}
+            <div style="margin-top: 2em;">
+                <h5><u>Artist</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    <li><a href="{{ url_for('artist.show_html', id=notation.artist.id) }}">{{ notation.artist.shortlink }}</a></li>
+                </ul>
+            </div>
+        {% endif %}
+        {% if notation.illust != None %}
+            <div style="margin-top: 2em;">
+                <h5><u>Illust</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    <li><a href="{{ url_for('illust.show_html', id=notation.illust.id) }}">{{ notation.illust.shortlink }}</a></li>
+                </ul>
+            </div>
+        {% endif %}
+        {% if notation.post != None %}
+            <div style="margin-top: 2em;">
+                <h5><u>Post</u></h5>
+                <ul style="margin-left: 1.5em;">
+                    <li><a href="{{ url_for('post.show_html', id=notation.post.id) }}">{{ notation.post.shortlink }}</a></li>
+                </ul>
+            </div>
+        {% endif %}
         <div style="margin-top: 2em; width: 75%;">
             <h5><u>Body</u></h5>
             <div style="border: 1px solid; padding: 5px;">

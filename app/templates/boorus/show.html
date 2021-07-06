@@ -5,60 +5,70 @@
 {% block secondary_links %}{{ helpers.base.render_template("boorus/_secondary_links.html", booru=booru) | safe }}{% endblock %}
 
 {% block content %}
-    <div id="booru-content">
-        <div class="heading" style="font-size: 32px">Booru #{{ booru.id }}</div>
-        <div style="display: flex; margin-top: 2em;">
-            <div style="width: 20%; margin-left: 1em;">
-                <h5><u>Info</u></h5>
-                <ul style="margin-left: 1.5em;">
-                    <li><strong><a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a></strong></li>
-                    <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
-                </ul>
-            </div>
-            <div style="width: 20%; margin-left: 1em;">
-                <h5><u>Names</u></h5>
-                <ul style="margin-left: 1.5em;">
-                    {% for booru_name in booru.names %}
-                            <li>{{ booru_name.name }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div style="width: 30%; margin-left: 1em;">
-                <h5><u>Artists</u></h5>
-                <ul style="margin-left: 1.5em;">
-                    {% for artist in booru.artists %}
-                            <li><a href="{{ artist.show_url }}">{{ artist.shortlink }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a>
-                                <ul style="margin-left: 1.5em;">
-                                    <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
-                                    <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
-                                    <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
-                                </ul>
-                            </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            <div style="width: 20%; margin-left: 1em;">
-                <h5><u>Timestamps</u></h5>
+    <div class="heading" style="font-size: 32px">Booru #{{ booru.id }}</div>
+    <div id="booru-content" style="margin-top: 2em; display: flex">
+        <div style="width: 20%; border: 2px solid #DDD; background: #F8F8F8; padding: 0.5em;">
+            <section style="margin-bottom: 1em;">
+                <h5>Timestamps</h5>
                 <ul style="margin-left: 1.5em;">
                     <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(booru.created) }}</li>
                     <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(booru.updated) }}</li>
                 </ul>
+            </section>
+            <section id="booru-options" style="margin-bottom: 1em;">
+                <h2>Options</h2>
+                <ul style="margin-left: 1em;">
+                    <li><a href="{{ url_for('booru.query_update_html', id=booru.id) }}">Update from source</a></li>
+                </ul>
+            </section>
+        </div>
+        <div style="width: 70%">
+            <div style="display: flex;">
+                <div style="width: 25%; margin-left: 1em;">
+                    <h5><u>Info</u></h5>
+                    <ul style="margin-left: 1.5em;">
+                        <li><strong><a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a> <a href="https://danbooru.donmai.us/posts?tags={{ booru.current_name }}">&raquo;</a> </strong></li>
+                        <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
+                    </ul>
+                </div>
+                <div style="width: 25%; margin-left: 1em;">
+                    <h5><u>Names</u></h5>
+                    <ul style="margin-left: 1.5em;">
+                        {% for booru_name in booru.names %}
+                                <li>{{ booru_name.name }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div style="width: 40%; margin-left: 1em;">
+                    <h5><u>Artists</u></h5>
+                    <ul style="margin-left: 1.5em;">
+                        {% for artist in booru.artists %}
+                                <li><a href="{{ artist.show_url }}">{{ artist.shortlink }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a>
+                                    <ul style="margin-left: 1.5em;">
+                                        <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
+                                        <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
+                                        <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
+                                    </ul>
+                                </li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
-        <div style="margin-top: 2em;">
-            <div class="heading">
-                <span style="font-size: 24px;"><u>Posts</u></span>
-                <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a>
-            </div>
-            <div style="display: flex; flex-wrap: wrap; margin-top: 1em;">
-                 {% for post in booru.recent_posts %}
-                    <div style="width: 340px;">
-                        {{ helpers.post.Preview(post) | safe }}
-                    </div>
-                {% else %}
-                    <em>none</em>
-                {% endfor %}
-            </div>
+    </div>
+    <div style="margin-top: 2em;">
+        <div class="heading">
+            <span style="font-size: 24px;"><u>Posts</u></span>
+            <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; margin-top: 1em;">
+             {% for post in booru.recent_posts %}
+                <div style="width: 340px;">
+                    {{ helpers.post.Preview(post) | safe }}
+                </div>
+            {% else %}
+                <em>none</em>
+            {% endfor %}
         </div>
     </div>
 {% endblock %}

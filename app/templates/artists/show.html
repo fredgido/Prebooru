@@ -52,9 +52,9 @@
             <section id="artist-options" style="margin-top: 1em;">
                 <h2>Options</h2>
                 <ul style="margin-left: 1em;">
-                    <li><a href="{{ url_for('artist.update_html', id=artist.id) }}">Update from source</a></li>
+                    <li><a href="{{ url_for('artist.query_update_html', id=artist.id) }}">Update from source</a></li>
                     <li><a href="{{ url_for('artist.query_booru_html', id=artist.id) }}">Query for booru</a></li>
-                    <li><a href="{{ url_for('illust.new_html', artist_id=artist.id) }}">Add illust</a></li>
+                    <li><a href="{{ url_for('illust.new_html', artist_id=artist.id, site_id=artist.site_id) }}">Add illust</a></li>
                     <li><a href="{{ url_for('notation.new_html', artist_id=artist.id) }}">Add notation</a></li>
                 </ul>
             </section>

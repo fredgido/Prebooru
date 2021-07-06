@@ -1,6 +1,7 @@
 # APP/MODELS/POST.PY
 
 # ##PYTHON IMPORTS
+import itertools
 import datetime
 from typing import List
 from dataclasses import dataclass
@@ -93,6 +94,10 @@ class Post(JsonModel):
     @property
     def artists(self):
         return UniqueObjects([illust.artist for illust in self.illusts])
+
+    @property
+    def boorus(self):
+        return UniqueObjects(list(itertools.chain(*[artist.boorus for artist in self.artists])))
 
     @property
     def illust_ids(self):

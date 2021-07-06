@@ -17,9 +17,11 @@
                 </ul>
             </div>
             <div style="width: 30%; margin-left: 1em;">
-                <h5><u>Webpages</u></h5>
+                <h5><u>Sources</u></h5>
                 <ul style="margin-left: 1.5em;">
-                        <li><strong>Request:</strong> {{ upload.request_url }}</li>
+                        <li><strong>Media filepath:</strong> {{ helpers.base.StrOrNone(upload.media_filepath) }}</li>
+                        <li><strong>Sample filepath:</strong> {{ helpers.base.StrOrNone(upload.sample_filepath) }}</li>
+                        <li><strong>Request:</strong> {{ helpers.base.StrOrNone(upload.request_url) }}</li>
                         <li><strong>Referrer:</strong> {{ helpers.base.StrOrNone(upload.referrer_url) }}</li>
                         <li><strong>Image urls:</strong>
                         {% for image_url in upload.image_urls %}
@@ -101,4 +103,11 @@
             </div>
         </div>
     </div>
+    {% if upload.status == 'pending' or upload.status == 'processing' %}
+        <script>
+            setTimeout(function () {
+                window.location.reload();
+            }, 5000)
+        </script>
+    {% endif %}
 {% endblock %}

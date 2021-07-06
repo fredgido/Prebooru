@@ -9,9 +9,8 @@ from ..models import Error, Post, UploadUrl, Upload, Artist
 # ##FUNCTIONS
 
 
-def CreateUploadFromRequest(type, request_url, image_urls, uploader_id, commit=True):
+def CreateUploadFromRequest(type, request_url, image_urls, commit=True):
     data = {
-        'uploader_id': uploader_id,
         'request_url': request_url,
         'type': type,
         'status': 'pending',
@@ -29,9 +28,8 @@ def CreateUploadFromRequest(type, request_url, image_urls, uploader_id, commit=T
 
 
 
-def CreateFileUploadFromRequest(uploader_id, media_filepath, sample_filepath, illust_url_id, commit=True):
+def CreateFileUploadFromRequest(media_filepath, sample_filepath, illust_url_id, commit=True):
     data = {
-        'uploader_id': uploader_id,
         'media_filepath': media_filepath,
         'sample_filepath': sample_filepath,
         'type': 'file',

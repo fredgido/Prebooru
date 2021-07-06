@@ -1,0 +1,20 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}New Artist{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.render_template("artists/_secondary_links.html", artist=artist) | safe }}{% endblock %}
+
+{% block content %}
+    <form method="POST" action="/artists">
+        {{ form.csrf_token }}
+        {{ form.csrf_token }}
+        {{ form.site_id.label }} {{ form.site_id }}
+        {{ form.site_artist_id.label }} {{ form.site_artist_id }}
+        {{ form.current_site_account.label }} {{ form.current_site_account }}
+        {{ form.account_string.label }} {{ form.account_string }}
+        {{ form.name_string.label }} {{ form.name_string }}
+        {{ form.profile.label }} {{ form.profile }}
+        {{ form.active.label }} {{ form.active }}
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}

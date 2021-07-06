@@ -74,7 +74,7 @@ def new_html():
     pool_id=request.args.get('pool_id', type=int)
     artist_id=request.args.get('artist_id', type=int)
     illust_id=request.args.get('illust_id', type=int)
-    post_id=request.args.get('illust_id', type=int)
+    post_id=request.args.get('post_id', type=int)
     print(request.args, pool_id, artist_id, illust_id, post_id)
     form = GetNotationForm(pool_id=pool_id, artist_id=artist_id, illust_id=illust_id, post_id=post_id)
     return render_template("notations/new.html", form=form, notation=None)
