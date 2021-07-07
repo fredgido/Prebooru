@@ -113,7 +113,7 @@ class Post(JsonModel):
     file_ext = DB.Column(DB.String(6), nullable=False)
     md5 = DB.Column(DB.String(255), nullable=False)
     size = DB.Column(DB.Integer, nullable=False)
-    illust_urls = DB.relationship(IllustUrl, secondary=PostIllustUrls, lazy='subquery', backref=DB.backref('post', uselist=False, lazy=True), cascade='all,delete')
+    illust_urls = DB.relationship(IllustUrl, secondary=PostIllustUrls, lazy='subquery', backref=DB.backref('post', uselist=False, lazy=True))
     errors = DB.relationship(Error, secondary=PostErrors, lazy=True, cascade='all,delete')
     notations = DB.relationship(Notation, secondary=PostNotations, lazy=True, backref=DB.backref('post', uselist=False, lazy=True), cascade='all,delete')
     _pools = DB.relationship(PoolPost, backref='item', lazy=True, cascade='all,delete')
@@ -122,6 +122,15 @@ class Post(JsonModel):
 
     def delete_pool(self, pool_id):
         pool_element_delete(pool_id, self)
+
+    def delete(self):
+        pools = [pool for pool in self.pools]
+        DB.session.delete(self)
+        DB.session.commit()
+        if len(pools) > 0:
+            for pool in pools:
+                pool._elements.reorder()
+            DB.session.commit()
 
     @staticmethod
     def searchable_attributes():

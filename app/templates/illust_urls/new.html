@@ -1,0 +1,32 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}
+    New illust URL
+    {% if form.illust_id.data %}
+        for illust #{{ form.illust_id.data }}
+    {% endif %}
+ {% endblock %}
+
+{% block content %}
+    <div class="heading" style="font-size: 28px">
+        {% if form.illust_id.data == None %}
+            New illust URL
+        {% else %}
+            New illust URL: <a href="{{ url_for('illust.show_html', id=form.illust_id.data) }}">illust #{{ form.illust_id.data }}</a>
+        {% endif %}
+    </div>
+    <form method="POST" action="{{ url_for('illust_url.create_html') }}">
+        {{ form.csrf_token }}
+        {% if form.illust_id.data %}
+            {{ form.illust_id(type="hidden") }}
+        {% else %}
+            {{ form.illust_id.label }} {{ form.illust_id }}
+        {% endif %}
+        {{ form.url.label }} {{ form.url(style="width: 50em;") }}
+        {{ form.width.label }} {{ form.width }}
+        {{ form.height.label }} {{ form.height }}
+        {{ form.order.label }} {{ form.order }}
+        {{ form.active.label }} {{ form.active }}
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}

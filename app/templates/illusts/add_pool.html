@@ -4,7 +4,7 @@
 
 {% block content %}
     <div class="heading" style="font-size: 28px">Add pool: <a href="{{ url_for('illust.show_html', id=illust.id) }}">{{ illust.shortlink }}</a></div>
-    <form method="POST" action="{{ url_for('illust.add_pool_html', id=illust.id) }}">
+    <form method="POST" action="{{ url_for('illust.create_pool_illust_html', id=illust.id) }}">
         {{ form.csrf_token }}
         {{ form.pool_id.label }} {{ form.pool_id }}
         <input type="submit" value="Submit">

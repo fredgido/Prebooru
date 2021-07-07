@@ -2,9 +2,10 @@
 
 # ## PYTHON IMPORTS
 import re
-from flask import jsonify, render_template
+from flask import jsonify, render_template, abort
 from sqlalchemy.sql.expression import case
-from wtforms import Form
+#from wtforms import Form
+from flask_wtf import FlaskForm
 from wtforms.meta import DefaultMeta
 
 # ## LOCAL IMPORTS
@@ -22,7 +23,7 @@ class BindNameMeta(DefaultMeta):
         return unbound_field.bind(form=form, **options)
 
 
-class CustomNameForm(Form):
+class CustomNameForm(FlaskForm):
     Meta = BindNameMeta
 
 
@@ -32,14 +33,13 @@ class CustomNameForm(Form):
 # #### Route helpers
 
 
+def PutMethodCheck(request):
+    if request.method == 'POST' and request.values.get('_method', default='').upper() != 'PUT':
+        abort(405)
+
+
 def ShowJson(model, id):
     item = model.query.filter_by(id=id).first()
-    return item.to_json() if item is not None else {}
-
-
-def ShowHtml(model, id):
-    item = model.query.filter_by(id=id).first()
-    return render_template
     return item.to_json() if item is not None else {}
 
 
@@ -72,6 +72,20 @@ def Paginate(query, request):
 
 
 # #### Param helpers
+
+
+def GetOrAbort(model, id):
+    item = model.find(id)
+    if item is None:
+        abort(404, "%s not found." % model.__name__)
+    return item
+
+
+def GetOrError(model, id):
+    item = model.find(id)
+    if item is None:
+        return {'error': True, 'message': "%s not found." % model.__name__}
+    return item
 
 
 def GetPage(request):
@@ -113,6 +127,12 @@ def GetDataParams(request, key):
     return GetParamsValue(params, key, True)
 
 
+def SetError(retdata, message):
+    retdata['error'] = True
+    retdata['message'] = message
+    return retdata
+
+
 def ParseType(params, key, parser):
     try:
         return parser(params[key])
@@ -120,7 +140,7 @@ def ParseType(params, key, parser):
         return None
 
 
-# #### Model helper
+# #### Update helpers
 
 
 def UpdateColumnAttributes(item, attrs, dataparams, updateparams):
@@ -133,7 +153,7 @@ def UpdateColumnAttributes(item, attrs, dataparams, updateparams):
     return is_dirty
 
 
-def UpdateRelationshipCollections(item, rellationships, dataparams, updateparams):
+def UpdateRelationshipCollections(item, relationships, dataparams, updateparams):
     """For simple collection relationships with scalar values"""
     is_dirty = False
     for attr, subattr, model in relationships:

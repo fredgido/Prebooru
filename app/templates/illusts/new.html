@@ -1,20 +1,40 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}New Illust{% endblock %}
+{% block title %}
+    New Illust
+    {% if not helpers.illust.IsGeneralForm(form) %}
+        for artist #{{ form.artist_id.data }}
+    {% endif %}
+{% endblock %}
 
 {% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=illust) | safe }}{% endblock %}
 
 {% block content %}
+    <div class="heading" style="font-size: 28px">
+        {% if helpers.illust.IsGeneralForm(form) %}
+            New illust
+        {% else %}
+            New illust: <a href="{{ url_for('artist.show_html', id=form.artist_id.data) }}">artist #{{ form.artist_id.data }}</a>
+        {% endif %}
+    </div>
     <form method="POST" action="/illusts">
         {{ form.csrf_token }}
-        {{ form.site_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.site_id(style="display: block;") }}
-        {{ form.site_illust_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.site_illust_id(style="display: block;") }}
-        {{ form.artist_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.artist_id(style="display: block;") }}
-        {{ form.pages.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.pages(style="display: block;") }}
-        {{ form.score.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.score(style="display: block;") }}
-        {{ form.tag_string.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.tag_string(style="display: block;") }}
-        {{ form.commentary.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.commentary(style="display: block;",rows=20,cols=200) }}
-        {{ form.active.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.active(style="display: block;") }}
+        {% if form.site_id.data %}
+            {{ form.site_id(style="display: none;") }}
+        {% else %}
+            {{ form.site_id.label }} {{ form.site_id }}
+        {% endif %}
+        {{ form.site_illust_id.label }} {{ form.site_illust_id }}
+        {% if form.artist_id.data %}
+            {{ form.artist_id(type="hidden") }}
+        {% else %}
+            {{ form.artist_id.label }} {{ form.artist_id }}
+        {% endif %}
+        {{ form.pages.label }} {{ form.pages }}
+        {{ form.score.label }} {{ form.score }}
+        {{ form.tag_string.label }} {{ form.tag_string }}
+        {{ form.commentary.label }} {{ form.commentary(rows=20,cols=200) }}
+        {{ form.active.label }} {{ form.active }}
         <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
     </form>
 {% endblock %}

@@ -143,6 +143,9 @@ def TimeAgo(timeval, precision=2):
         return "%f months ago" % SetPrecision(days / 30, 2)
     return "%f years ago" % SetPrecision(days / 365, 2)
 
+def AddDictEntry(indict,key,entry):
+    indict[key] = indict[key] + [entry] if key in indict else [entry]
+
 '''
 DOESN'T WORK
 def pmemoize(func):

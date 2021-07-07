@@ -53,10 +53,10 @@
             <section id="illust-options" style="margin-top: 1em;">
                 <h2>Options</h2>
                 <ul style="margin-left: 1em;">
-                    <li><a href="{{ url_for('illust.update_html', id=illust.id) }}">Update from source</a></li>
+                    <li><a href="{{ url_for('illust.query_update_html', id=illust.id) }}">Update from source</a></li>
                     <li><a href="{{ helpers.illust.DanbooruBatchUrl(illust) }}" target="_blank">Batch bookmarklet</a></li>
-                    <li><a href="{{ url_for('illust.new_illust_url_html', id=illust.id) }}">Add media URL</a></li>
-                    <li><a href="{{ url_for('illust.add_new_pool_html', id=illust.id) }}">Add pool</a></li>
+                    <li><a href="{{ url_for('illust_url.new_html', illust_id=illust.id) }}">Add media URL</a></li>
+                    <li><a href="{{ url_for('pool_element.new_html', illust_id=illust.id) }}">Add pool</a></li>
                     <li><a href="{{ url_for('notation.new_html', illust_id=illust.id) }}">Add notation</a></li>
                 </ul>
             </section>
@@ -135,10 +135,11 @@
         {% elif illust.type == 'image' %}
             <h5><u>Image URLs</u></h5>
             <div style="display: flex;">
-                 {% for illust_url in illust.urls %}
+                 {% for illust_url in helpers.illust.IllustUrlsOrdered(illust) %}
                     <div style="width: 25%;">
                         <div>
                             <ul style="margin-left: 1.5em; padding-right: 0.5em;">
+                                <li><strong>( <a href="{{ url_for('illust_url.edit_html', id=illust_url.id) }}">edit</a> )</strong></li>
                                 <li><strong>Order: {{ illust_url.order + 1 }}</strong></li>
                                 <li><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</li>
                                 <li><strong>Dimensions:</strong> {{ illust_url.width }} x {{ illust_url.height }}</li>

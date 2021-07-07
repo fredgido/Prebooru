@@ -121,12 +121,12 @@ class Illust(JsonModel):
         return self.__source
 
     def delete(self):
-        pools = self.pools
+        pools = [pool for pool in self.pools]
         DB.session.delete(self)
         DB.session.commit()
-        for pool in pools:
-            pool._elements.reorder()
         if len(pools) > 0:
+            for pool in pools:
+                pool._elements.reorder()
             DB.session.commit()
     
     @staticmethod

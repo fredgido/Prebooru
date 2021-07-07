@@ -4,20 +4,24 @@
 import os
 import time
 from flask import request
+from sqlalchemy import not_
 import atexit
 import random
 import requests
 import threading
+import itertools
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # ## LOCAL IMPORTS
 from app import database
 from app import SESSION, PREBOORU_APP
+from app.config import workingdirectory, datafilepath
 from app.cache import ApiData, MediaFile
-from app.models import Upload, Illust, Artist
-from app.sources import base as BASE_SOURCE
+from app.models import Upload, Illust, Artist, Booru, Label
+from app.sources import base as BASE_SOURCE, danbooru as DANBOORU_SOURCE
 from app.logical.utility import MinutesAgo, StaticVars, GetCurrentTime
 from app.logical.logger import LogError
+from app.logical.logger import PutGetJSON, LoadDefault
 #from app.logical.unshortenlink import UnshortenAllLinks
 from argparse import ArgumentParser
 
@@ -26,6 +30,10 @@ from argparse import ArgumentParser
 
 SCHED = None
 SEM = threading.Semaphore()
+BOORU_SEM = threading.Semaphore()
+
+BOORU_ARTISTS_DATA = None
+BOORU_ARTISTS_FILE = workingdirectory + datafilepath + 'booru_artists_file.json'
 
 # ### FUNCTIONS
 
@@ -57,6 +65,60 @@ def CheckForShortLinks():
     print("CheckForShortLinks")
     UnshortenAllLinks()
 
+def LoadBooruArtistData():
+    global BOORU_ARTISTS_DATA
+    if BOORU_ARTISTS_DATA is None:
+        BOORU_ARTISTS_DATA = PutGetJSON(BOORU_ARTISTS_FILE, 'r')
+        BOORU_ARTISTS_DATA = BOORU_ARTISTS_DATA if type(BOORU_ARTISTS_DATA) is dict else {}
+        BOORU_ARTISTS_DATA['last_checked_artist_id'] = BOORU_ARTISTS_DATA['last_checked_artist_id'] if ('last_checked_artist_id' in BOORU_ARTISTS_DATA) and (type(BOORU_ARTISTS_DATA['last_checked_artist_id']) is int) else 0
+
+def CheckForNewArtistBoorus():
+    print("CheckForNewArtistBoorus")
+    BOORU_SEM.acquire()
+    print("<booru semaphore acquire>")
+    LoadBooruArtistData()
+    page = Artist.query.filter(Artist.id > BOORU_ARTISTS_DATA['last_checked_artist_id'], not_(Artist.boorus.any())).paginate(per_page=100)
+    try:
+        while True:
+            if len(page.items) == 0:
+                break
+            query_urls = [artist.booru_search_url for artist in page.items]
+            results = DANBOORU_SOURCE.GetArtistsByMultipleUrls(query_urls)
+            if results['error']:
+                print("Error:", results)
+                break
+            booru_artist_ids = set(artist['id'] for artist in itertools.chain(*[results['data'][url] for url in results['data']]))
+            boorus = Booru.query.filter(Booru.danbooru_id.in_(booru_artist_ids)).all()
+            max_artist_id = 0
+            for url in results['data']:
+                danbooru_artists = results['data'][url]
+                db_artist = next(filter(lambda x: x.booru_search_url == url, page.items))
+                for danbooru_artist in danbooru_artists:
+                    booru = next(filter(lambda x: x.danbooru_id == danbooru_artist['id'], boorus), None)
+                    if booru is None:
+                        current_time = GetCurrentTime()
+                        booru = Booru(danbooru_id=danbooru_artist['id'], current_name=danbooru_artist['name'], created=current_time, updated=current_time)
+                        SESSION.add(booru)
+                        SESSION.commit()
+                    booru_names = [name.name for name in booru.names]
+                    if danbooru_artist['name'] not in booru_names:
+                        name_label = Label.query.filter_by(name=danbooru_artist['name']).first()
+                        if name_label is None:
+                            name_label = Label(name=danbooru_artist['name'])
+                        booru.names.append(name_label)
+                    booru.artists.append(db_artist)
+                    SESSION.commit()
+                    print("Added artist #", db_artist.id, "to booru #", booru.id)
+            max_artist_id = max(max_artist_id, *[artist.id for artist in page.items])
+            print("Max ID:", max_artist_id)
+            BOORU_ARTISTS_DATA['last_checked_artist_id'] = max_artist_id
+            PutGetJSON(BOORU_ARTISTS_FILE, 'w', BOORU_ARTISTS_DATA)
+            if not page.has_next:
+                break
+            page = page.next()
+    finally:
+        BOORU_SEM.release()
+        print("<booru semaphore release>")
 
 @StaticVars(processing=False)
 def ProcessUploads():
@@ -84,6 +146,7 @@ def ProcessUploads():
             except Exception as e:
                 print("Unable to contact similarity server:", e)
     finally:
+        SCHED.add_job(CheckForNewArtistBoorus)
         ProcessUploads.processing = False
         SEM.release()
         print("<semaphore release>")
@@ -212,9 +275,11 @@ if __name__ == '__main__':
         SCHED = BackgroundScheduler(daemon=True)
         #SCHED.add_job(CheckSubscriptions, 'interval', seconds=15)
         SCHED.add_job(CheckPendingUploads, 'interval', minutes=5)
+        SCHED.add_job(CheckForNewArtistBoorus, 'interval', minutes=5)
         SCHED.add_job(ExpireUploads, 'interval', minutes=1)
         #SCHED.add_job(CheckGlobals, 'interval', seconds=1)
         SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1)
+        
         #SCHED.add_job(CheckForShortLinks, 'interval', hours=2)
         SCHED.add_job(ProcessUploads)
         SCHED.start()

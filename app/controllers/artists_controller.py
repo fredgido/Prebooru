@@ -13,7 +13,8 @@ from ..models import Artist, Label
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
-    DefaultOrder, GetDataParams, CustomNameForm, ParseType, UpdateColumnAttributes, UpdateRelationshipCollections
+    DefaultOrder, GetDataParams, CustomNameForm, ParseType, UpdateColumnAttributes, UpdateRelationshipCollections,\
+    GetOrAbort, GetOrError
 
 
 # ## GLOBAL VARIABLES
@@ -66,11 +67,7 @@ def ConvertUpdateParams(dataparams):
     return params
 
 
-def query_booru(id):
-    artist = Artist.find(id)
-    if artist is None:
-        abort(404)
-    return BASE_SOURCE.QueryArtistBoorus(artist)
+# #### Route helpers
 
 
 def index():
@@ -95,8 +92,8 @@ def show_json(id):
 
 @bp.route('/artists/<int:id>', methods=['GET'])
 def show_html(id):
-    artist = Artist.query.filter_by(id=id).first()
-    return render_template("artists/show.html", artist=artist) if artist is not None else abort(404)
+    artist = GetOrAbort(Artist, id)
+    return render_template("artists/show.html", artist=artist)
 
 
 @bp.route('/artists.json', methods=['GET'])
@@ -149,9 +146,7 @@ def create_json():
 @bp.route('/artists/<int:id>/edit', methods=['GET'])
 def edit_html(id):
     """HTML access point to update function."""
-    artist = Artist.find(id)
-    if artist is None:
-        abort(404)
+    artist = GetOrAbort(Artist, id)
     account_string = '\r\n'.join(site_account.name for site_account in artist.site_accounts)
     name_string = '\r\n'.join(artist_name.name for artist_name in artist.names)
     form = GetArtistForm(site_id=artist.site_id, site_artist_id=artist.site_artist_id, current_site_account=artist.current_site_account, account_string=account_string, name_string=name_string, active=artist.active)
@@ -163,9 +158,7 @@ def update_html(id):
     print("update_html", request.method, request.values.get('_method'))
     if request.method == 'POST' and request.values.get('_method', default='').upper() != 'PUT':
         abort(405)
-    artist = Artist.find(id)
-    if artist is None:
-        abort(404)
+    artist = GetOrAbort(Artist, id)
     is_dirty = False
     dataparams = GetDataParams(request, 'artist')
     updateparams = ConvertUpdateParams(dataparams)
@@ -206,9 +199,7 @@ def query_create_json():
 @bp.route('/artists/<int:id>/query_update', methods=['GET'])
 def query_update_html(id):
     """Query source and update artist."""
-    artist = Artist.find(id)
-    if artist is None:
-        abort(404)
+    artist = GetOrAbort(Artist, id)
     BASE_SOURCE.UpdateArtist(artist)
     flash("Artist updated.")
     return redirect(url_for('artist.show_html', id=id))
@@ -217,7 +208,8 @@ def query_update_html(id):
 @bp.route('/artists/<int:id>/query_booru', methods=['GET'])
 def query_booru_html(id):
     """Query booru and create/update booru relationships."""
-    response = query_booru(id)
+    artist = GetOrAbort(Artist, id)
+    response = BASE_SOURCE.QueryArtistBoorus(artist)
     if response['error']:
         flash(response['message'])
     else:
@@ -227,7 +219,10 @@ def query_booru_html(id):
 
 @bp.route('/artists/<int:id>/query_booru.json', methods=['GET'])
 def query_booru_json(id):
-    response = query_booru(id)
+    artist = GetOrError(Artist, id)
+    if type(artist) is dict:
+        return artist
+    response = BASE_SOURCE.QueryArtistBoorus(artist)
     if response['error']:
         return response
     response['artist'] = response['artist'].to_json()

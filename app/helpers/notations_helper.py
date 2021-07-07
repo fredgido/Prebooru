@@ -27,3 +27,6 @@ def ConvertToHTML(notation):
         output_html = output_html[:link_match.start()] + html_link + output_html[link_match.end():]
     output_html = re.sub(r'\r?\n', '<br>', output_html)
     return Markup(output_html)
+
+def IsGeneralForm(form):
+    return (form.pool_id.data is None) and (form.artist_id.data is None) and (form.illust_id.data is None) and (form.post_id.data is None)

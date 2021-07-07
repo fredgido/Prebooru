@@ -60,9 +60,6 @@ event.listen(DB.engine, 'connect', _fk_pragma_on_connect)
 event.listen(DB.get_engine(bind='cache'), 'connect', _fk_pragma_on_connect)
 event.listen(DB.get_engine(bind='similarity'), 'connect', _fk_pragma_on_connect)
 
-# Add application helpers to jinja globals
-from . import helpers  # noqa: E402
-PREBOORU_APP.jinja_env.globals.update(helpers=helpers)
 
 # Extend Python imports
 from .logical import uniquejoin  # noqa: E402

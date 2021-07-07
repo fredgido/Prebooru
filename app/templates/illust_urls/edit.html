@@ -1,0 +1,22 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %}
+    Edit illust URL for illust #{{ illust_url.illust_id }}
+ {% endblock %}
+
+{% block content %}
+    <div class="heading" style="font-size: 28px">
+        Edit illust URL: <a href="{{ url_for('illust.show_html', id=illust_url.illust_id) }}">illust #{{ illust_url.illust_id }}</a>
+    </div>
+    <form method="POST" action="{{ url_for('illust_url.update_html', id=illust_url.id) }}">
+        <input type="hidden" name="_method" value="put">
+        {{ form.csrf_token }}
+        {{ form.illust_id(type="hidden") }}
+        {{ form.url.label }} {{ form.url(style="width: 50em;") }}
+        {{ form.width.label }} {{ form.width }}
+        {{ form.height.label }} {{ form.height }}
+        {{ form.order.label }} {{ form.order }}
+        {{ form.active.label }} {{ form.active }}
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}

@@ -3,16 +3,16 @@
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, abort, url_for, flash, redirect
 from sqlalchemy.orm import lazyload, selectinload
-from wtforms import StringField
+from wtforms import StringField, IntegerField
 from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
-from ..models import Pool, Post, Illust, IllustUrl
+from ..models import Pool, Post, Illust, Notation, IllustUrl
 from ..database import local as DBLOCAL
 from ..logical.utility import GetCurrentTime
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
-    DefaultOrder, GetDataParams, CustomNameForm, GetPage, GetLimit
+    DefaultOrder, GetDataParams, CustomNameForm, GetPage, GetLimit, ParseType
 
 
 # ## GLOBAL VARIABLES
@@ -27,6 +27,16 @@ def GetPoolForm(**kwargs):
     class PoolForm(CustomNameForm):
         name = StringField('Name', id='pool-name', custom_name='pool[name]', validators=[DataRequired()])
     return PoolForm(**kwargs)
+
+
+def GetPoolElementForm(**kwargs):
+    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
+    class PoolElementForm(CustomNameForm):
+        pool_id = IntegerField('Pool ID', id='pool-element-pool-id', custom_name='pool_element[pool_id]')
+        illust_id = IntegerField('Illust ID', id='pool-element-illust-id', custom_name='pool_element[illust_id]')
+        post_id = IntegerField('Post ID', id='pool-element-post-id', custom_name='pool_element[post_id]')
+        notation_id = IntegerField('Notation ID', id='pool-element-notation-id', custom_name='pool_element[notation_id]')
+    return PoolElementForm(**kwargs)
 
 
 # ## FUNCTIONS
@@ -49,19 +59,40 @@ def PoolNameUniqueness(name):
     return True
 
 
-def AddTypeElement(pool, itemclass, id, dataparams):
+def CheckPoolElementParams(dataparams):
+    if dataparams['pool_id'] is None:
+        return "No pool ID present!"
+    if (dataparams['illust_id'] is None) and (dataparams['post_id'] is None) and (dataparams['notation_id'] is None):
+        return "No illust, post, or notation ID specified!"
+
+
+def ConvertPoolElementParams(dataparams):
+    params = {}
+    params['pool_id'] = ParseType(dataparams, 'pool_id', int)
+    params['illust_id'] = ParseType(dataparams, 'illust_id', int)
+    params['post_id'] = ParseType(dataparams, 'post_id', int)
+    params['notation_id'] = ParseType(dataparams, 'notation_id', int)
+    return params
+
+
+def CreatePoolElementAbort(message, params):
+    flash(message, 'error')
+    return redirect(url_for('pool.new_pool_element_html', **params))
+
+
+def AddTypeElement(pool, itemclass, itemtype, id, dataparams):
     item = itemclass.find(id)
     if item is None:
-        return {'error': True, 'message': "%s not found." % itemclass.__name__, 'parameters': dataparams}
+        return {'error': True, 'message': "%s not found." % itemtype, 'parameters': dataparams}
     pool_ids = [pool.id for pool in item.pools]
     print("Pool IDs:", pool_ids)
     if pool.id in pool_ids:
-        return {'error': True, 'message': "%s #%d already added to pool #%d." % (itemclass.__name__, item.id, pool.id), 'parameters': dataparams}
+        return {'error': True, 'message': "%s #%d already added to pool #%d." % (itemtype, item.id, pool.id), 'parameters': dataparams}
     pool.updated = GetCurrentTime()
     pool.elements.append(item)
     DBLOCAL.SaveData()
     pool_ids += [pool.id]
-    return {'error': False, 'pool': pool.to_json(), 'item': item.to_json(), 'data': pool_ids, 'params': dataparams}
+    return {'error': False, 'pool': pool.to_json(), 'type': itemtype, 'item': item.to_json(), 'data': pool_ids, 'params': dataparams}
 
 
 def IndexQuery():
@@ -158,18 +189,3 @@ def update_html(id):
         pool.updated = GetCurrentTime()
         DBLOCAL.SaveData()
     return redirect(url_for('pool.show_html', id=pool.id))
-
-
-@bp.route('/pools/<int:id>/element.json', methods=['POST'])
-def add_element(id):
-    print(request.values)
-    pool = Pool.find(id)
-    if pool is None:
-        return {'error': True, 'message': "Pool not found."}
-    dataparams = GetDataParams(request, 'pool')
-    ConvertDataParams(dataparams)
-    if 'post_id' in dataparams:
-        return AddTypeElement(pool, Post, dataparams['post_id'], dataparams)
-    elif 'illust_id' in dataparams:
-        return AddTypeElement(pool, Illust, dataparams['illust_id'], dataparams)
-    return {'error': True, 'message': "Must include illust or post ID.", 'parameters': dataparams}

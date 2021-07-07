@@ -9,7 +9,7 @@ from sqlalchemy.orm import aliased
 
 # ##LOCAL IMPORTS
 from .. import DB
-from ..sites import GetSiteDomain
+from ..sites import GetSiteDomain, GetSiteKey
 from .base import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
 from .artist_url import ArtistUrl
 from .illust import Illust
@@ -91,6 +91,10 @@ class Artist(JsonModel):
         return GetSiteDomain(self.site_id)
 
     @property
+    def booru_search_url(self):
+        return self._source.ArtistBooruSearchUrl(self)
+
+    @property
     def show_url(self):
         return url_for("artist.show_html", id=self.id)
 
@@ -102,6 +106,14 @@ class Artist(JsonModel):
         DB.session.commit()
 
     _recent_posts = None
+
+    @property
+    def _source(self):
+        if not hasattr(self, '__source'):
+            from ..sources import DICT as SOURCEDICT
+            site_key = GetSiteKey(self.site_id)
+            self.__source = SOURCEDICT[site_key]
+        return self.__source
 
     @staticmethod
     def searchable_attributes():

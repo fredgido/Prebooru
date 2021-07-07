@@ -5,6 +5,7 @@ from ..sites import GetSiteDomain, GetSiteKey
 from ..sources import DICT as SOURCEDICT, base as BASE_SOURCE
 from .base_helper import SearchUrlFor
 
+
 def SiteDataIterator(illust):
     site_data_json = illust.site_data.to_json()
     for key,val in site_data_json.items():
@@ -57,3 +58,9 @@ def DanbooruBatchUrl(illust):
     post_url = source.GetPostUrl(illust)
     query_string = urllib.parse.urlencode({'url': post_url})
     return 'https://danbooru.donmai.us/uploads/batch?' + query_string
+
+def IsGeneralForm(form):
+    return (form.artist_id.data is None) or (form.site_id.data is None)
+
+def IllustUrlsOrdered(illust):
+    return sorted(illust.urls, key=lambda x: x.order)

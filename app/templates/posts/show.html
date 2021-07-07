@@ -151,7 +151,7 @@
                 <ul style="margin-left: 1em;">
                     <li><a href="{{ post.file_url }}">Original file</a></li>
                     <li><a href="javascript:prompt('Copy file link:', '{{ post.file_path.encode('unicode-escape').decode() }}');false;">File link</a></li>
-                    <li><a href="{{ url_for('post.add_new_pool_html', id=post.id) }}">Add pool</a></li>
+                    <li><a href="{{ url_for('pool_element.new_html', post_id=post.id) }}">Add pool</a></li>
                     <li><a href="{{ url_for('notation.new_html', post_id=post.id) }}">Add notation</a></li>
                 </ul>
             </section>

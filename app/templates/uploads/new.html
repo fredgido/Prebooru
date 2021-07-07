@@ -3,10 +3,26 @@
 {% block title %}New Upload{% endblock %}
 
 {% block content %}
-    <div class="heading" style="font-size: 28px">New Upload</div>
+    <div class="heading" style="font-size: 28px">
+        {% if illust_url == None %}
+            New upload
+        {% else %}
+            New upload: <a href="{{ url_for('illust.show_html', id=illust_url.illust_id) }}">illust #{{ illust_url.illust_id }}</a>
+        {% endif %}
+    </div>
+    {% if illust_url != None %}
+        <ul style="margin-left: 2em;">
+            <li><strong>URL:</strong> {{ illust_url.url }}</li>
+            <li><strong>Dimensions:</strong> ( {{ illust_url.width }} x {{ illust_url.height }} )</li>
+        </ul>
+    {% endif %}
     <form method="POST" action="/uploads">
         {{ form.csrf_token }}
-        {{ form.illust_url_id.label }} {{ form.illust_url_id }}
+        {% if form.illust_url_id.data %}
+            {{ form.illust_url_id(type="hidden") }}
+        {% else %}
+            {{ form.illust_url_id.label }} {{ form.illust_url_id }}
+        {% endif %}
         {{ form.media_filepath.label }} {{ form.media_filepath(style="width: 100em;") }}
         {{ form.sample_filepath.label }} {{ form.sample_filepath(style="width: 100em;") }}
         <input type="submit" value="Submit">

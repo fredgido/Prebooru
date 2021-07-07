@@ -11,7 +11,7 @@ from wtforms.validators import DataRequired
 
 from ..logical.utility import EvalBoolString, IsTruthy, IsFalsey
 from ..logical.logger import LogError
-from ..models import Upload, Post
+from ..models import Upload, Post, IllustUrl
 from ..sources import base as BASE_SOURCE
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams, ParseType
 
@@ -112,8 +112,13 @@ def index():
 @bp.route('/uploads/new', methods=['GET'])
 def new_html():
     illust_url_id = request.args.get('illust_url_id', type=int)
+    if illust_url_id is not None:
+        illust_url = IllustUrl.find(illust_url_id)
+        if illust_url is None:
+            flash("Illust URL #%d does not exist.", 'error')
+            illust_url_id = None
     form = GetUploadForm(illust_url_id=illust_url_id)
-    return render_template("uploads/new.html", form=form, upload=None)
+    return render_template("uploads/new.html", form=form, upload=None, illust_url=illust_url)
 
 @bp.route('/uploads', methods=['POST'])
 def create_html():
