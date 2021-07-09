@@ -7,13 +7,14 @@
 {% block content %}
     <form method="POST" action="/artists">
         {{ form.csrf_token }}
-        {{ form.csrf_token }}
         {{ form.site_id.label }} {{ form.site_id }}
         {{ form.site_artist_id.label }} {{ form.site_artist_id }}
+        {{ form.site_created.label }} {{ form.site_created }} {{ helpers.base.DescriptionText(form.site_created.description) }}
         {{ form.current_site_account.label }} {{ form.current_site_account }}
-        {{ form.account_string.label }} {{ form.account_string }}
-        {{ form.name_string.label }} {{ form.name_string }}
-        {{ form.profile.label }} {{ form.profile }}
+        {{ form.account_string.label }} {{ form.account_string(rows=5) }} {{ helpers.base.DescriptionText(form.account_string.description) }}
+        {{ form.name_string.label }} {{ form.name_string(rows=5) }} {{ helpers.base.DescriptionText(form.name_string.description) }}
+        {{ form.webpage_string.label }} {{ form.webpage_string(cols=100, rows=10) }} {{ helpers.base.DescriptionText(form.webpage_string.description) }}
+        {{ form.profile.label }} {{ form.profile(cols=100, rows=10) }}
         {{ form.active.label }} {{ form.active }}
         <input type="submit" value="Submit">
     </form>

@@ -14,7 +14,7 @@
             </menu>
         </nav>
     </header>
-    <section class="content">
+    <section id="content">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 <div id="notice" style="position: fixed; top: 1em; left: 25%; width: 50%; z-index: 9999; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
@@ -27,11 +27,13 @@
                         {% endif %}
                     {% endfor %}
                 </div>
-                <script>
-                    setTimeout(()=>{
-                        document.getElementById('notice').style.setProperty('display', 'none');
-                    }, 5000);
-                </script>
+                {% if not helpers.base.HasErrorMessage(messages) %}
+                    <script>
+                        setTimeout(()=>{
+                            document.getElementById('notice').style.setProperty('display', 'none');
+                        }, 5000);
+                    </script>
+                {% endif %}
             {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}

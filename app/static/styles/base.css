@@ -41,7 +41,7 @@ a:visited {
     color: #0075f8;
     text-decoration: none;
 }
-section.content {
+section#content {
     margin-left: 4em;
 }
 table {
@@ -71,23 +71,47 @@ code {
     font-family: monospace;
     background-color: lightgrey;
 }
-
 form label {
     display: block;
     font-weight: bold;
     font-size: 20px;
     margin-top: 1em;
 }
-
 form input,
 form textarea,
 form select {
     display: block;
 }
-
 form input[type=submit] {
     font-weight: bold;
     height: 30px;
     width: 60px; 
     margin-top: 20px;
+}
+ul {
+    margin-left: 1.5em;
+}
+span.item-heading {
+    font-size: 125%;
+    font-weight: bold;
+}
+span.muted-timestamp {
+    font-size: 75%;
+    color: #888;
+}
+span.explanation {
+    color: grey;
+    font-style: italic;
+}
+span#recent-posts-heading {
+    font-size: 24px;
+    text-decoration: underline;
+}
+div#recent-posts-container {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 1em;
+}
+div.recent-post-block {
+    width: 340px;
 }

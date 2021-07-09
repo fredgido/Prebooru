@@ -1,7 +1,7 @@
 # APP\CONTROLLERS\BOORUS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
+from flask import Blueprint, request, render_template, redirect, url_for, flash
 from sqlalchemy.orm import selectinload
 
 # ## LOCAL IMPORTS
@@ -19,7 +19,7 @@ bp = Blueprint("booru", __name__)
 
 # ## FUNCTIONS
 
-# #### Route helpers
+# #### Route auxiliary functions
 
 
 def index():

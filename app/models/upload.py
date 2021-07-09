@@ -68,9 +68,9 @@ class Upload(JsonModel):
     sample_filepath = DB.Column(DB.String(255), nullable=True)
     illust_url_id = DB.Column(DB.Integer, DB.ForeignKey('illust_url.id'), nullable=True)
     subscription_id = DB.Column(DB.Integer, DB.ForeignKey('subscription.id'), nullable=True)
-    image_urls = DB.relationship(UploadUrl, secondary=UploadUrls, lazy='subquery', uselist=True, backref=DB.backref('upload', lazy=True))
-    posts = DB.relationship(Post, secondary=UploadPosts, lazy=True)
-    errors = DB.relationship(Error, secondary=UploadErrors, lazy=True)
+    image_urls = DB.relationship(UploadUrl, secondary=UploadUrls, lazy='subquery', uselist=True, backref=DB.backref('upload', lazy=True, uselist=False), cascade='all,delete')
+    posts = DB.relationship(Post, secondary=UploadPosts, backref=DB.backref('uploads', lazy=True), lazy=True)
+    errors = DB.relationship(Error, secondary=UploadErrors, lazy=True, cascade='all,delete')
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
     @property

@@ -22,10 +22,16 @@ def SafePrint(*args,**kwargs):
 
 def ProcessTimestamp(timestring):
     """Get seconds from the Epoch for timestamps"""
-    return round(iso8601.parse_date(timestring).timestamp())
+    try:
+        return round(iso8601.parse_date(timestring).timestamp())
+    except Exception:
+        pass
 
 def ProcessUTCTimestring(timestring):
-    return iso8601.parse_date(timestring)
+    try:
+        return iso8601.parse_date(timestring)
+    except Exception:
+        pass
 
 def GetBufferChecksum(buffer):
     hasher = hashlib.md5()

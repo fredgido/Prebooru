@@ -125,6 +125,7 @@ class Post(JsonModel):
 
     def delete(self):
         pools = [pool for pool in self.pools]
+        #self.uploads.clear()
         DB.session.delete(self)
         DB.session.commit()
         if len(pools) > 0:

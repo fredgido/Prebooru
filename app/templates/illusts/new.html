@@ -7,6 +7,8 @@
     {% endif %}
 {% endblock %}
 
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/illusts.css') }}">{% endblock %}
+
 {% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=illust) | safe }}{% endblock %}
 
 {% block content %}
@@ -19,22 +21,9 @@
     </div>
     <form method="POST" action="/illusts">
         {{ form.csrf_token }}
-        {% if form.site_id.data %}
-            {{ form.site_id(style="display: none;") }}
-        {% else %}
-            {{ form.site_id.label }} {{ form.site_id }}
-        {% endif %}
-        {{ form.site_illust_id.label }} {{ form.site_illust_id }}
-        {% if form.artist_id.data %}
-            {{ form.artist_id(type="hidden") }}
-        {% else %}
-            {{ form.artist_id.label }} {{ form.artist_id }}
-        {% endif %}
-        {{ form.pages.label }} {{ form.pages }}
-        {{ form.score.label }} {{ form.score }}
-        {{ form.tag_string.label }} {{ form.tag_string }}
-        {{ form.commentary.label }} {{ form.commentary(rows=20,cols=200) }}
-        {{ form.active.label }} {{ form.active }}
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {{ field_input() }}
+        {% endfor %}
         <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
     </form>
 {% endblock %}

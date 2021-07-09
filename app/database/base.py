@@ -10,34 +10,34 @@ from ..models import ArtistUrl, Artist, Label, Description, Illust, IllustUrl, T
 
 # ##FUNCTIONS
 
-from ..logical.utility import GetCurrentTime
+from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
 
 ### CREATE ###
 
-def CreateArtistFromParameters(params, site_id):
+def CreateArtistFromParameters(params):
     current_time = GetCurrentTime()
     data = {
-        'site_id': site_id,
+        'site_id': params['site_id'],
         'site_artist_id': params['site_artist_id'],
+        'current_site_account': params['current_site_account'],
+        'site_created': ProcessUTCTimestring(params['site_created']),
         'requery': current_time + datetime.timedelta(days=1),
         'created': current_time,
         'updated': current_time,
     }
-    data['site_created'] = params['site_created'] if 'site_created' in params else None
     artist = Artist(**data)
     SESSION.add(artist)
     SESSION.commit()
-    if 'names' in params:
-        for name in params['names']:
-            AddArtistName(artist, name)
-    if 'site_accounts' in params:
-        for account in params['site_accounts']:
-            AddArtistSiteAccount(artist, account)
-    if 'profiles' in params:
-        for profile in params['profiles']:
-            AddArtistProfile(artist, profile)
-    if 'webpages' in params:
+    for name in params['names']:
+        AddArtistName(artist, name)
+    if params['current_site_account']:
+        params['site_accounts'] = list(set(params['site_accounts'] + [params['current_site_account']]))
+    for account in params['site_accounts']:
+        AddArtistSiteAccount(artist, account)
+    if len(params['webpages']):
         AddArtistWebpages(artist, params['webpages'])
+    if params['profile']:
+        AddArtistProfile(artist, params['profile'])
     return artist
 
 
@@ -245,12 +245,15 @@ def AddArtistWebpages(artist, webpages, commit=True):
     artist_urls = []
     new_urls = []
     for url in webpages:
+        is_active = url[0] != '-'
+        if not is_active:
+            url = url[1:]
         artist_url = ArtistUrl.query.filter_by(artist_id=artist.id, url=url).first()
         if artist_url is None:
             data = {
                 'artist_id': artist.id,
                 'url': url,
-                'active': True,
+                'active': is_active,
             }
             artist_url = ArtistUrl(**data)
             new_urls.append(artist_url)

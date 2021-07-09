@@ -1,0 +1,19 @@
+<section id="video-posts">
+    <h5>Video URLs</h5>
+    <div class="video-post-info">
+        <ul>
+            <li><strong>Order: {{ illust.video_illust_url.order }}</strong></li>
+            <li><strong>Video URL:</strong> {{ helpers.illust.OriginalUrl(illust.video_illust_url) }}</li>
+            <li><strong>Thumb URL:</strong> {{ helpers.illust.OriginalUrl(illust.thumb_illust_url) }}</li>
+            <li><strong>Dimensions:</strong> {{ illust.video_illust_url.width }} x {{ illust.video_illust_url.height }}</li>
+            <li><strong>Active:</strong> {{ illust.video_illust_url.active | tojson }}</li>
+        </ul>
+    </div>
+    <div class="video-post-preview">
+        {% if illust.video_illust_url.post != None %}
+            {{ helpers.post.Preview(illust.video_illust_url.post) | safe }}
+        {% else %}
+            <em>No post.</em>
+        {% endif %}
+    </div>
+</section>

@@ -94,11 +94,13 @@ def create(request):
 @bp.route('/pool_elements/new', methods=['GET'])
 def new_html():
     """HTML access point to the create pool element function."""
+    '''
     pool_id = request.args.get('pool_id', type=int)
     illust_id = request.args.get('illust_id', type=int)
     post_id = request.args.get('post_id', type=int)
     notation_id = request.args.get('notation_id', type=int)
-    form = GetPoolElementForm(pool_id=pool_id, illust_id=illust_id, post_id=post_id, notation_id=notation_id)
+    '''
+    form = GetPoolElementForm(**request.args)
     return render_template("pool_elements/new.html", form=form)
 
 

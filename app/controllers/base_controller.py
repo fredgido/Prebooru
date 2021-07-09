@@ -2,11 +2,13 @@
 
 # ## PYTHON IMPORTS
 import re
+from functools import reduce
 from flask import jsonify, render_template, abort
 from sqlalchemy.sql.expression import case
-#from wtforms import Form
+from wtforms import Form
 from flask_wtf import FlaskForm
 from wtforms.meta import DefaultMeta
+from wtforms.widgets import HiddenInput
 
 # ## LOCAL IMPORTS
 from ..logical.searchable import AllAttributeFilters
@@ -23,7 +25,7 @@ class BindNameMeta(DefaultMeta):
         return unbound_field.bind(form=form, **options)
 
 
-class CustomNameForm(FlaskForm):
+class CustomNameForm(Form):
     Meta = BindNameMeta
 
 
@@ -71,7 +73,7 @@ def Paginate(query, request):
     return query.paginate(page=GetPage(request), per_page=GetLimit(request))
 
 
-# #### Param helpers
+# #### ID helpers
 
 
 def GetOrAbort(model, id):
@@ -86,6 +88,19 @@ def GetOrError(model, id):
     if item is None:
         return {'error': True, 'message': "%s not found." % model.__name__}
     return item
+
+
+# #### Form helpers
+
+
+def HideInput(form, attr, value):
+    field = getattr(form, attr)
+    field.data = value
+    field.widget = HiddenInput()
+    field._value = lambda: value
+
+
+# #### Param helpers
 
 
 def GetPage(request):
@@ -138,6 +153,31 @@ def ParseType(params, key, parser):
         return parser(params[key])
     except Exception as e:
         return None
+
+
+def ParseStringList(params, key, separator):
+    return [item.strip() for item in re.split(separator, params[key]) if item.strip() != ""]
+
+
+def CheckParamRequirements(params, requirements):
+    return reduce(lambda acc, x: acc + (["%s not present or invalid." % x] if params[x] is None else []), requirements, [])
+
+
+def IntOrBlank(data):
+    try:
+        return int(data)
+    except Exception:
+        return ""
+
+
+def NullifyBlanks(data):
+    def _Check(val):
+        return type(val) is str and val.strip() == ""
+    return {k:(v if not _Check(v) else None) for (k,v) in data.items()}
+
+
+def SetDefault(indict, key, default):
+    indict[key] = indict[key] if key in indict else default
 
 
 # #### Update helpers

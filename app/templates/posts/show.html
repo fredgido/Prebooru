@@ -32,6 +32,8 @@
                         {% set outer_loop = loop %}
                         <li><strong><a href="{{url_for('artist.show_html', id=artist.id)}}">{{ artist.shortlink }}</a></strong>
                             <ul style="margin-left: 1em;">
+                                <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
+                                <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
                                 <li><strong>Site ID:</strong> {{ artist.site_artist_id }}</li>
                                 <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
                                 <li><strong>Names:</strong>
@@ -56,6 +58,7 @@
                         {% set outer_loop = loop %}
                         <li><strong><a href="{{url_for('illust.show_html', id=illust.id)}}">illust #{{ illust.id }}</a></strong>
                             <ul style="margin-left: 1em;">
+                                <li><strong><a href="{{ helpers.illust.SiteIllustUrl(illust) }}">{{ helpers.illust.ShortLink(illust) }}</a> {{ helpers.illust.PostIllustUrl(illust) | safe }}</strong></li>
                                 <li><strong>Site ID:</strong> {{ illust.site_illust_id }}</li>
                                 <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
                                 <li><strong>Tags:</strong>

@@ -1,0 +1,71 @@
+/****EDIT Page****/
+textarea#illust-tag-string {
+    width: 20em;
+    height: 5em;
+}
+textarea#illust-commentary {
+    width: 50em;
+    height: 10em;
+}
+/****SHOW Page****/
+div#illust-sidebar {
+    width: 20%;
+    border: 2px solid #DDD;
+    background: #F8F8F8;
+    padding: 0.5em;
+}
+div#illust-sidebar > section {
+    margin-bottom: 1em;
+}
+div#artist-notations-container {
+    max-height: 250px;
+    overflow-y: auto;
+}
+div.illust-notation-block {
+    border: 1px solid #EEE;
+}
+div#illust-site-content {
+    width: 70%;
+}
+div#illust-site-content h5,
+div#illust-posts h5 {
+    text-decoration: underline;
+}
+div#illust-site-content-1 {
+    display: flex;
+}
+div#illust-site-content-1 > section {
+    margin-left: 1em;
+}
+section#illust-site-info {
+    width: 25%;
+}
+section#illust-metrics {
+    width: 25%;
+}
+section#illust-tags {
+    width: 40%;
+}
+div#illust-site-content-2 {
+    margin-top: 2em;
+}
+section#illust-commentaries {
+    margin-left: 1em;
+    width: 90%;
+}
+div#illust-commentaries-container {
+    border: 1px solid #EEE;
+    padding: 0.5em;
+    max-height: 200px;
+    overflow-y: auto;
+}
+div.illust-commentaries-block {
+    margin: 0.5em;
+}
+div#image-posts-container {
+    display: flex;
+}
+div.image-post {
+    width: 25%;
+    padding-right: 0.5em;
+}

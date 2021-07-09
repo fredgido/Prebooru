@@ -73,10 +73,34 @@ ONE_DAY = 60 * 60 * 24
 SITE_ID = 0
 IMAGE_SITE_ID = 1
 
+ILLUST_SHORTLINK = 'pixiv #%d'
+ARTIST_SHORTLINK = 'pxuser #%d'
+
+ILLUST_HREFURL = 'https://www.pixiv.net/artworks/%d'
+ARTIST_HREFURL = 'https://www.pixiv.net/users/%d'
+
 # ##FUNCTIONS
 
 #   AUXILIARY
 
+def HasArtistUrls(artist):
+    return (artist.current_site_account is not None) or (len(artist.site_accounts) == 1)
+
+def ArtistMainUrl(artist):
+    if not HasArtistUrls(artist):
+        return ""
+    return ARTIST_HREFURL % artist.site_artist_id
+
+def ArtistMediaUrl(artist):
+    url = ArtistMainUrl(artist)
+    return url + '/artworks' if len(url) else ""
+
+def ArtistLikesUrl(artist):
+    url = ArtistMainUrl(artist)
+    return url + '/bookmarks' if len(url) else ""
+
+def ArtistBooruSearchUrl(artist):
+    return ARTIST_HREFURL % artist.site_artist_id
 
 def GetDataIllustIDs(pixiv_data, type):
     try:

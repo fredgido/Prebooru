@@ -2,8 +2,13 @@ import re
 import html
 import datetime
 from flask import Markup, request, render_template, url_for, Markup
+from wtforms import Field, BooleanField, TextAreaField
+from wtforms.widgets import HiddenInput
 
 from ..logical.utility import TimeAgo
+
+def RenderTemplate(*args, **kwargs):
+    return Markup(render_template(*args, **kwargs))
 
 def HasItems(items):
     return len(items) > 0
@@ -83,3 +88,31 @@ def UrlForWithArgs(endpoint, **kwargs):
         url_args['id'] = int(re.search(r'\d+$', request.path).group(0))
     return url_for(endpoint, **url_args)
 
+def DescriptionText(description):
+    return Markup('<small style="font-size: 80%; color: #888; font-style: italic;">' + description + '</small>')
+
+def AddContainer(tagname, markup_text, classlist=[], **attrs):
+    class_string = ' class="%s"' % ' '.join(classlist) if len(classlist) > 0 else ''
+    attr_string = ' ' + ' '.join(['%s="%s"' % attr for attr in attrs.items()]) if len(attrs) else ''
+    return Markup('<%s%s%s>' % (tagname, class_string, attr_string)) + markup_text + Markup('</%s>' % tagname)
+
+def FormIterator(form):
+    form_fields = [attr for attr in dir(form) if not attr.startswith('__') and issubclass(getattr(form, attr).__class__, Field)]
+    for field in form:
+        field_name = next(filter(lambda x: getattr(form, x) == field, form_fields))
+        def _builder(**kwargs):
+            nonlocal field
+            if type(field) is BooleanField:
+                built_markup = str(field.label) + field(value="0", type="hidden") + field(value="1")
+            elif type(field.widget) is HiddenInput:
+                return AddContainer('div', field, classlist=['input', 'hidden'])
+            else:
+                built_markup = str(field.label) + field
+            description = kwargs['description'] if 'description' in kwargs else field.description
+            if description:
+                built_markup += DescriptionText(description)
+            return AddContainer('div', built_markup, classlist=['input'])
+        yield field_name, _builder
+
+def HasErrorMessages(messages):
+    return any(filter(lambda category, message: category == 'error', messages))

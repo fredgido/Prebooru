@@ -11,7 +11,7 @@ from . import base as BASE
 from .. import SESSION
 from ..models import ArtistUrl, Artist, Tag, IllustUrl, TwitterData, Illust, Label, Description
 from ..cache import ApiData
-from ..logical.utility import GetCurrentTime, DaysFromNow, SafeGet
+from ..logical.utility import GetCurrentTime, DaysFromNow, SafeGet, ProcessUTCTimestring
 from ..sites import Site, GetSiteId
 
 
@@ -28,7 +28,10 @@ https?://t\.co                         # Hostname
 
 
 def ProcessTwitterTimestring(time_string):
-    return datetime.datetime.strptime(time_string, '%a %b %d %H:%M:%S +0000 %Y')
+    try:
+        return datetime.datetime.strptime(time_string, '%a %b %d %H:%M:%S +0000 %Y')
+    except ValueError:
+        pass
 
 
 ###MOVE TO LOCAL
@@ -366,11 +369,8 @@ def CreateArtistFromUser(twuser, commit=True):
 
 
 def CreateArtistFromParameters(params):
-    if 'site_created' in params:
-        try:
-            params['site_created'] = ProcessTwitterTimestring(params['site_created'])
-        except Exception:
-            del params['site_created']
+    if params['site_created'] is not None:
+        params['site_created'] = ProcessTwitterTimestring(params['site_created']) or ProcessUTCTimestring(params['site_created'])
     return BASE.CreateArtistFromParameters(params, Site.TWITTER.value)
 
 

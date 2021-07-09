@@ -2,160 +2,21 @@
 
 {% block title %}Illust # {{ illust.id }}{% endblock %}
 
-{% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=illust) | safe }}{% endblock %}
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/illusts.css') }}">{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.RenderTemplate("illusts/_secondary_links.html", illust=illust) }}{% endblock %}
 
 {% block content %}
     <div class="heading" style="font-size: 32px">Illust #{{ illust.id }}</div>
-    <div id="illust-content" style="margin-top: 2em; display: flex">
-        <div style="width: 20%; border: 2px solid #DDD; background: #F8F8F8; padding: 0.5em;">
-            <section style="margin-bottom: 1em;">
-                <h5><a href="{{ url_for('artist.show_html', id=illust.artist_id) }}">{{ illust.artist.shortlink }}</a></h5>
-                <ul style="margin-left: 1.5em;">
-                    <li><strong>Site ID:</strong> {{ illust.artist.site_artist_id }}</li>
-                    <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(illust.artist.current_site_account) }}</li>
-                    <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(illust.artist) | safe }}</li>
-                </ul>
-            </section>
-            <section style="margin-bottom: 1em;">
-                <h5>Pools</h5>
-                <ul style="margin-left: 1.5em;">
-                    {% for pool in illust.pools %}
-                        <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
-                    {% else %}
-                        <li><em>none</em></li>
-                    {% endfor %}
-                </ul>
-            </section>
-            <section style="margin-bottom: 1em;">
-                <h5><u>Timestamps</u></h5>
-                <ul style="margin-left: 1.5em;">
-                    <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(illust.requery) }}</li>
-                    <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.created) }}</li>
-                    <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(illust.updated) }}</li>
-                </ul>
-            </section>
-            <section style="margin-bottom: 1em;">
-                <h5>Notations</h5>
-                <ul style="margin-left: 1.5em;">
-                    {% for notation in illust.notations %}
-                        <li>
-                            <a href="{{ url_for('notation.show_html', id=notation.id) }}">notation #{{ notation.id }}</a>
-                            <div style="border: 1px solid #EEE;">
-                                {{ helpers.notation.ConvertToHTML(notation) }}<br><br>
-                                <span style="font-size: 75%; color: #888;">{{ helpers.base.FormatTimestamps(notation) }}</span>
-                            </div>
-                        </li>
-                    {% else %}
-                        <li><em>none</em></li>
-                    {% endfor %}
-                </ul>
-            </section>
-            <section id="illust-options" style="margin-top: 1em;">
-                <h2>Options</h2>
-                <ul style="margin-left: 1em;">
-                    <li><a href="{{ url_for('illust.query_update_html', id=illust.id) }}">Update from source</a></li>
-                    <li><a href="{{ helpers.illust.DanbooruBatchUrl(illust) }}" target="_blank">Batch bookmarklet</a></li>
-                    <li><a href="{{ url_for('illust_url.new_html', illust_id=illust.id) }}">Add media URL</a></li>
-                    <li><a href="{{ url_for('pool_element.new_html', illust_id=illust.id) }}">Add pool</a></li>
-                    <li><a href="{{ url_for('notation.new_html', illust_id=illust.id) }}">Add notation</a></li>
-                </ul>
-            </section>
-        </div>
-        <div style="width: 70%">
-            <div style="display: flex;">
-                <div style="width: 25%; margin-left: 1em;">
-                    <h5><u>Site</u></h5>
-                    <ul style="margin-left: 1.5em;">
-                        <li><strong><a href="{{ helpers.illust.SiteIllustUrl(illust) }}">{{ helpers.illust.ShortLink(illust) }}</a> {{ helpers.illust.PostIllustUrl(illust) | safe }}</strong></li>
-                        <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
-                        <li><strong>Illust ID:</strong> {{ illust.site_illust_id }}</li>
-                        <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.site_created) }}</li>
-                        <li><strong>Pages:</strong> {{ illust.pages }}</li>
-                        <li><strong>Active:</strong> {{ illust.active }}</li>
-                    </ul>
-                </div>
-                <div style="width: 25%; margin-left: 1em;">
-                    <h5><u>Metrics</u></h5>
-                    <ul style="margin-left: 1.5em;">
-                            <li><strong>Score:</strong> {{ illust.score }}</li>
-                             {% for key,val in helpers.illust.SiteDataIterator(illust) %}
-                                <li><strong>{{ key.title() }}:</strong> {{ val }}</li>
-                            {% endfor %}
-                    </ul>
-                </div>
-                <div style="width: 40%; margin-left: 1em;">
-                    <h5><u>Tags</u></h5>
-                    <ul style="margin-left: 1.5em;">
-                        {% for tag in illust.tags %}
-                            <li>{{ tag.name }}</li>
-                        {% else %}
-                            <li><em>none</em></li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-            <div style="margin-top: 2em;">
-                <div style="margin-left: 1em; width: 90%;">
-                    <h5><u>Commentaries</u></h5>
-                    {% if helpers.base.HasItems(illust.commentaries) %}
-                        <div style="border: 1px solid lightgrey; padding: 5px;">
-                            {% for commentary in illust.commentaries %}
-                                {{ helpers.base.ConvertStrToHTML(commentary.body) }}
-                                {% if not loop.last %}
-                                    <br><hr><br>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <span style="color: grey;"><em>There are no commentaries.</em></span>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+    <div id="artist-content" style="margin-top: 2em; display: flex">
+        {{ helpers.base.RenderTemplate("illusts/_sidebar.html", illust=illust) }}
+        {{ helpers.base.RenderTemplate("illusts/_site_content.html", illust=illust) }}
     </div>
     <div id="illust-posts" style="margin-top: 2em;">
         {% if illust.type == 'video' %}
-            <h5><u>Video URLs</u></h5>
-            <div>
-                <ul style="margin-left: 1.5em; padding-right: 0.5em;">
-                    <li><strong>Order: {{ illust.video_illust_url.order + 1 }}</strong></li>
-                    <li><strong>Video URL:</strong> {{ helpers.illust.OriginalUrl(illust.video_illust_url) }}</li>
-                    <li><strong>Thumb URL:</strong> {{ helpers.illust.OriginalUrl(illust.thumb_illust_url) }}</li>
-                    <li><strong>Dimensions:</strong> {{ illust.video_illust_url.width }} x {{ illust.video_illust_url.height }}</li>
-                    <li><strong>Active:</strong> {{ illust.video_illust_url.active | tojson }}</li>
-                </ul>
-            </div>
-            <div>
-                {% if illust.video_illust_url.post != None %}
-                    {{ helpers.post.Preview(illust.video_illust_url.post) | safe }}
-                {% else %}
-                    <em>No post.</em>
-                {% endif %}
-            </div>
+            {{ helpers.base.RenderTemplate("illusts/_video_posts.html", illust=illust) }}
         {% elif illust.type == 'image' %}
-            <h5><u>Image URLs</u></h5>
-            <div style="display: flex;">
-                 {% for illust_url in helpers.illust.IllustUrlsOrdered(illust) %}
-                    <div style="width: 25%;">
-                        <div>
-                            <ul style="margin-left: 1.5em; padding-right: 0.5em;">
-                                <li><strong>( <a href="{{ url_for('illust_url.edit_html', id=illust_url.id) }}">edit</a> )</strong></li>
-                                <li><strong>Order: {{ illust_url.order + 1 }}</strong></li>
-                                <li><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</li>
-                                <li><strong>Dimensions:</strong> {{ illust_url.width }} x {{ illust_url.height }}</li>
-                                <li><strong>Active:</strong> {{ illust_url.active | tojson }}</li>
-                            </ul>
-                        </div>
-                        <div>
-                            {% if illust_url.post != None %}
-                                {{ helpers.post.Preview(illust_url.post) | safe }}
-                            {% else %}
-                                <em>No post.</em> (<a href="{{ url_for('upload.new_html', illust_url_id=illust_url.id) }}">Upload</a> )
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
+            {{ helpers.base.RenderTemplate("illusts/_image_posts.html", illust=illust) }}
         {% endif %}
     </div>
 {% endblock %}

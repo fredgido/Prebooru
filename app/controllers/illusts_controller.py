@@ -6,6 +6,7 @@ from flask import Blueprint, request, render_template, jsonify, redirect, url_fo
 from sqlalchemy.orm import selectinload, lazyload
 from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
 from wtforms.validators import DataRequired
+from wtforms.widgets import HiddenInput
 
 # ## LOCAL IMPORTS
 
@@ -14,13 +15,20 @@ from ..logical.logger import LogError
 from ..models import Illust, Artist, Notation, Pool
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
+from ..database.illust_db import CreateIllustFromParameters
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
-    Paginate, GetDataParams, CustomNameForm, ParseType, GetOrAbort, GetOrError, SetError
+    Paginate, GetDataParams, CustomNameForm, ParseType, GetOrAbort, GetOrError, SetError, HideInput, IntOrBlank,\
+    NullifyBlanks, SetDefault, CheckParamRequirements, ParseStringList
 
 
 # ## GLOBAL VARIABLES
 
 bp = Blueprint("illust", __name__)
+
+
+CREATE_REQUIRED_PARAMS = ['artist_id', 'site_id', 'site_illust_id']
+UPDATE_REQUIRED_PARAMS = []
+
 
 # Forms
 
@@ -28,14 +36,15 @@ bp = Blueprint("illust", __name__)
 def GetIllustForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
     class IllustForm(CustomNameForm):
-        site_id = SelectField('Site', choices=[('1', 'Pixiv'), ('3', 'Twitter')], id='illust-site-id', custom_name='illust[site_id]', validators=[DataRequired()])
-        site_illust_id = IntegerField('Site Illust ID', id='illust-site-illust-id', custom_name='illust[site_illust_id]', validators=[DataRequired()])
         artist_id = IntegerField('Artist ID', id='illust-artist-id', custom_name='illust[artist_id]', validators=[DataRequired()])
+        site_id = SelectField('Site', choices=[("", ""), ('1', 'Pixiv'), ('3', 'Twitter')], id='illust-site-id', custom_name='illust[site_id]', validators=[DataRequired()], coerce=IntOrBlank)
+        site_illust_id = IntegerField('Site Illust ID', id='illust-site-illust-id', custom_name='illust[site_illust_id]', validators=[DataRequired()])
+        site_created = StringField('Site Created', id='artist-site-created', custom_name='artist[site_created]', description='Format must be ISO8601 timestamp (e.g. 2021-05-24T04:46:51).')
         pages = IntegerField('Pages', id='illust-pages', custom_name='illust[pages]')
         score = IntegerField('Score', id='illust-score', custom_name='illust[score]')
-        active = BooleanField('Active', id='illust-active', custom_name='illust[active]')
-        tag_string = StringField('Tag string', id='illust-tag-string', custom_name='illust[tag_string]')
+        tag_string = TextAreaField('Tag string', id='illust-tag-string', custom_name='illust[tag_string]', description="Separated by whitespace.")
         commentary = TextAreaField('Commentary', id='illust-commentary', custom_name='illust[commentary]')
+        active = BooleanField('Active', id='illust-active', custom_name='illust[active]')
     return IllustForm(**kwargs)
 
 
@@ -61,7 +70,7 @@ def GetAddPoolIllustForm(**kwargs):
 
 # #### Helper functions
 
-
+"""
 def CheckDataParams(dataparams):
     if 'site_id' not in dataparams or not dataparams['site_id'].isdigit():
         return "No site ID present!"
@@ -69,8 +78,24 @@ def CheckDataParams(dataparams):
         return "No site illust ID present!"
     if 'site_artist_id' not in dataparams or not dataparams['site_artist_id'].isdigit():
         return "No site artist ID present!"
+"""
+
+def ConvertDataParams(dataparams):
+    params = GetIllustForm(**dataparams).data
+    if 'tag_string' in dataparams:
+        dataparams['tags'] = params['tags'] = ParseStringList(dataparams, 'tag_string', r'\s')
+    params['active'] = EvalBoolString(dataparams['active']) if 'active' in dataparams else None
+    params = NullifyBlanks(params)
+    return params
 
 
+def ConvertCreateParams(dataparams):
+    createparams = ConvertDataParams(dataparams)
+    SetDefault(createparams, 'tags', [])
+    createparams['commentaries'] = createparams['commentary']
+    return createparams
+
+"""
 def ConvertDataParams(dataparams):
     dataparams['site_id'] = int(dataparams['site_id'])
     dataparams['site_illust_id'] = int(dataparams['site_illust_id'])
@@ -104,7 +129,7 @@ def ConvertCreateParams(dataparams):
     params['commentary'] = dataparams['commentary'] if len(dataparams['commentary'].strip()) > 0 else None
     params['tags'] = dataparams['tag_string'].split() if len(dataparams['tag_string']) > 0 else []
     return params
-
+"""
 
 def CheckCreateUrlParams(dataparams):
     if dataparams['url'] is None:
@@ -138,20 +163,19 @@ def create():
     dataparams = GetDataParams(request, 'illust')
     createparams = ConvertCreateParams(dataparams)
     retdata = {'error': False, 'data': createparams, 'params': dataparams}
-    error = CheckCreateParams(createparams)
-    if error is not None:
-        return SetError(retdata, error)
+    errors = CheckParamRequirements(createparams, CREATE_REQUIRED_PARAMS)
+    if len(errors) > 0:
+        return SetError(retdata, '\n'.join(errors))
     artist = Artist.find(createparams['artist_id'])
     if artist is None:
-        del createparams['artist_id']
+        createparams['artist_id'] = None
         return SetError(retdata, "artist #%s not found." % dataparams['artist_id'])
     illust = Illust.query.filter_by(site_id=createparams['site_id'], site_illust_id=createparams['site_illust_id']).first()
     if illust is not None:
-        del createparams['site_id']
-        del createparams['site_illust_id']
+        createparams['site_illust_id'] = None
         retdata['item'] = illust.to_json()
-        return SetError(retdata, "illust already exists: %d." % illust.id)
-    illust = BASE_SOURCE.CreateDBIllustFromParams(createparams)
+        return SetError(retdata, "Illust already exists: illust #%d" % illust.id)
+    illust = CreateIllustFromParameters(createparams)
     retdata['item'] = illust.to_json()
     return retdata
 
@@ -199,6 +223,9 @@ def new_html():
         if artist is None:
             flash("artist #%d not a valid artist." % form.artist_id.data, 'error')
             form.artist_id.data = None
+        else:
+            HideInput(form, 'artist_id', artist.id)
+            HideInput(form, 'site_id', artist.site_id)
     return render_template("illusts/new.html", form=form, illust=None)
 
 

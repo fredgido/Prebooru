@@ -2,18 +2,24 @@
 
 {% block title %}Edit - Artist #{{ artist.id }}{% endblock %}
 
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/artists.css') }}">{% endblock %}
+
 {% block secondary_links %}{{ helpers.base.render_template("artists/_secondary_links.html", artist=artist) | safe }}{% endblock %}
 
 {% block content %}
-    <form method="POST" action="/artists/{{artist.id}}">
+    <div class="heading" style="font-size: 28px">
+        Edit: <a href="{{ artist.show_url }}">{{ artist.shortlink }}</a>
+    </div>
+    <form method="POST" action="{{ url_for('artist.update_html', id=artist.id) }}">
         <input type="hidden" name="_method" value="put">
         {{ form.csrf_token }}
-        {{ form.site_id.label }} {{ form.site_id }}
-        {{ form.site_artist_id.label }} {{ form.site_artist_id }}
-        {{ form.current_site_account.label }} {{ form.current_site_account }}
-        {{ form.account_string.label }} {{ form.account_string(cols=50, rows=10) }} {{ form.account_string.description }}
-        {{ form.name_string.label }} {{ form.name_string(cols=50, rows=10) }} {{ form.name_string.description }}
-        {{ form.active.label }} {{ form.active }}
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {% if field_name == 'profile' %}
+                {{ field_input(description="Text here will be added to existing artist profiles.") }}
+            {% else %}
+                {{ field_input() }}
+            {% endif %}
+        {% endfor %}
         <input type="submit" value="Submit">
     </form>
 {% endblock %}

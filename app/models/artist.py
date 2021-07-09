@@ -8,8 +8,9 @@ from flask import url_for
 from sqlalchemy.orm import aliased
 
 # ##LOCAL IMPORTS
-from .. import DB
+from .. import DB, SESSION
 from ..sites import GetSiteDomain, GetSiteKey
+from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
 from .base import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
 from .artist_url import ArtistUrl
 from .illust import Illust
@@ -87,6 +88,10 @@ class Artist(JsonModel):
         return self._recent_posts
 
     @property
+    def illust_count(self):
+        return Illust.query.filter_by(artist_id=self.id).count()
+
+    @property
     def site_domain(self):
         return GetSiteDomain(self.site_id)
 
@@ -97,6 +102,10 @@ class Artist(JsonModel):
     @property
     def show_url(self):
         return url_for("artist.show_html", id=self.id)
+
+    @property
+    def illust_search(self):
+        return url_for("illust.index_html", **{'search[artist_id]': self.id})
 
     def delete(self):
         self.names.clear()
@@ -115,14 +124,9 @@ class Artist(JsonModel):
             self.__source = SOURCEDICT[site_key]
         return self.__source
 
+
     @staticmethod
     def searchable_attributes():
         basic_attributes = ['id', 'site_id', 'site_artist_id', 'site_created', 'current_site_account', 'active', 'created', 'updated', 'requery']
         relation_attributes = ['names', 'site_accounts', 'profiles', 'webpages', 'illusts', 'boorus']
         return basic_attributes + relation_attributes
-
-"""
-#Including these so that joins on both can be disambiguated (see notes)
-Names = aliased(Label)
-SiteAccounts = aliased(Label)
-"""

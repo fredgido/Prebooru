@@ -1,0 +1,77 @@
+<div id="artist-site-content">
+    <div id="artist-site-content-1">
+        <section id="artist-site-info">
+            <h5><u>Site</u></h5>
+            <ul>
+                <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
+                <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
+                <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
+                <li><strong>Artist ID:</strong> {{ artist.site_artist_id }}</li>
+                <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
+                <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.site_created) }}</li>
+                <li><strong>Active:</strong> {{ artist.active }}</li>
+            </ul>
+        </section>
+        <section id="artist-labels">
+            <h5><u>Labels</u></h5>
+            <ul>
+                <li><strong>Names:</strong>
+                    {% for artist_name in artist.names %}
+                        {% if loop.first %}
+                            <ul>
+                        {% endif %}
+                            <li>{{ artist_name.name }}</li>
+                        {% if loop.last %}
+                            </ul>
+                        {% endif %}
+                    {% else %}
+                        <em>none</em>
+                    {% endfor %}
+                </li>
+                <li><strong>Accounts:</strong>
+                    {% for site_account in artist.site_accounts %}
+                        {% if loop.first %}
+                            <ul>
+                        {% endif %}
+                            <li>{{ site_account.name }}</li>
+                        {% if loop.last %}
+                            </ul>
+                        {% endif %}
+                    {% else %}
+                        <em>none</em>
+                    {% endfor %}
+                </li>
+            </ul>
+        </section>
+        <section id="artist-webpages">
+            <h5><u>Webpages</u></h5>
+            {% for webpage in artist.webpages %}
+                <div class="artist-webpage-block">
+                    <ul>
+                        <li><strong>URL:</strong> {{ helpers.artist.WebpageLink(webpage.url) | safe }}</li>
+                        <li><strong>Active:</strong> {{ webpage.active | tojson }}</li>
+                    </ul>
+                </div>
+            {% else %}
+                <ul><li><em>none</em></li></ul>
+            {% endfor %}
+        </section>
+    </div>
+    <div id="artist-site-content-2">
+        <section id="artist-profiles">
+            <h5><u>Profiles</u></h5>
+            <div id="artist-profiles-container">
+                {% for profile in artist.profiles %}
+                    <div class="artist-profiles-block">
+                        {{ helpers.base.ConvertStrToHTML(profile.body) }}
+                    </div>
+                    {% if not loop.last %}
+                        <hr>
+                    {% endif %}
+                {% else %}
+                    <span class="explanation">There are no profiles.</span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
