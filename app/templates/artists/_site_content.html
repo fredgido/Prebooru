@@ -1,7 +1,7 @@
 <div id="artist-site-content">
     <div id="artist-site-content-1">
         <section id="artist-site-info">
-            <h5><u>Site</u></h5>
+            <h4>Site</h4>
             <ul>
                 <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
                 <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
@@ -13,7 +13,7 @@
             </ul>
         </section>
         <section id="artist-labels">
-            <h5><u>Labels</u></h5>
+            <h4>Labels</h4>
             <ul>
                 <li><strong>Names:</strong>
                     {% for artist_name in artist.names %}
@@ -44,7 +44,7 @@
             </ul>
         </section>
         <section id="artist-webpages">
-            <h5><u>Webpages</u></h5>
+            <h4>Webpages</h4>
             {% for webpage in artist.webpages %}
                 <div class="artist-webpage-block">
                     <ul>
@@ -59,7 +59,7 @@
     </div>
     <div id="artist-site-content-2">
         <section id="artist-profiles">
-            <h5><u>Profiles</u></h5>
+            <h4>Profiles</h4>
             <div id="artist-profiles-container">
                 {% for profile in artist.profiles %}
                     <div class="artist-profiles-block">

@@ -25,8 +25,13 @@ from app.logical.logger import PutGetJSON, LoadDefault
 #from app.logical.unshortenlink import UnshortenAllLinks
 from argparse import ArgumentParser
 
+from app.logical.file import LoadDefault, PutGetJSON
+from app.config import workingdirectory, datafilepath
 
 # ## GLOBAL VARIABLES
+
+SERVER_PID_FILE = workingdirectory + datafilepath + 'worker-server-pid.json'
+SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
 SCHED = None
 SEM = threading.Semaphore()
@@ -41,6 +46,8 @@ BOORU_ARTISTS_FILE = workingdirectory + datafilepath + 'booru_artists_file.json'
 
 @atexit.register
 def Cleanup():
+    if SERVER_PID is not None:
+        PutGetJSON(SERVER_PID_FILE, 'w', [])
     if SCHED is not None and SCHED.running:
         SCHED.shutdown()
 
@@ -259,18 +266,26 @@ def create_artist():
 def requery_illust():
     pass
 
-# ##EXECUTION START
+# #### Main function
 
-if __name__ == '__main__':
-    parser = ArgumentParser(description="Worker to process uploads.")
-    parser.add_argument('--logging', required=False, default=False, action="store_true", help="Display the SQL commands.")
-    args = parser.parse_args()
+def Main(args):
+    global SERVER_PID, SCHED
+    if SERVER_PID is not None:
+        print("Server process already running: %d" % SERVER_PID)
+        input()
+        exit(-1)
+
     if args.logging:
         import logging
         logging.basicConfig()
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
+    if args.title:
+        os.system('title Worker Server')
+
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        SERVER_PID = os.getpid()
+        PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
         ExpungeCacheRecords()
         SCHED = BackgroundScheduler(daemon=True)
         #SCHED.add_job(CheckSubscriptions, 'interval', seconds=15)
@@ -286,6 +301,11 @@ if __name__ == '__main__':
 
     PREBOORU_APP.run(threaded=True, port=4000)
 
+# ##EXECUTION START
 
-    #while True:
-    #    time.sleep(1)
+if __name__ == '__main__':
+    parser = ArgumentParser(description="Worker to process uploads.")
+    parser.add_argument('--logging', required=False, default=False, action="store_true", help="Display the SQL commands.")
+    parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")
+    args = parser.parse_args()
+    Main(args)

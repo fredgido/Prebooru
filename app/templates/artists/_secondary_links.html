@@ -1,6 +1,7 @@
 <menu id="secondary-menu">
     {{ helpers.base.SubnavLinkTo("Listing", 'artist.index_html') }}
     {{ helpers.base.SubnavLinkTo("New", 'artist.new_html') }}
+    {{ helpers.base.SubnavLinkTo("Create", 'artist.query_create_html', attrs={'onclick': 'return QueryCreate()'}) }}
     {% if artist != None %}
         |
         {{ helpers.base.SubnavLinkTo("Show", 'artist.show_html', id=artist.id) }}

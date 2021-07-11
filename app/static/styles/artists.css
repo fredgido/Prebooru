@@ -39,6 +39,9 @@ div.artist-notation-block {
 div#artist-site-content {
     width: 70%;
 }
+div#artist-site-content h4 {
+    text-decoration: underline;
+}
 div#artist-site-content-1 {
     display: flex;
 }

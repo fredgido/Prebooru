@@ -1,5 +1,9 @@
 {% extends 'layouts/base.html' %}
 
+{% block title %}Illusts{% endblock %}
+
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/illusts.css') }}">{% endblock %}
+
 {% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=None) | safe }}{% endblock %}
 
 {% block content %}
@@ -65,5 +69,6 @@
             {% endfor %}
         </tbody>
     </table>
-    {{ helpers.base.PageNavigation(illusts) | safe }}
 {% endblock %}
+
+{% block pages %}{{ helpers.base.PageNavigation(illusts) }}{% endblock %}

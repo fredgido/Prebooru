@@ -1,8 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'artists/_base.html' %}
 
 {% block title %}New Artist{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.render_template("artists/_secondary_links.html", artist=artist) | safe }}{% endblock %}
 
 {% block content %}
     <form method="POST" action="/artists">

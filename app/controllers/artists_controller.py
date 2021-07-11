@@ -1,21 +1,21 @@
 # APP\CONTROLLERS\ARTISTS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
+from flask import Blueprint, request, render_template, redirect, url_for, flash
 from sqlalchemy.orm import selectinload, lazyload
 from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from ..logical.utility import GetCurrentTime, EvalBoolString
+from ..logical.utility import EvalBoolString
 from ..logical.logger import LogError
-from ..models import Artist, Label
+from ..models import Artist
 from ..sources import base as BASE_SOURCE
-from ..database import local as DBLOCAL, base as DBBASE, artist_db as ARTISTDB
+from ..database.local import IsError
 from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
-    DefaultOrder, GetDataParams, CustomNameForm, ParseType, UpdateColumnAttributes, UpdateRelationshipCollections,\
-    GetOrAbort, GetOrError, SetError, ParseStringList, CheckParamRequirements, IntOrBlank, NullifyBlanks, SetDefault
+    DefaultOrder, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, ParseStringList, CheckParamRequirements,\
+    IntOrBlank, NullifyBlanks, SetDefault, PutMethodCheck
 
 # ## GLOBAL VARIABLES
 
@@ -49,7 +49,6 @@ def GetArtistForm(**kwargs):
 
 def ConvertDataParams(dataparams):
     params = GetArtistForm(**dataparams).data
-    print("-1", params, dataparams, request.values)
     if 'account_string' in dataparams:
         dataparams['site_accounts'] = params['site_accounts'] = ParseStringList(dataparams, 'account_string', r'\s')
     if 'name_string' in dataparams:
@@ -105,21 +104,40 @@ def create():
     retdata['item'] = artist.to_json()
     return retdata
 
-    #artist = BASE_SOURCE.CreateDBArtistFromParams(dataparams)
-    #artist_json = artist.to_json() if artist is not None else artist
-    #return {'error': False, 'artist': artist_json}
 
-
-def update(id):
-    if request.method == 'POST' and request.values.get('_method', default='').upper() != 'PUT':
-        abort(405)
-    artist = GetOrAbort(Artist, id)
+def update(artist):
     dataparams = GetDataParams(request, 'artist')
     updateparams = ConvertUpdateParams(dataparams)
     updatelist = list(set(dataparams.keys()).intersection(updateparams.keys()))
-    print("#0", dataparams.keys(), updateparams.keys())
     UpdateArtistFromParameters(artist, updateparams, updatelist)
-    return artist
+    return {'error': False, 'item': artist.to_json()}
+
+
+def query_create():
+    """Query source and create artist."""
+    params = {
+        'url': request.values.get('url'),
+    }
+    retdata = {'error': False, 'params': params}
+    if params['url'] is None:
+        return SetError(retdata, "Must include the artist URL.")
+    source = BASE_SOURCE.GetArtistSource(params['url'])
+    if source == None:
+        return SetError(retdata, "Not a valid artist URL.")
+    site_id = source.SiteId()
+    ret = source.GetArtistId(params['url'])
+    if ret is None:
+        return SetError(retdata, "Unable to find site artist ID with URL.")
+    if IsError(ret):
+        return SetError(retdata, ret.message)
+    site_artist_id = int(ret)
+    artist = Artist.query.filter_by(site_id=site_id, site_artist_id=site_artist_id).first()
+    if artist is not None:
+        retdata['item'] = artist.to_json()
+        return SetError(retdata, "Artist already exists.")
+    artist = source.CreateArtist(site_artist_id)
+    retdata['item'] = artist.to_json()
+    return retdata
 
 
 # #### Route functions
@@ -172,23 +190,7 @@ def create_html():
 
 @bp.route('/artists.json', methods=['post'])
 def create_json():
-    dataparams = GetDataParams(request, 'artist')
-    error = CheckDataParams(dataparams)
-    if error is not None:
-        return {'error': True, 'message': error, 'params': dataparams}
-    ConvertDataParams(dataparams)
-    artist = Artist.query.filter_by(site_id=dataparams['site_id'], site_artist_id=dataparams['site_artist_id']).first()
-    if artist is not None:
-        return {'error': True, 'message': "Artist already exists.", 'params': dataparams, 'artist': artist}
-    try:
-        artist = BASE_SOURCE.CreateDBArtistFromParams(dataparams)
-    except Exception as e:
-        print("Database exception!", e)
-        LogError('controllers.artists.create', "Unhandled exception occurred creating artist: %s" % (str(e)))
-        request.environ.get('werkzeug.server.shutdown')()
-        return {'error': True, 'message': 'Database exception! Check log file.'}
-    artist_json = artist.to_json() if artist is not None else artist
-    return {'error': False, 'artist': artist_json}
+    return create()
 
 
 # ###### UPDATE
@@ -201,59 +203,47 @@ def edit_html(id):
     editparams = artist.to_json()
     editparams['account_string'] = '\r\n'.join(site_account.name for site_account in artist.site_accounts)
     editparams['name_string'] = '\r\n'.join(artist_name.name for artist_name in artist.names)
-    editparams['webpage_string'] = '\r\n'.join(( ('' if webpage.active else '-') + webpage.url) for webpage in artist.webpages)
+    editparams['webpage_string'] = '\r\n'.join((('' if webpage.active else '-') + webpage.url) for webpage in artist.webpages)
     form = GetArtistForm(**editparams)
     return render_template("artists/edit.html", form=form, artist=artist)
 
 
 @bp.route('/artists/<int:id>', methods=['POST', 'PUT'])
 def update_html(id):
-    artist = update(id)
+    PutMethodCheck(request)
+    artist = GetOrAbort(Artist, id)
+    update(artist)
     return redirect(url_for('artist.show_html', id=artist.id))
 
-"""
+
 @bp.route('/artists/<int:id>', methods=['POST', 'PUT'])
-def update_html(id):
-    print("update_html", request.method, request.values.get('_method'))
-    if request.method == 'POST' and request.values.get('_method', default='').upper() != 'PUT':
-        abort(405)
-    artist = GetOrAbort(Artist, id)
-    is_dirty = False
-    dataparams = GetDataParams(request, 'artist')
-    updateparams = ConvertUpdateParams(dataparams)
-    print(dataparams, updateparams)
-    UpdateArtistFromParameters(artist, updateparams, updatelist)
-    is_dirty = UpdateColumnAttributes(artist, ['site_id', 'site_artist_id', 'current_site_account', 'active'], dataparams, updateparams)
-    is_dirty = UpdateRelationshipCollections(artist, [('site_accounts', 'name', Label), ('names', 'name', Label)], dataparams, updateparams) or is_dirty
-    if is_dirty:
-        print("Changes detected.")
-        artist.updated = GetCurrentTime()
-        DBLOCAL.SaveData()
-    return redirect(url_for('artist.show_html', id=artist.id))
-"""
+def update_json(id):
+    PutMethodCheck(request)
+    artist = GetOrError(Artist, id)
+    if type(artist) is dict:
+        return artist
+    return update(artist)
+
 
 # ###### MISC
 
 
-@bp.route('/artists/query_create.json', methods=['post'])
+@bp.route('/artists/query_create', methods=['POST', 'GET'])
+def query_create_html():
+    results = query_create()
+    if results['error']:
+        flash(results['message'], 'error')
+        return redirect(request.referrer)
+    flash('Artist created.')
+    return redirect(url_for('artist.show_html', id=results['item']['id']))
+
+
+@bp.route('/artists/query_create.json', methods=['POST'])
 def query_create_json():
-    """Query source and create artist."""
-    site_id = request.values.get('site_id', type=int)
-    site_artist_id = request.values.get('site_artist_id', type=int)
-    if site_id is None or site_artist_id is None:
-        return {'error': True, 'message': "Must include the site ID and site artist ID."}
-    artist = Artist.query.filter_by(site_id=site_id, site_artist_id=site_artist_id).first()
-    if artist is not None:
-        return {'error': True, 'message': "Artist already exists.", 'params': {'site_id': site_id, 'site_artist_id': site_artist_id}, 'artist': artist}
     try:
-        artist = BASE_SOURCE.QueryCreateArtist(site_id, site_artist_id)
+        return query_create()
     except Exception as e:
-        print("Database exception!", e)
-        LogError('controllers.artists.create', "Unhandled exception occurred query/creating artist: %s" % (str(e)))
-        request.environ.get('werkzeug.server.shutdown')()
-        return {'error': True, 'message': 'Database exception! Check log file.'}
-    artist_json = artist.to_json() if artist is not None else artist
-    return {'error': False, 'artist': artist_json}
+        return {'error': True, 'message': "Unhandled exception occurred creating artist: %s" % (str(e))}
 
 
 @bp.route('/artists/<int:id>/query_update', methods=['GET'])

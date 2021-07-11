@@ -1,13 +1,47 @@
 # PREBOORU.PY
 
 # ## PYTHON IMPORTS
-from argparse import ArgumentParser
+import os
+import atexit
 import colorama
+from argparse import ArgumentParser
 
 # ## LOCAL IMPORTS
 from app import PREBOORU_APP
 from app import controllers
 from app import helpers
+from app.logical.file import LoadDefault, PutGetJSON
+from app.config import workingdirectory, datafilepath
+
+# ## GLOBAL VARIABLES
+
+SERVER_PID_FILE = workingdirectory + datafilepath + 'prebooru-server-pid.json'
+SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
+
+# ## FUNCTIONS
+
+@atexit.register
+def Cleanup():
+    if SERVER_PID is not None:
+        PutGetJSON(SERVER_PID_FILE, 'w', [])
+
+
+def Main(args):
+    global SERVER_PID
+    if SERVER_PID is not None:
+        print("Server process already running: %d" % SERVER_PID)
+        input()
+        exit(-1)
+    if args.extension:
+        from flask_flaskwork import Flaskwork
+        Flaskwork(PREBOORU_APP)
+    if args.title:
+        os.system('title Prebooru Server')
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        SERVER_PID = os.getpid()
+        PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
+    PREBOORU_APP.run(threaded=True)
+
 
 # ### INITIALIZATION
 
@@ -32,8 +66,6 @@ PREBOORU_APP.jinja_env.globals.update(helpers=helpers)
 if __name__ == '__main__':
     parser = ArgumentParser(description="Server to process network requests.")
     parser.add_argument('--extension', required=False, default=False, action="store_true", help="Enable Chrome extension.")
+    parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")
     args = parser.parse_args()
-    if args.extension:
-        from flask_flaskwork import Flaskwork
-        Flaskwork(PREBOORU_APP)
-    PREBOORU_APP.run(threaded=True)
+    Main(args)

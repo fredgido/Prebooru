@@ -14,6 +14,7 @@ import requests
 from io import BytesIO
 from sqlalchemy import func
 import threading
+from argparse import ArgumentParser
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # ## LOCAL IMPORTS
@@ -30,14 +31,25 @@ from app.logical.network import GetHTTPFile
 from app.storage import CACHE_DATA_DIRECTORY, CACHE_NETWORK_URLPATH
 import app.sources.twitter
 from app.sources import base as BASE_SOURCE
-from argparse import ArgumentParser
+from app.logical.file import LoadDefault, PutGetJSON
+from app.config import workingdirectory, datafilepath
 
 #### GLOBAL VARIABLES
+
+SERVER_PID_FILE = workingdirectory + datafilepath + 'similarity-server-pid.json'
+SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
 SCHED = None
 SEM = threading.Semaphore()
 
 #### FUNCTIONS
+
+@atexit.register
+def Cleanup():
+    if SERVER_PID is not None:
+        PutGetJSON(SERVER_PID_FILE, 'w', [])
+    if SCHED is not None and SCHED.running:
+        SCHED.shutdown()
 
 @PREBOORU_APP.route('/check_similarity.json', methods=['GET'])
 def check_similarity():
@@ -373,8 +385,12 @@ def ComparePostSimilarity(args):
         print("Mismatching:", mismatching_bits, "Ratio:", miss_ratio, "Score:", score)
 
 def StartServer(args):
-    global SCHED
+    if args.title:
+        os.system('title Similarity Server')
+    global SCHED, SERVER_PID
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        SERVER_PID = os.getpid()
+        PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
         SCHED = BackgroundScheduler(daemon=True)
         #SCHED.add_job(CheckMissingSimilarity, 'interval', minutes=5)
         SCHED.add_job(ProcessSimilarity)
@@ -388,6 +404,7 @@ if __name__ == '__main__':
     parser.add_argument('type', choices=['generate', 'pools', 'compare', 'comparepost', 'transfer', 'server'])
     parser.add_argument('--logging', required=False, default=False, action="store_true", help="Display the SQL commands.")
     parser.add_argument('--expunge', required=False, default=False, action="store_true", help="Expunge all similarity records.")
+    parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")
     args = parser.parse_args()
     if args.logging:
         import logging

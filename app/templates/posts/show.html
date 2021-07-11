@@ -11,12 +11,12 @@
         <aside id="sidebar" style="width: 25em;">
             <section id="tag-list"><!-- placeholder for user tags --></section>
             <section id="artist-info">
-                <h3>Boorus</h3>
-                <ul style="margin-left: 1em;">
+                <h4>Boorus</h4>
+                <ul>
                     {% for booru in post.boorus %}
                         {% set outer_loop = loop %}
                         <li><strong><a href="{{url_for('booru.show_html', id=booru.id)}}">{{ booru.shortlink }}</strong></a>
-                            <ul style="margin-left: 1em;">
+                            <ul>
                                 <li><strong><a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a></strong></li>
                             </ul>
                         </li>
@@ -26,12 +26,12 @@
                 </ul>
             </section>
             <section id="artist-info" style="margin-top: 1em;">
-                <h3>Artists</h3>
-                <ul style="margin-left: 1em;">
+                <h4>Artists</h4>
+                <ul>
                     {% for artist in post.artists %}
                         {% set outer_loop = loop %}
                         <li><strong><a href="{{url_for('artist.show_html', id=artist.id)}}">{{ artist.shortlink }}</a></strong>
-                            <ul style="margin-left: 1em;">
+                            <ul>
                                 <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
                                 <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
                                 <li><strong>Site ID:</strong> {{ artist.site_artist_id }}</li>
@@ -52,17 +52,17 @@
                 </ul>
             </section>
             <section id="illust-info" style="margin-top: 1em;">
-                <h3>Illusts</h3>
-                <ul style="margin-left: 1em;">
+                <h4>Illusts</h4>
+                <ul>
                     {% for illust in post.illusts %}
                         {% set outer_loop = loop %}
                         <li><strong><a href="{{url_for('illust.show_html', id=illust.id)}}">illust #{{ illust.id }}</a></strong>
-                            <ul style="margin-left: 1em;">
+                            <ul>
                                 <li><strong><a href="{{ helpers.illust.SiteIllustUrl(illust) }}">{{ helpers.illust.ShortLink(illust) }}</a> {{ helpers.illust.PostIllustUrl(illust) | safe }}</strong></li>
                                 <li><strong>Site ID:</strong> {{ illust.site_illust_id }}</li>
                                 <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
                                 <li><strong>Tags:</strong>
-                                    <ul style="margin-left: 1em;">
+                                    <ul>
                                     {% for tag in illust.tags %}
                                         <li>{{ tag.name }}</li>
                                     {% else %}
@@ -76,8 +76,8 @@
                 </ul>
             </section>
             <section id="post-info" style="margin-top: 1em;">
-                <h2>Info</h2>
-                <ul style="margin-left: 1em;">
+                <h4>Info</h4>
+                <ul>
                     <li><strong>ID:</strong> post #{{ post.id }}</li>
                     <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(post.created) }}</li>
                     <li><strong>Size:</strong> {{ post.size }} bytes</li>
@@ -85,7 +85,7 @@
                     <li><strong>Type:</strong> {{ post.file_ext }}</li>
                     <li><strong>MD5:</strong> {{ post.md5 }}</li>
                     <li><strong>Sources:</strong>
-                        <ul style="margin-left: 1em;">
+                        <ul>
                             {% for illust_url in post.illust_urls %}
                                 {% set outer_loop = loop %}
                                 <li>{{ helpers.illust.OriginalUrl(illust_url) }}</li>
@@ -95,8 +95,8 @@
                 </ul>
             </section>
             <section id="pool-list" style="margin-top: 1em;">
-                <h2>Pools</h2>
-                <ul style="margin-left: 1em;">
+                <h4>Pools</h4>
+                <ul>
                     {% for pool in post.pools %}
                         <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
                     {% else %}
@@ -105,8 +105,8 @@
                 </ul>
             </section>
             <section id="notations-list" style="margin-top: 1em;">
-                <h2>Notations</h2>
-                <ul style="margin-left: 1em;">
+                <h4>Notations</h4>
+                <ul>
                     {% for notation in post.notations %}
                         <li><a href="{{ url_for('notation.show_html', id=notation.id) }}">notation #{{ notation.id }}</a>
                             <ul style="margin-left: 1.5em;">
@@ -122,8 +122,8 @@
             </section>
             {% if helpers.base.HasItems(post.errors) %}
                 <section id="error-list" style="margin-top: 1em;">
-                    <h2>Errors</h2>
-                    <ul style="margin-left: 1em;">
+                    <h4>Errors</h4>
+                    <ul>
                     {% for error in post.errors %}
                         <li><strong>Module:</strong> {{ error.module }}</li>
                         <li><strong>Message:</strong> {{ error.message }}</li>
@@ -135,8 +135,8 @@
                 </section>
             {% endif %}
             <section id="post-image-search" style="margin-top: 1em;">
-                <h2>Image search</h2>
-                <ul style="margin-left: 1em;">
+                <h4>Image search</h4>
+                <ul>
                     <li><strong>Danbooru:</strong> {{ helpers.post.DanbooruSearchLinks(post) | safe }}</li>
                     <li><strong>Sauce:</strong> {{ helpers.post.SauceNAOSearchLinks(post) | safe }}</li>
                     <li><strong>Ascii2D:</strong> {{ helpers.post.Ascii2DSearchLinks(post) | safe }}</li>
@@ -144,14 +144,14 @@
                 </ul>
             </section>
             <section id="post-image-search" style="margin-top: 1em;">
-                <h2>Upload</h2>
-                <ul style="margin-left: 1em;">
+                <h4>Upload</h4>
+                <ul>
                     <li><strong>Danbooru:</strong> {{ helpers.post.DanbooruPostBookmarkletLinks(post) | safe }}</li>
                 </ul>
             </section>
             <section id="post-options" style="margin-top: 1em;">
-                <h2>Options</h2>
-                <ul style="margin-left: 1em;">
+                <h4>Options</h4>
+                <ul>
                     <li><a href="{{ post.file_url }}">Original file</a></li>
                     <li><a href="javascript:prompt('Copy file link:', '{{ post.file_path.encode('unicode-escape').decode() }}');false;">File link</a></li>
                     <li><a href="{{ url_for('pool_element.new_html', post_id=post.id) }}">Add pool</a></li>
@@ -166,7 +166,7 @@
                 </picture>
             </section>
             <section id="artist-commentaries" style="border: 1px solid grey; padding: 0.5em;">
-                <h2><u>Commentaries</u></h2>
+                <h4><u>Commentaries</u></h4>
                 {% for illust in post.illusts %}
                     {% set outer_loop = loop %}
                     <div><strong>Illust #{{ illust.id }}:</strong><br>

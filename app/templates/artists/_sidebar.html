@@ -18,7 +18,7 @@
         <h4>Illusts ( <a href="{{ artist.illust_search }}">{{ artist.illust_count }}</a> )</h4>
     </section>
     <section id="artist-timestamps">
-        <h5>Timestamps</h5>
+        <h4>Timestamps</h4>
         <ul>
             <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(artist.requery) }}</li>
             <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.created) }}</li>
@@ -44,7 +44,7 @@
         </div>
     </section>
     <section id="artist-options">
-        <h2>Options</h2>
+        <h4>Options</h4>
         <ul>
             <li><a href="{{ url_for('artist.query_update_html', id=artist.id) }}">Update from source</a></li>
             <li><a href="{{ url_for('artist.query_booru_html', id=artist.id) }}">Query for booru</a></li>

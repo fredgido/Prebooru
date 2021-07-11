@@ -298,6 +298,9 @@ def GetMediaExtension(media_url):
     filename = GetHTTPFilename(media_url)
     return GetFileExtension(filename)
 
+def IsArtistUrl(url):
+    return bool(USERS_RG.match(url))
+
 
 def IsPostUrl(url):
     return bool(TWEET_RG.match(url))
@@ -329,6 +332,12 @@ def SiteId():
 
 def GetIllustId(request_url, referrer_url):
     return int((TWEET_RG.match(request_url) or TWEET_RG.match(referrer_url)).group(1))
+
+def GetArtistId(artist_url):
+    match = USERS_RG.match(artist_url)
+    if match:
+        screen_name = match.group(1)
+        return GetTwitterUserID(screen_name)
 
 
 def GetFullUrl(illust_url):
@@ -544,6 +553,18 @@ def GetTwitterIllust(illust_id):
         return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
     return data['body'][0]
 
+
+def GetTwitterUserID(account):
+    print("Getting user ID: %s" % account)
+    jsondata = {
+        'screen_name': account,
+        'withHighlightedLabel': False
+    }
+    urladdons = urllib.parse.urlencode({'variables': json.dumps(jsondata)})
+    data = TwitterRequest('https://twitter.com/i/api/graphql/Vf8si2dfZ1zmah8ePYPjDQ/UserByScreenNameWithoutResults?%s' % urllib.parse.urlencode({'variables': json.dumps(jsondata)}))
+    if data['error']:
+        return DBLOCAL.CreateError('sources.twitter.GetUserID', data['message'])
+    return SafeGet(data, 'body', 'data', 'user', 'rest_id')
 
 """
 TwitterRequest('https://twitter.com/i/api/graphql/WN6Hck-Pwm-YP0uxVj1oMQ/UserByRestIdWithoutResults?%s' % urllib.parse.urlencode({'variables': json.dumps({'userId': '2267697692', 'withHighlightedLabel': False})}))

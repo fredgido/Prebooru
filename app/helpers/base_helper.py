@@ -56,9 +56,9 @@ def NavLinkTo(text, endpoint):
     html_text = text.lower().replace(" ", "-")
     return Markup(render_template("layouts/_nav_link.html", text=text, html_text=html_text, endpoint=endpoint, klass=klass))
 
-def SubnavLinkTo(text, endpoint, id=None, **kwargs):
+def SubnavLinkTo(text, endpoint, id=None, attrs={}, **kwargs):
     html_text = text.lower().replace(" ", "-")
-    return Markup(render_template("layouts/_subnav_link.html", text=text, html_text=html_text, endpoint=endpoint, id=id, kwargs=kwargs))
+    return Markup(render_template("layouts/_subnav_link.html", text=text, html_text=html_text, endpoint=endpoint, id=id, attrs=attrs, kwargs=kwargs))
 
 def PageNavigation(paginate):
     #print("PageNavigation-1:", paginate.page, paginate.prev_num, paginate.next_num, paginate.pages)
@@ -75,7 +75,7 @@ def PageNavigation(paginate):
     pages += ['...'] if right != penultimate_page else []
     pages += [last_page] if last_page > 1 else []
     #print("PageNavigation-2:", previous_page, current_page, next_page, pages, left, right, last_page, penultimate_page)
-    return render_template("layouts/_paginator.html", prev_page=previous_page, current_page=current_page, next_page=next_page, pages=pages)
+    return RenderTemplate("layouts/_paginator.html", prev_page=previous_page, current_page=current_page, next_page=next_page, pages=pages)
 
 def UrlForWithArgs(endpoint, **kwargs):
     url_args = {}
@@ -115,4 +115,4 @@ def FormIterator(form):
         yield field_name, _builder
 
 def HasErrorMessages(messages):
-    return any(filter(lambda category, message: category == 'error', messages))
+    return any((category, message) for (category, message) in messages if category == 'error')

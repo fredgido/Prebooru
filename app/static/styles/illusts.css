@@ -27,8 +27,8 @@ div.illust-notation-block {
 div#illust-site-content {
     width: 70%;
 }
-div#illust-site-content h5,
-div#illust-posts h5 {
+div#illust-site-content h4,
+div#illust-posts h4 {
     text-decoration: underline;
 }
 div#illust-site-content-1 {

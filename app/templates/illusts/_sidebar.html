@@ -1,6 +1,6 @@
 <div id="illust-sidebar">
     <section id="illust-artists">
-        <h5><a href="{{ url_for('artist.show_html', id=illust.artist_id) }}">{{ illust.artist.shortlink }}</a></h5>
+        <h4><a href="{{ url_for('artist.show_html', id=illust.artist_id) }}">{{ illust.artist.shortlink }}</a></h4>
         <ul>
             <li><strong>Site ID:</strong> {{ illust.artist.site_artist_id }}</li>
             <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(illust.artist.current_site_account) }}</li>
@@ -8,7 +8,7 @@
         </ul>
     </section>
     <section id="illust-pools">
-        <h5>Pools</h5>
+        <h4>Pools</h4>
         <ul>
             {% for pool in illust.pools %}
                 <li><a href="{{ url_for('pool.show_html', id=pool.id) }}">{{ pool.name }}</a></li>
@@ -18,7 +18,7 @@
         </ul>
     </section>
     <section id="illust-timestamps">
-        <h5><u>Timestamps</u></h5>
+        <h4>Timestamps</h4>
         <ul>
             <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(illust.requery) }}</li>
             <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.created) }}</li>
@@ -26,7 +26,7 @@
         </ul>
     </section>
     <section id="illust-notations">
-        <h5>Notations</h5>
+        <h4>Notations</h4>
         <div id="illust-notations-container">
             <ul>
                 {% for notation in illust.notations %}
@@ -44,7 +44,7 @@
         </div>
     </section>
     <section id="illust-options">
-        <h2>Options</h2>
+        <h4>Options</h4>
         <ul>
             <li><a href="{{ url_for('illust.query_update_html', id=illust.id) }}">Update from source</a></li>
             <li><a href="{{ helpers.illust.DanbooruBatchUrl(illust) }}" target="_blank">Batch bookmarklet</a></li>

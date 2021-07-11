@@ -201,7 +201,7 @@ def AddIllustUrls(illust, tweet, commit=True):
             'width': dimensions[0],
             'height': dimensions[1],
             'illust_id': illust.id,
-            'order': i,
+            'order': i + 1,
             'active': True,
         }
         illust_url = IllustUrl(**data)
@@ -228,7 +228,7 @@ def AddVideoUrls(illust, tweet, commit=True):
         'width': dimensions[0],
         'height': dimensions[1],
         'illust_id': illust.id,
-        'order': 0,
+        'order': 1,
         'active': True,
     }
     video_url = IllustUrl(**data)
@@ -274,6 +274,7 @@ def AddArtistProfile(artist, profile_text):
     print("AddArtistProfile")
     if profile_text == "":
         return False
+    profile_text = re.sub(r'(?<!\r)\n', '\r\n', profile_text)
     current_profiles = [descr.body for descr in artist.profiles]
     if profile_text in current_profiles:
         return False

@@ -124,6 +124,9 @@ def UploadCheck(request_url, referrer_url):
 def IsImageUrl(image_url):
     return bool(IMAGE_RG.match(image_url))
 
+def IsArtistUrl(artist_url):
+    return False
+
 """https://i.pximg.net/c/540x540_70/img-master/img/2017/05/02/01/10/08/62686328_p0_master1200.jpg"""
 def SmallImageUrl(image_url):
     image_url = urllib.parse.urlparse(image_url).path.replace('img-original', 'img-master')

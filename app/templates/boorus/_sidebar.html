@@ -1,0 +1,18 @@
+<div id="booru-sidebar">
+    <section id="booru-illusts">
+        <h4>Illusts ( <a href="{{ booru.illust_search }}">{{ booru.illust_count }}</a> )</h4>
+    </section>
+    <section id="booru-timestamps">
+        <h4>Timestamps</h4>
+        <ul>
+            <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(booru.created) }}</li>
+            <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(booru.updated) }}</li>
+        </ul>
+    </section>
+    <section id="booru-options">
+        <h4>Options</h4>
+        <ul>
+            <li><a href="{{ url_for('booru.query_update_html', id=booru.id) }}">Update from source</a></li>
+        </ul>
+    </section>
+</div>

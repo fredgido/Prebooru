@@ -1,8 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'artists/_base.html' %}
 
 {% block title %}Artists{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.render_template("artists/_secondary_links.html", artist=artist) | safe }}{% endblock %}
 
 {% block content %}
     <table id="artists-table" class="striped" width="100%">
@@ -64,5 +62,6 @@
             {% endfor %}
         </tbody>
     </table>
-    {{ helpers.base.PageNavigation(artists) | safe }}
 {% endblock %}
+
+{% block pages %}{{ helpers.base.PageNavigation(artists) }}{% endblock %}

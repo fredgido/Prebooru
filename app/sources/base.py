@@ -27,6 +27,12 @@ def GetSource(request_url, referrer_url):
             return source
 
 
+def GetArtistSource(artist_url):
+    for source in SOURCES:
+        if source.IsArtistUrl(artist_url):
+            return source
+
+
 def GetImageSource(image_url):
     for source in SOURCES:
         if source.IsImageUrl(image_url):

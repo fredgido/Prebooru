@@ -64,6 +64,14 @@ class Booru(JsonModel):
             self._recent_posts = q.all()
         return self._recent_posts
 
+    @property
+    def illust_count(self):
+        return Illust.query.join(Artist, Illust.artist).join(Booru, Artist.boorus).filter(Booru.id == self.id).count()
+
+    @property
+    def illust_search(self):
+        return url_for("illust.index_html", **{'search[artist][boorus][id]': self.id})
+
     def delete(self):
         self.names.clear()
         self.artists.clear()
