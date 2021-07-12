@@ -1,10 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'illusts/_base.html' %}
 
 {% block title %}Illusts{% endblock %}
-
-{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/illusts.css') }}">{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=None) | safe }}{% endblock %}
 
 {% block content %}
     <table id="illusts-table" class="striped" width="100%">
@@ -22,7 +18,7 @@
             {% for illust in illusts.items %}
                 {% set outer_loop = loop %}
                 <tr id="illust-{{ illust.id }}">
-                    <td><a href="{{ illust.show_url }}">illust #{{ illust.id }}</a> <a href="{{ helpers.illust.PostSearch(illust) }}">&raquo;</td>
+                    <td><a href="{{ illust.show_url }}">illust #{{ illust.id }}</a> <a href="{{ helpers.illust.PostSearch(illust) }}">&raquo;</a></td>
                     <td>
                         <span><strong>Domain:</strong> {{ illust.site_domain }}</span><br>
                         <span><strong>Illust ID:</strong> {{ illust.site_illust_id }}</span><br>

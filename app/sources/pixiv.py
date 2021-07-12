@@ -124,6 +124,9 @@ def UploadCheck(request_url, referrer_url):
 def IsImageUrl(image_url):
     return bool(IMAGE_RG.match(image_url))
 
+def IsArtistIdUrl(artist_url):
+    return False
+
 def IsArtistUrl(artist_url):
     return False
 

@@ -41,7 +41,7 @@ class Booru(JsonModel):
     danbooru_id: int
     current_name: str
     names: List[lambda x: x['name']]
-    artist_ids: List
+    artist_ids: lambda x: x
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
     id = DB.Column(DB.Integer, primary_key=True)

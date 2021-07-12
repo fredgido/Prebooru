@@ -1,8 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'illusts/_base.html' %}
 
 {% block title %}Edit - Illust #{{ illust.id }}{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=illust) | safe }}{% endblock %}
 
 {% block content %}
     <form method="POST" action="/illusts/{{illust.id}}">

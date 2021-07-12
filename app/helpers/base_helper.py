@@ -116,3 +116,6 @@ def FormIterator(form):
 
 def HasErrorMessages(messages):
     return any((category, message) for (category, message) in messages if category == 'error')
+
+def UrlLink(url):
+    return Markup('<a href="%s">%s</a>' % (url, url))

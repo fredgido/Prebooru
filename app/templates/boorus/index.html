@@ -1,8 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'boorus/_base.html' %}
 
 {% block title %}Boorus{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.render_template("boorus/_secondary_links.html", booru=booru) | safe }}{% endblock %}
 
 {% block content %}
     <table id="boorus-table" class="striped" width="100%">
@@ -48,5 +46,6 @@
             {% endfor %}
         </tbody>
     </table>
-    {{ helpers.base.PageNavigation(boorus) | safe }}
 {% endblock %}
+
+{% block pages %}{{ helpers.base.PageNavigation(boorus) | safe }}{% endblock %}

@@ -1,12 +1,13 @@
 import time
 import requests
 
+from ..config import DANBOORU_HOSTNAME
 from ..logical.utility import AddDictEntry
 
-def DanbooruRequest(url, params):
+def DanbooruRequest(url, params=None):
     for i in range(3):
         try:
-            response = requests.get(url, params=params, timeout=10)
+            response = requests.get(DANBOORU_HOSTNAME + url, params=params, timeout=10)
         except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
             print("Pausing for network timeout...")
             time.sleep(5)
@@ -19,8 +20,16 @@ def DanbooruRequest(url, params):
     else:
         return {'error': True, 'message': "HTTP %d: %s" % (response.status_code, response.reason)}
 
+def GetArtistByID(id, include_urls=False):
+    params = {'only': 'name,urls'} if include_urls else None
+    request_url = '/artists/%d.json' % id
+    data = DanbooruRequest(request_url, params)
+    if data['error']:
+        return data
+    return {'error': False, 'artist': data['json']}
+
 def GetArtistsByUrl(url):
-    request_url = 'https://danbooru.donmai.us/artist_urls.json'
+    request_url = '/artist_urls.json'
     params = {
         'search[url]': url,
         'only': 'url,artist',
@@ -33,7 +42,7 @@ def GetArtistsByUrl(url):
     return {'error': False, 'artists': artists}
 
 def GetArtistsByMultipleUrls(url_list):
-    request_url = 'https://danbooru.donmai.us/artist_urls.json'
+    request_url = '/artist_urls.json'
     params = {
         'search[url_space]': ' '.join(url_list),
         'only': 'url,artist',
@@ -46,3 +55,14 @@ def GetArtistsByMultipleUrls(url_list):
     for artist_url in data['json']:
         AddDictEntry(retdata, artist_url['url'], artist_url['artist'])
     return {'error': False, 'data': retdata}
+
+def GetArtistUrlsByArtistID(danbooru_id):
+    request_url = '/artist_urls.json'
+    params = {
+        'search[artist_id]': danbooru_id,
+        'limit': 1000,
+    }
+    data = DanbooruRequest(request_url, params)
+    if data['error']:
+        return data
+    return {'error': False, 'artist_urls': data['json']}

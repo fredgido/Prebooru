@@ -207,7 +207,7 @@ def index_json():
 def index_html():
     q = index()
     illusts = Paginate(q, request)
-    return render_template("illusts/index.html", illusts=illusts)
+    return render_template("illusts/index.html", illusts=illusts, illust=None)
 
 
 # ###### CREATE
@@ -381,7 +381,7 @@ def add_notation_json(id):
 # ###### Misc
 
 
-@bp.route('/illusts/<int:id>/query_update', methods=['GET'])
+@bp.route('/illusts/<int:id>/query_update', methods=['POST'])
 def query_update_html(id):
     illust = GetOrAbort(Illust, id)
     BASE_SOURCE.UpdateIllust(illust)

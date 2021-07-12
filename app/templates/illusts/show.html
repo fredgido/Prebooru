@@ -1,10 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'illusts/_base.html' %}
 
 {% block title %}Illust # {{ illust.id }}{% endblock %}
-
-{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/illusts.css') }}">{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.RenderTemplate("illusts/_secondary_links.html", illust=illust) }}{% endblock %}
 
 {% block content %}
     <div class="heading" style="font-size: 32px">Illust #{{ illust.id }}</div>

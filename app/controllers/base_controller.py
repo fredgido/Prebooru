@@ -13,6 +13,7 @@ from wtforms.widgets import HiddenInput
 # ## LOCAL IMPORTS
 from ..logical.searchable import AllAttributeFilters
 
+
 # ## GLOBAL VARIABLES
 
 # #### Classes
@@ -38,6 +39,10 @@ class CustomNameForm(Form):
 def PutMethodCheck(request):
     if request.method == 'POST' and request.values.get('_method', default='').upper() != 'PUT':
         abort(405)
+
+
+def GetMethodRedirect(request):
+    return request.values.get('_method', default='').upper() == 'GET'
 
 
 def ShowJson(model, id):

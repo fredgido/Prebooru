@@ -1,0 +1,30 @@
+{% extends 'illust_urls/_base.html' %}
+
+{% block title %}Illust URLs{% endblock %}
+
+{% block content %}
+    <table id="illust-urls-table" class="striped" width="100%">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Domain</th>
+                <th>Url</th>
+                <th>Dimensions</th>
+                <th>Active</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for illust_url in illust_urls.items %}
+                <tr id="illust-url-{{ illust_url.id }}">
+                    <td><a href="{{ illust_url.show_url }}">{{ illust_url.shortlink }}</a></td>
+                    <td>{{ illust_url.site_domain }}</td>
+                    <td>{{ illust_url.url }}</td>
+                    <td>({{ illust_url.width }} x {{ illust_url.height }})</td>
+                    <td>{{ illust_url.active | tojson }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block pages %}{{ helpers.base.PageNavigation(illust_urls) }}{% endblock %}

@@ -2,9 +2,9 @@
 
 # ##PYTHON IMPORTS
 import sys
+import urllib
 
-
-from ..sites import GetSiteKey
+from ..sites import GetSiteKey, GetSiteId
 from ..sources import SOURCES, DICT as SOURCEDICT, danbooru
 from ..models import Upload, IllustUrl, Booru, Label
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
@@ -20,6 +20,9 @@ IMAGE_HEADERS = {}
 
 # ##FUNCTIONS
 
+def GetImageSiteId(url):
+    parse = urllib.parse.urlparse(url)
+    return GetSiteId(parse.netloc)
 
 def GetSource(request_url, referrer_url):
     for source in SOURCES:
@@ -32,12 +35,16 @@ def GetArtistSource(artist_url):
         if source.IsArtistUrl(artist_url):
             return source
 
+def GetArtistIdSource(artist_url):
+    for source in SOURCES:
+        if source.IsArtistIdUrl(artist_url):
+            return source
 
 def GetImageSource(image_url):
     for source in SOURCES:
         if source.IsImageUrl(image_url):
             return source
-    return CURRENT_MODULE
+    #return CURRENT_MODULE
 
 def SmallImageUrl(image_url):
     return image_url
@@ -162,6 +169,26 @@ def QueryArtistBoorus(artist):
             DBLOCAL.SaveData()
         boorus.append(booru)
     return {'error': False, 'artist': artist, 'boorus': boorus}
+
+def QueryUpdateBooru(booru):
+    dirty = False
+    booru_data = danbooru.GetArtistByID(booru.danbooru_id)
+    if booru_data['error']:
+        return booru_data
+    existing_names = [booru_name.name for booru_name in booru.names]
+    if booru_data['artist']['name'] != booru.current_name:
+        booru.current_name = booru_data['artist']['name']
+        dirty = True
+    if booru_data['artist']['name'] not in existing_names:
+        label = Label.query.filter_by(name=booru_data['artist']['name']).first()
+        if label is None:
+            label = Label(name=booru_data['artist']['name'])
+            DBLOCAL.SaveData(label)
+        booru.names.append(label)
+        dirty = True
+    if dirty:
+        booru.updated = GetCurrentTime()
+        DBLOCAL.SaveData()
 
 def ProcessArtist(artist):
     source = _Source(artist.site_id)

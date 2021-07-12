@@ -1,0 +1,13 @@
+{% extends 'boorus/_base.html' %}
+
+{% block title %}New Booru{% endblock %}
+
+{% block content %}
+    <form method="POST" action="{{ url_for('booru.create_html') }}">
+        {{ form.csrf_token }}
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {{ field_input() }}
+        {% endfor %}
+        <input type="submit" value="Submit">
+    </form>
+{% endblock %}

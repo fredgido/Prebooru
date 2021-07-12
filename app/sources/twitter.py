@@ -133,9 +133,29 @@ TWEET_RG = re.compile(r"""
 (\?|$)                                  # End
 """, re.X | re.IGNORECASE)
 
-USERS_RG = re.compile(r"""
+"""https://twitter.com/danboorubot"""
+
+USERS1_RG = re.compile(r"""
 ^https?://twitter\.com                  # Hostname
 /([\w-]+)                               # Account
+(\?|$)                                  # End
+""", re.X | re.IGNORECASE)
+
+"""https://twitter.com/intent/user?user_id=2807221321"""
+
+USERS2_RG = re.compile(r"""
+^https?://twitter\.com                  # Hostname
+/intent/user\?user_id=
+(\d+)                                   # User ID
+$                                       # End
+""", re.X | re.IGNORECASE)
+
+"""https://twitter.com/i/user/994169624659804161"""
+
+USERS3_RG = re.compile(r"""
+^https?://twitter\.com                  # Hostname
+/i/user
+/(\d+)                                  # User ID
 (\?|$)                                  # End
 """, re.X | re.IGNORECASE)
 
@@ -299,12 +319,20 @@ def GetMediaExtension(media_url):
     return GetFileExtension(filename)
 
 def IsArtistUrl(url):
-    return bool(USERS_RG.match(url))
+    return bool(USERS1_RG.match(url)) or IsArtistIdUrl(url)
 
+def IsArtistIdUrl(url):
+    return bool(USERS2_RG.match(url) or USERS3_RG.match(url))
 
 def IsPostUrl(url):
     return bool(TWEET_RG.match(url))
 
+def PartialMediaUrl(url):
+    parse = urllib.parse.urlparse(url)
+    site_id = GetSiteId(parse.netloc)
+    match = IMAGE2_RG.match(url)
+    query_addon = '?format=%s' % match.group(3) if match else ""
+    return parse.path + query_addon if site_id != 0 else parse.geturl()
 
 def IsMediaUrl(url):
     return IsImageUrl(url) or IsVideoUrl(url)
@@ -333,12 +361,19 @@ def SiteId():
 def GetIllustId(request_url, referrer_url):
     return int((TWEET_RG.match(request_url) or TWEET_RG.match(referrer_url)).group(1))
 
+def GetArtistIdUrlId(artist_url):
+    match = USERS2_RG.match(artist_url) or USERS3_RG.match(artist_url)
+    if match:
+        return match.group(1)
+
 def GetArtistId(artist_url):
-    match = USERS_RG.match(artist_url)
+    match = USERS2_RG.match(artist_url) or USERS3_RG.match(artist_url)
+    if match:
+        return match.group(1)
+    match = USERS1_RG.match(artist_url)
     if match:
         screen_name = match.group(1)
         return GetTwitterUserID(screen_name)
-
 
 def GetFullUrl(illust_url):
     media_url = GetMediaUrl(illust_url)
@@ -376,7 +411,7 @@ def GetIllustUrl(site_illust_id):
 
 def SubscriptionCheck(request_url):
     artist_id = None
-    artwork_match = USERS_RG.match(request_url)
+    artwork_match = USERS1_RG.match(request_url)
     if artwork_match:
         artist_id = int(artwork_match.group(1))
     return artist_id

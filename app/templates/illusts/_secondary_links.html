@@ -1,6 +1,7 @@
 <menu id="secondary-menu">
     {{ helpers.base.SubnavLinkTo("Listing", 'illust.index_html') }}
     {{ helpers.base.SubnavLinkTo("New", 'illust.new_html') }}
+    {{ helpers.base.SubnavLinkTo("URLs", 'illust_url.index_html') }}
     {% if illust != None %}
         |
         {{ helpers.base.SubnavLinkTo("Show", 'illust.show_html', illust.id) }}

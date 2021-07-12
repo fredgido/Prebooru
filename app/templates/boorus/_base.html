@@ -1,0 +1,5 @@
+{% extends 'layouts/base.html' %}
+
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/boorus.css') }}">{% endblock %}
+
+{% block secondary_links %}{{ helpers.base.RenderTemplate("boorus/_secondary_links.html", booru=booru) }}{% endblock %}

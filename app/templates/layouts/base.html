@@ -2,7 +2,10 @@
 <head>
     <title>{% block title %}{% endblock %} - Prebooru</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles/base.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     {% block css %}{% endblock %}
+    <script src="{{ url_for('static', filename='javascript/base.js') }}"></script>
+    {% block linkscript %}{% endblock %}
 </head>
 <body>
     <header id="top">
@@ -35,7 +38,7 @@
             {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}
-        {% block script %}{% endblock %}
         {% block pages %}{% endblock %}
+        {% block pagescript %}{% endblock %}
     </section>
 </body>

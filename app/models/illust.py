@@ -67,7 +67,7 @@ class Illust(JsonModel):
     site_created = DB.Column(DB.DateTime(timezone=False), nullable=True)
     commentaries = DB.relationship(Description, secondary=IllustCommentaries, lazy='subquery', backref=DB.backref('illusts', lazy=True))
     tags = DB.relationship(Tag, secondary=IllustTags, lazy='subquery', backref=DB.backref('illusts', lazy=True))
-    urls = DB.relationship(IllustUrl, backref='illust', lazy=True, cascade="all, delete")
+    urls = DB.relationship(IllustUrl, backref=DB.backref('illust', lazy=True, uselist=False), lazy=True, cascade="all, delete")
     artist_id = DB.Column(DB.Integer, DB.ForeignKey('artist.id'), nullable=False)
     pages = DB.Column(DB.Integer, nullable=True)
     score = DB.Column(DB.Integer, nullable=True)

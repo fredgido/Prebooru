@@ -46,7 +46,7 @@
     <section id="illust-options">
         <h4>Options</h4>
         <ul>
-            <li><a href="{{ url_for('illust.query_update_html', id=illust.id) }}">Update from source</a></li>
+            <li><a href="{{ url_for('illust.query_update_html', id=illust.id) }}" onclick="return Prebooru.linkPost(this)">Update from source</a></li>
             <li><a href="{{ helpers.illust.DanbooruBatchUrl(illust) }}" target="_blank">Batch bookmarklet</a></li>
             <li><a href="{{ url_for('illust_url.new_html', illust_id=illust.id) }}">Add media URL</a></li>
             <li><a href="{{ url_for('pool_element.new_html', illust_id=illust.id) }}">Add pool</a></li>

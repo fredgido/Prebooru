@@ -55,6 +55,7 @@ def UpdateArtistFromParameters(artist, updateparams, updatelist):
     update_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in updatelist]
     print("#3", update_relationships)
     update_results.append(UpdateRelationshipCollections(artist, update_relationships, updateparams))
+    # This needs to be fixed for profile adds
     append_relationships = [relationship for relationship in APPEND_SCALAR_RELATIONSHIPS if relationship[0] in updatelist]
     print("#3", append_relationships)
     update_results.append(AppendRelationshipCollections(artist, append_relationships, updateparams))

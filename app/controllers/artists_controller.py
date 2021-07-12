@@ -8,14 +8,13 @@ from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
 from ..logical.utility import EvalBoolString
-from ..logical.logger import LogError
 from ..models import Artist
 from ..sources import base as BASE_SOURCE
 from ..database.local import IsError
 from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
     DefaultOrder, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, ParseStringList, CheckParamRequirements,\
-    IntOrBlank, NullifyBlanks, SetDefault, PutMethodCheck
+    IntOrBlank, NullifyBlanks, SetDefault, PutMethodCheck, GetMethodRedirect
 
 # ## GLOBAL VARIABLES
 
@@ -23,6 +22,7 @@ bp = Blueprint("artist", __name__)
 
 CREATE_REQUIRED_PARAMS = ['site_id', 'site_artist_id']
 UPDATE_REQUIRED_PARAMS = []
+
 
 # Forms
 
@@ -110,7 +110,7 @@ def update(artist):
     updateparams = ConvertUpdateParams(dataparams)
     updatelist = list(set(dataparams.keys()).intersection(updateparams.keys()))
     UpdateArtistFromParameters(artist, updateparams, updatelist)
-    return {'error': False, 'item': artist.to_json()}
+    return {'error': False, 'item': artist.to_json(), 'params': dataparams, 'data': updateparams}
 
 
 def query_create():
@@ -122,7 +122,7 @@ def query_create():
     if params['url'] is None:
         return SetError(retdata, "Must include the artist URL.")
     source = BASE_SOURCE.GetArtistSource(params['url'])
-    if source == None:
+    if source is None:
         return SetError(retdata, "Not a valid artist URL.")
     site_id = source.SiteId()
     ret = source.GetArtistId(params['url'])
@@ -181,6 +181,8 @@ def new_html():
 
 @bp.route('/artists', methods=['POST'])
 def create_html():
+    if GetMethodRedirect(request):
+        return index_html()
     results = create()
     if results['error']:
         flash(results['message'], 'error')
@@ -188,8 +190,10 @@ def create_html():
     return redirect(url_for('artist.show_html', id=results['item']['id']))
 
 
-@bp.route('/artists.json', methods=['post'])
+@bp.route('/artists.json', methods=['POST'])
 def create_json():
+    if GetMethodRedirect(request):
+        return index_json()
     return create()
 
 
@@ -228,7 +232,7 @@ def update_json(id):
 # ###### MISC
 
 
-@bp.route('/artists/query_create', methods=['POST', 'GET'])
+@bp.route('/artists/query_create', methods=['POST'])
 def query_create_html():
     results = query_create()
     if results['error']:
@@ -246,7 +250,7 @@ def query_create_json():
         return {'error': True, 'message': "Unhandled exception occurred creating artist: %s" % (str(e))}
 
 
-@bp.route('/artists/<int:id>/query_update', methods=['GET'])
+@bp.route('/artists/<int:id>/query_update', methods=['POST'])
 def query_update_html(id):
     """Query source and update artist."""
     artist = GetOrAbort(Artist, id)
@@ -255,7 +259,7 @@ def query_update_html(id):
     return redirect(url_for('artist.show_html', id=id))
 
 
-@bp.route('/artists/<int:id>/query_booru', methods=['GET'])
+@bp.route('/artists/<int:id>/query_booru', methods=['POST'])
 def query_booru_html(id):
     """Query booru and create/update booru relationships."""
     artist = GetOrAbort(Artist, id)

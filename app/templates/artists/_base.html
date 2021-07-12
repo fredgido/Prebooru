@@ -3,17 +3,3 @@
 {% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/artists.css') }}">{% endblock %}
 
 {% block secondary_links %}{{ helpers.base.RenderTemplate("artists/_secondary_links.html", artist=artist) }}{% endblock %}
-
-{% block script %}
-<script>
-function QueryCreate() {
-    url = prompt("Enter the site artist URL to create from:");
-    if (url !== null) {
-        link = document.getElementById("subnav-create-link");
-        link.href=link.href + "?url=" + encodeURIComponent(url);
-    } else {
-        return false;
-    }
-}
-</script>
-{% endblock %}

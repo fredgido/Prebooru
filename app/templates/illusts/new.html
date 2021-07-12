@@ -1,4 +1,4 @@
-{% extends 'layouts/base.html' %}
+{% extends 'illusts/_base.html' %}
 
 {% block title %}
     New Illust
@@ -6,10 +6,6 @@
         for artist #{{ form.artist_id.data }}
     {% endif %}
 {% endblock %}
-
-{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/illusts.css') }}">{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.render_template("illusts/_secondary_links.html", illust=illust) | safe }}{% endblock %}
 
 {% block content %}
     <div class="heading" style="font-size: 28px">

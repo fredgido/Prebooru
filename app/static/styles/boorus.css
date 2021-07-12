@@ -1,5 +1,8 @@
-/****EDIT Page****/
-
+/****NEW/EDIT Page****/
+textarea#booru-name-string {
+    width: 20em;
+    height: 5em;
+}
 /****SHOW Page****/
 div#booru-heading {
     font-size: 32px;
