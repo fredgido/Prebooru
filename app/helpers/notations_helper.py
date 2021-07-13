@@ -30,3 +30,6 @@ def ConvertToHTML(notation):
 
 def IsGeneralForm(form):
     return (form.pool_id.data is None) and (form.artist_id.data is None) and (form.illust_id.data is None) and (form.post_id.data is None)
+
+def NotationBlock(notation):
+    return Markup(render_template("notations/_notation_block.html", notation=notation))

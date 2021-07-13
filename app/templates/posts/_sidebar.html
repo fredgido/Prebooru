@@ -1,0 +1,131 @@
+<aside id="post-sidebar">
+    <section id="tag-list" style="display: none;"><!-- placeholder for user tags --></section>
+    <section id="booru-info">
+        <h4>Boorus</h4>
+        <ul>
+            {% for booru in post.boorus %}
+                <li><strong><a href="{{url_for('booru.show_html', id=booru.id)}}">{{ booru.shortlink }}</strong></a>
+                    <ul>
+                        <li><strong><a href="{{ helpers.booru.DanbooruPageLink(booru) }}">{{ booru.current_name }}</a> <a href="{{ helpers.booru.DanbooruPostSearch(booru) }}">&raquo;</a></strong></li>
+                    </ul>
+                </li>
+            {% else %}
+                <li><em>none</em></li>
+            {% endfor %}
+        </ul>
+    </section>
+    <section id="artist-info">
+        <h4>Artists</h4>
+        <ul>
+            {% for artist in post.artists %}
+                <li><strong><a href="{{url_for('artist.show_html', id=artist.id)}}">{{ artist.shortlink }}</a></strong>
+                    <ul>
+                        <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
+                        <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
+                        <li><strong>Site ID:</strong> {{ artist.site_artist_id }}</li>
+                        <li><strong>Domain:</strong> {{ artist.site_domain }}</li>
+                        <li><strong>Names:</strong>
+                            {% for artist_name in artist.names %}
+                                <span>{{ artist_name.name }}</span>&emsp;
+                            {% endfor %}
+                        </li>
+                        <li><strong>Accounts:</strong>
+                            {% for site_account in artist.site_accounts %}
+                                <span>{{ site_account.name }}</span>&emsp;
+                            {% endfor %}
+                        </li>
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+    <section id="illust-info">
+        <h4>Illusts</h4>
+        <ul>
+            {% for illust in post.illusts %}
+                {% set outer_loop = loop %}
+                <li><strong><a href="{{url_for('illust.show_html', id=illust.id)}}">illust #{{ illust.id }}</a></strong>
+                    <ul>
+                        <li><strong><a href="{{ helpers.illust.SiteIllustUrl(illust) }}">{{ helpers.illust.ShortLink(illust) }}</a> {{ helpers.illust.PostIllustUrl(illust) | safe }}</strong></li>
+                        <li><strong>Site ID:</strong> {{ illust.site_illust_id }}</li>
+                        <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
+                        <li><strong>Tags:</strong>
+                            <ul>
+                            {% for tag in illust.tags %}
+                                <li>{{ tag.name }}</li>
+                            {% else %}
+                                <li><em>none</em></li>
+                            {% endfor %}
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% if helpers.base.HasItems(post.pools) %}
+        <section id="pool-list">
+            <h4>Pools</h4>
+            <ul>
+                {% for pool_element in post._pools %}
+                    <li>
+                        <a href="{{ url_for('pool.show_html', id=pool_element.pool_id) }}">{{ pool_element.pool.name }}</a>
+                        <span class="delete-control">
+                            (
+                            <a href="{{ url_for('pool_element.delete_html', id=pool_element.id) }}" onclick="return confirm('Delete pool?') && Prebooru.linkDelete(this)">remove</a>
+                            )
+                        </span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+    {% if helpers.base.HasItems(post.notations) %}
+        <section id="notations-list">
+            <h4>Notations</h4>
+            <ul>
+                {% for notation in post.notations %}
+                    <li>{{ helpers.base.RenderTemplate("notations/_notation_block.html", notation=notation) }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+    {% if helpers.base.HasItems(post.errors) %}
+        <section id="error-list">
+            <h4>Errors</h4>
+            <ul>
+            {% for error in post.errors %}
+                <li><strong>Module:</strong> {{ error.module }}</li>
+                <li><strong>Message:</strong> {{ error.message }}</li>
+                <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(error.created) }}</li>
+            {% else %}
+                <li><em>none</em></li>
+            {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+    <section id="post-image-search">
+        <h4>Image search</h4>
+        <ul>
+            <li><strong>Danbooru:</strong> {{ helpers.post.DanbooruSearchLinks(post) | safe }}</li>
+            <li><strong>Sauce:</strong> {{ helpers.post.SauceNAOSearchLinks(post) | safe }}</li>
+            <li><strong>Ascii2D:</strong> {{ helpers.post.Ascii2DSearchLinks(post) | safe }}</li>
+            <li><strong>IQDB.org:</strong> {{ helpers.post.IQDBOrgSearchLinks(post) | safe }}</li>
+        </ul>
+    </section>
+    <section id="post-image-search">
+        <h4>Upload</h4>
+        <ul>
+            <li><strong>Danbooru:</strong> {{ helpers.post.DanbooruPostBookmarkletLinks(post) | safe }}</li>
+        </ul>
+    </section>
+    <section id="post-options">
+        <h4>Options</h4>
+        <ul>
+            <li><a href="{{ post.file_url }}">Original file</a></li>
+            <li><a href="javascript:prompt('Copy file link:', '{{ post.file_path.encode('unicode-escape').decode() }}');false;">File link</a></li>
+            <li><a href="{{ url_for('pool_element.create_html') }}" data-post-id="{{ post.id }}" onclick="return PostCreatePool(this)">Add pool</a></li>
+            <li><a href="{{ url_for('notation.new_html', post_id=post.id) }}">Add notation</a></li>
+        </ul>
+    </section>
+</aside>

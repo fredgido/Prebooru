@@ -1,0 +1,46 @@
+<div id="post-site-content">
+    <section id="post-info">
+        <h4>Info</h4>
+        <ul>
+            <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(post.created) }}</li>
+            <li><strong>Type/Size:</strong> {{ post.file_ext.upper() }} @ {{ post.size }} bytes</li>
+            <li><strong>Dimensions:</strong> ({{ post.width }} x {{ post.height }})</li>
+            <li><strong>MD5:</strong> {{ post.md5 }}</li>
+            <li><strong>Sources:</strong>
+                {% if helpers.base.Length(post.illust_urls) == 1 %}
+                    {{ helpers.illust.OriginalUrl(post.illust_urls[0]) }}
+                {% elif not helpers.base.HasItems(post.illust_urls) %}
+                    <em>none</em>
+                {% else %}
+                    <ul>
+                        {% for illust_url in post.illust_urls %}
+                            <li>{{ helpers.illust.OriginalUrl(illust_url) }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </li>
+        </ul>
+    </section>
+    <section id="post-commentaries">
+        <h4><u>Commentaries</u></h4>
+        {% for illust in post.illusts %}
+            {% set outer_loop = loop %}
+            <div><strong>Illust #{{ illust.id }}:</strong><br>
+                {% if helpers.base.HasItems(illust.commentaries) %}
+                    <div class="post-commentaries-container">
+                        {% for commentary in illust.commentaries %}
+                            <div class="post-commentaries-block">
+                                {{ helpers.base.ConvertStrToHTML(commentary.body) }}
+                            </div>
+                            {% if not loop.last %}
+                                <hr>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <span class="explanation">There are no commentaries.</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </section>
+</div>

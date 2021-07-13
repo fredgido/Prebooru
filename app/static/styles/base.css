@@ -133,6 +133,14 @@ span.explanation {
     color: grey;
     font-style: italic;
 }
+article.post {
+    display: inline-block;
+    width: 304px;
+    height: 304px;
+    margin: 0 10px 10px 0;
+    vertical-align: top;
+    text-align: center;
+}
 span#recent-posts-heading {
     font-size: 24px;
 }
@@ -143,4 +151,10 @@ div#recent-posts-container {
 }
 div.recent-post-block {
     width: 340px;
+}
+span.delete-control {
+    font-size: 75%
+}
+span.delete-control > a {
+    color: red;
 }

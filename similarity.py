@@ -26,7 +26,7 @@ from app.similarity.similarity_result import SimilarityResult, HASH_SIZE
 from app.similarity.similarity_result3 import SimilarityResult3
 from app.similarity.similarity_pool import SimilarityPool
 from app.logical.file import PutGetRaw, CreateDirectory
-from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow
+from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow, GetFileExtension, GetHTTPFilename
 from app.logical.network import GetHTTPFile
 from app.storage import CACHE_DATA_DIRECTORY, CACHE_NETWORK_URLPATH
 import app.sources.twitter
@@ -41,6 +41,18 @@ SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
 SCHED = None
 SEM = threading.Semaphore()
+
+class NoSource():
+    @staticmethod
+    def SmallImageUrl(url):
+        return url
+    @staticmethod
+    def NormalizedImageUrl(url):
+        return url
+    @staticmethod
+    def GetMediaExtension(url):
+        return GetFileExtension(GetHTTPFilename(url))
+    IMAGE_HEADERS = {}
 
 #### FUNCTIONS
 
@@ -60,8 +72,8 @@ def check_similarity():
         return {'error': True, 'message': "Must include url."}
     similar_results = []
     for image_url in request_urls:
-        source = BASE_SOURCE.GetImageSource(image_url)
-        download_url = source.SmallImageUrl(image_url)
+        source = BASE_SOURCE.GetImageSource(image_url) or NoSource()
+        download_url = source.SmallImageUrl(image_url) if source is not None else image_url
         media = MediaFile.query.filter_by(media_url=download_url).first()
         if media is None:
             print("Download url:", download_url)

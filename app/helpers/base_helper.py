@@ -13,6 +13,9 @@ def RenderTemplate(*args, **kwargs):
 def HasItems(items):
     return len(items) > 0
 
+def Length(items):
+    return len(items)
+
 def FlashMessages(messages):
     return Markup('<br>----------------------------------<br>'.join(messages))
 

@@ -1,8 +1,31 @@
-article.post {
-    display: inline-block;
-    width: 304px;
-    height: 304px;
-    margin: 0 10px 10px 0;
-    vertical-align: top;
-    text-align: center;
+/****SHOW Page****/
+aside#post-sidebar {
+    width: 20%;
+    border: 2px solid #DDD;
+    background: #F8F8F8;
+    padding: 0.5em;
+}
+aside#post-sidebar > section {
+    margin-bottom: 1em;
+}
+div#post-content {
+    width: 1300px;
+}
+div#post-site-content {
+    display: flex;
+}
+section#post-info {
+    width: 40%;
+}
+section#post-commentaries {
+    width: 50%;
+    max-height: 400px;
+    overflow-y: auto;
+}
+div.post-commentaries-container {
+    border: 1px solid #EEE;
+    padding: 0.25em;
+}
+div.post-commentaries-block {
+    margin: 0.25em;
 }

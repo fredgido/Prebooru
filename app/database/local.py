@@ -117,6 +117,11 @@ def SaveData(instance=None):
     SESSION.commit()
 
 
+def RemoveData(instance):
+    SESSION.delete(instance)
+    SESSION.commit()
+
+
 def GetDBPostByField(field, value):
     return Post.query.filter_by(**{field: value}).first()
 

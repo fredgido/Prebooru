@@ -326,39 +326,6 @@ def index_pools_json():
     return retvalue
 
 
-# ########## CREATE
-
-
-@bp.route('/illusts/<int:id>/pools/add', methods=['GET'])
-def add_pool_illust_html(id):
-    """HTML access point to the create pool illust function."""
-    illust = GetOrAbort(Illust, id)
-    form = GetAddPoolIllustForm()
-    return render_template("illusts/add_pool.html", form=form, illust=illust)
-
-
-@bp.route('/illusts/<int:id>/pools', methods=['POST'])
-def create_pool_illust_html(id):
-    illust = GetOrAbort(Illust, id)
-    dataparams = GetDataParams(request, 'illust')
-    pool_id = ParseType(dataparams, 'pool_id', int)
-    if pool_id is None:
-        flash("Must include valid pool ID.", 'error')
-        redirect(url_for('illust.add_new_pool_html', id=id))
-    pool = Pool.find(pool_id)
-    if pool is None:
-        flash("Pool #%d not found." % pool_id, 'error')
-        redirect(url_for('illust.add_new_pool_html', id=id))
-    pool_ids = [pool.id for pool in illust.pools]
-    if pool.id in pool_ids:
-        flash("Illust #%d already in pool #%d." % (illust.id, pool.id), 'error')
-        redirect(url_for('illust.add_new_pool_html', id=id))
-    pool.updated = GetCurrentTime()
-    pool.elements.append(illust)
-    DBLOCAL.SaveData()
-    return redirect(url_for('illust.show_html', id=id))
-
-
 # ###### Notation
 
 

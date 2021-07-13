@@ -7,10 +7,10 @@ from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
-from ..models import Pool, Post, Illust, Notation
+from ..models import Pool, Post, Illust, Notation, PoolElement
 from ..database import local as DBLOCAL
 from ..logical.utility import GetCurrentTime
-from .base_controller import GetDataParams, CustomNameForm, ParseType
+from .base_controller import GetDataParams, CustomNameForm, ParseType, ReferrerCheck, DeleteMethodCheck, GetOrAbort
 
 
 # ## GLOBAL VARIABLES
@@ -109,10 +109,27 @@ def create_html():
     result = create(request)
     if result['error']:
         flash(result['message'], 'error')
-        return redirect(url_for('pool_element.new_html', **result['dataparams']))
+        if ReferrerCheck('pool_element.new_html', request):
+            return redirect(url_for('pool_element.new_html', **result['dataparams']))
+        else:
+            return redirect(request.referrer)
+    flash("Added to pool.")
     return redirect(url_for('%s.show_html' % result['type'], id=result['item']['id']))
 
 
 @bp.route('/pool_elements.json', methods=['POST'])
 def create_json():
     return create(request)
+
+
+@bp.route('/pool_elements/<int:id>', methods=['POST', 'DELETE'])
+def delete_html(id):
+    DeleteMethodCheck(request)
+    pool_element = GetOrAbort(PoolElement, id)
+    pool = pool_element.pool
+    DBLOCAL.RemoveData(pool_element)
+    pool._elements.reorder()
+    DBLOCAL.SaveData()
+    flash("Removed from pool.")
+    return redirect(request.referrer)
+

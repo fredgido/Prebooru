@@ -86,7 +86,7 @@ def create(request):
     source = GetImageSource(createparams['url'])
     if source is None:
         createparams['url'] = None
-        return SetError(retdata, "URL is not a valid image URL from a recognized source." % dataparams['illust_id'])
+        return SetError(retdata, "URL is not a valid image URL from a recognized source.")
     partial_url = source.PartialMediaUrl(createparams['url'])
     site_id = GetImageSiteId(createparams['url'])
     illust_url = IllustUrl.query.filter_by(site_id=site_id, url=partial_url).first()

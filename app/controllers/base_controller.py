@@ -2,8 +2,9 @@
 
 # ## PYTHON IMPORTS
 import re
+import urllib
 from functools import reduce
-from flask import jsonify, render_template, abort
+from flask import jsonify, render_template, abort, url_for
 from sqlalchemy.sql.expression import case
 from wtforms import Form
 from flask_wtf import FlaskForm
@@ -36,8 +37,17 @@ class CustomNameForm(Form):
 # #### Route helpers
 
 
+def ReferrerCheck(endpoint, request):
+    return urllib.parse.urlparse(request.referrer).path == url_for(endpoint)
+
+
 def PutMethodCheck(request):
     if request.method == 'POST' and request.values.get('_method', default='').upper() != 'PUT':
+        abort(405)
+
+
+def DeleteMethodCheck(request):
+    if request.method == 'POST' and request.values.get('_method', default='').upper() != 'DELETE':
         abort(405)
 
 
