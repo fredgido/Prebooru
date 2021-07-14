@@ -5,12 +5,11 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
-from sqlalchemy.orm import aliased
+
 
 # ##LOCAL IMPORTS
-from .. import DB, SESSION
+from .. import DB
 from ..sites import GetSiteDomain, GetSiteKey
-from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
 from .base import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
 from .artist_url import ArtistUrl
 from .illust import Illust
@@ -20,7 +19,9 @@ from .post import Post
 from .illust_url import IllustUrl
 from .notation import Notation
 
+
 # ##GLOBAL VARIABLES
+
 
 ArtistNames = DB.Table(
     'artist_names',
@@ -45,6 +46,7 @@ ArtistNotations = DB.Table(
     DB.Column('notation_id', DB.Integer, DB.ForeignKey('notation.id'), primary_key=True),
     DB.Column('artist_id', DB.Integer, DB.ForeignKey('artist.id'), primary_key=True),
 )
+
 
 @dataclass
 class Artist(JsonModel):
@@ -79,7 +81,7 @@ class Artist(JsonModel):
 
     @property
     def recent_posts(self):
-        if self._recent_posts is None:
+        if not hasattr(self, '_recent_posts'):
             q = Post.query
             q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == self.id)
             q = q.order_by(Post.id.desc())
@@ -114,8 +116,6 @@ class Artist(JsonModel):
         DB.session.delete(self)
         DB.session.commit()
 
-    _recent_posts = None
-
     @property
     def _source(self):
         if not hasattr(self, '__source'):
@@ -123,7 +123,6 @@ class Artist(JsonModel):
             site_key = GetSiteKey(self.site_id)
             self.__source = SOURCEDICT[site_key]
         return self.__source
-
 
     @staticmethod
     def searchable_attributes():

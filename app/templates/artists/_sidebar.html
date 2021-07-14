@@ -6,7 +6,7 @@
                 <li><span class="item-heading"><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></span>
                     <ul>
                         <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
-                        <li><strong>Current name:</strong> <a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a></li>
+                        <li><strong>Current name: <a href="{{ helpers.booru.DanbooruPageLink(booru) }}">{{ booru.current_name }}</a> <a href="{{ helpers.booru.DanbooruPostSearch(booru) }}">&raquo;</a></strong></li>
                     </ul>
                 </li>
             {% else %}
@@ -25,24 +25,18 @@
             <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(artist.updated) }}</li>
         </ul>
     </section>
-    <section id="artist-notations">
-        <h4>Notations</h4>
-        <div id="artist-notations-container">
-            <ul>
-                {% for notation in artist.notations %}
-                    <li>
-                        <a href="{{ url_for('notation.show_html', id=notation.id) }}">notation #{{ notation.id }}</a>
-                        <div class="artist-notation-block">
-                            {{ helpers.notation.ConvertToHTML(notation) }}<br><br>
-                            <span class="muted-timestamp">{{ helpers.base.FormatTimestamps(notation) }}</span>
-                        </div>
-                    </li>
-                {% else %}
-                    <li><em>none</em></li>
-                {% endfor %}
-            </ul>
-        </div>
-    </section>
+    {% if artist.notations | length > 0 %}
+        <section id="artist-notations">
+            <h4>Notations</h4>
+            <div id="artist-notations-container">
+                <ul>
+                    {% for notation in artist.notations %}
+                        <li>{% include "notations/_notation_block.html" %}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+    {% endif %}
     <section id="artist-options">
         <h4>Options</h4>
         <ul>

@@ -19,18 +19,3 @@
         </div>
     </div>
 {% endblock %}
-
-{% block pagescript %}
-<script>
-function PostCreatePool(obj) {
-    let post_id = obj.dataset.postId;
-    console.log(post_id);
-    let pool_id = prompt("Enter pool # to add to:");
-    if (pool_id !== null) {
-        console.log(pool_id);
-        Prebooru.postRequest(obj.href, {'pool_element[pool_id]': pool_id, 'pool_element[post_id]': post_id});
-    }
-    return false;
-}
-</script>
-{% endblock %}

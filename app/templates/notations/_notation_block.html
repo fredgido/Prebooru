@@ -1,4 +1,4 @@
-<a href="{{ url_for('notation.show_html', id=notation.id) }}">{{ notation.shortlink }}</a>
+<strong><a href="{{ notation.show_url }}">{{ notation.shortlink }}</a></strong>
 <div class="notation-block">
     {{ helpers.notation.ConvertToHTML(notation) }}<br><br>
     <span class="muted-timestamp">{{ helpers.base.FormatTimestamps(notation) }}</span>

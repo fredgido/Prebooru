@@ -18,7 +18,6 @@ Prebooru.postRequest = function(url, args) {
 Prebooru.promptArgPost = function(obj, prompt_text, argname) {
     let arg = prompt(prompt_text);
     if (arg !== null) {
-        console.log(arg, argname);
         Prebooru.postRequest(obj.href, {[argname]: arg});
     }
     return false;
@@ -33,3 +32,26 @@ Prebooru.linkDelete = function(obj) {
     Prebooru.postRequest(obj.href, {_method: 'delete'});
     return false;
 };
+
+Prebooru.deleteConfirm = function(obj) {
+    if (confirm("Delete this item?")) {
+        Prebooru.linkDelete(obj);
+    }
+    return false;
+}
+
+Prebooru.createPool = function (obj, type) {
+    let item_id = obj.dataset[type + 'Id'];
+    let pool_id = prompt("Enter pool # to add to:");
+    if (pool_id !== null) {
+        Prebooru.postRequest(obj.href, {'pool_element[pool_id]': pool_id, [`pool_element[${type}_id]`]: item_id});
+    }
+    return false;
+}
+
+Prebooru.deletePool = function(obj) {
+    if (confirm('Remove item from pool?')) {
+        Prebooru.linkDelete(obj);
+    }
+    return false;
+}

@@ -2,4 +2,4 @@
 
 {% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/artists.css') }}">{% endblock %}
 
-{% block secondary_links %}{{ helpers.base.RenderTemplate("artists/_secondary_links.html", artist=artist) }}{% endblock %}
+{% block secondary_links %}{% include "artists/_secondary_links.html" %}{% endblock %}

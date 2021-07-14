@@ -6,7 +6,7 @@
     <div class="heading" style="font-size: 28px">
         Edit: <a href="{{ artist.show_url }}">{{ artist.shortlink }}</a>
     </div>
-    <form method="POST" action="{{ url_for('artist.update_html', id=artist.id) }}">
+    <form method="POST" action="{{ artist.update_url }}">
         <input type="hidden" name="_method" value="put">
         {{ form.csrf_token }}
         {% for field_name,field_input in helpers.base.FormIterator(form) %}

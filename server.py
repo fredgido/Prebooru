@@ -2,6 +2,7 @@
 
 # ## PYTHON IMPORTS
 import os
+import psutil
 from argparse import ArgumentParser
 
 # ## LOCAL IMPORTS
@@ -38,8 +39,13 @@ def StopServer(name, *args):
     pid = next(iter(LoadDefault(filename, [])), None)
     if pid is not None:
         print("Killing %s: %d" % (name, pid))
-        os.system('taskkill /PID %d /F' % pid)
-        PutGetJSON(filename, 'w', [])
+        p = psutil.Process(pid)
+        p.terminate()
+        try:
+            p.wait(timeout=5)
+        except psutil.TimeoutExpired:
+            p.kill()
+        #PutGetJSON(filename, 'w', [])
     else:
         print("Server %s not running." % name)
 

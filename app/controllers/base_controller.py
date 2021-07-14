@@ -55,6 +55,14 @@ def GetMethodRedirect(request):
     return request.values.get('_method', default='').upper() == 'GET'
 
 
+def PutMethodRedirect(request):
+    return request.values.get('_method', default='').upper() == 'PUT'
+
+
+def DeleteMethodRedirect(request):
+    return request.values.get('_method', default='').upper() == 'DELETE'
+
+
 def ShowJson(model, id):
     item = model.query.filter_by(id=id).first()
     return item.to_json() if item is not None else {}
@@ -108,11 +116,10 @@ def GetOrError(model, id):
 # #### Form helpers
 
 
-def HideInput(form, attr, value):
+def HideInput(form, attr):
     field = getattr(form, attr)
-    field.data = value
     field.widget = HiddenInput()
-    field._value = lambda: value
+    field._value = lambda: field.data
 
 
 # #### Param helpers

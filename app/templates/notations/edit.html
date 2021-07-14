@@ -1,15 +1,15 @@
-{% extends 'layouts/base.html' %}
+{% extends 'notations/_base.html' %}
 
-{% block title %}Edit - Notation #{{ notation.id }}{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.render_template("notations/_secondary_links.html", notation=notation) | safe }}{% endblock %}
+{% block title %}Edit - {{ notation.shortlink.title() }}{% endblock %}
 
 {% block content %}
-    <form method="Post" action="/notations/{{notation.id}}">
+    <form method="POST" action="{{ notation.update_url }}">
+        <div class="heading" style="font-size: 28px">Edit {{ helpers.notation.FormHeader(form) }}</div>
         <input type="hidden" name="_method" value="put">
         {{ form.csrf_token }}
-        {{ form.body.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.body(style="display: block;",rows=20,cols=200) }}
-        {{ form.pool_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.pool_id(style="display: block;") }}
-        <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {{ field_input() }}
+        {% endfor %}
+        <input type="submit" value="Submit">
     </form>
 {% endblock %}

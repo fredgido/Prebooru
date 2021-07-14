@@ -369,6 +369,21 @@ def CreateArtistFromUser(twuser, commit=True):
     return artist
 
 
+def GetArtistParametersFromTwuser(twuser):
+    current_time = GetCurrentTime()
+    return {
+        'site_id': Site.TWITTER.value,
+        'site_artist_id': int(twuser['id_str']),
+        'site_created': ProcessTwitterTimestring(twuser['created_at']),
+        'current_site_account': twuser['screen_name'],
+        'requery': GetCurrentTime() + datetime.timedelta(days=1),
+        'active': True,
+        'names': [twuser['name']],
+        'site_accounts': [twuser['screen_name']],
+        'profiles': GetUserDescription(twuser) or None,
+        'webpages': GetTwitterUserWebpages(twuser),
+    }
+
 def CreateArtistFromParameters(params):
     if params['site_created'] is not None:
         params['site_created'] = ProcessTwitterTimestring(params['site_created']) or ProcessUTCTimestring(params['site_created'])

@@ -108,7 +108,7 @@ def FormIterator(form):
             if type(field) is BooleanField:
                 built_markup = str(field.label) + field(value="0", type="hidden") + field(value="1")
             elif type(field.widget) is HiddenInput:
-                return AddContainer('div', field, classlist=['input', 'hidden'])
+                return AddContainer('div', str(field), classlist=['input', 'hidden']) if field.data is not None else ""
             else:
                 built_markup = str(field.label) + field
             description = kwargs['description'] if 'description' in kwargs else field.description

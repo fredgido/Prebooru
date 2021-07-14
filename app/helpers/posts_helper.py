@@ -26,7 +26,7 @@ def SimilarSearchLinks(post, format_url, proxy_url=None):
         href_url = format_url + encoded_url
         html = '<a href="%s">illust #%d</a>' % (href_url, illust.id )
         image_links.append(html)
-    if proxy_url is not None:
+    if len(image_links) == 0 and proxy_url is not None:
         image_links.append('<a href="%s?post_id=%d">file</a>' % (proxy_url, post.id))
     return ' | '.join(image_links)
 
@@ -56,5 +56,6 @@ def DanbooruPostBookmarkletLinks(post):
         href_url = 'https://danbooru.donmai.us/uploads/new?' + query_string
         html = '<a href="%s" target="_blank">illust #%d</a>' % (href_url, illust.id)
         image_links.append(html)
-    image_links.append('<a href="https://danbooru.donmai.us/uploads/new?prebooru_post_id=%d" target="_blank">file</a>' % post.id)
+    if len(image_links) == 0:
+        image_links.append('<a href="https://danbooru.donmai.us/uploads/new?prebooru_post_id=%d" target="_blank">file</a>' % post.id)
     return ' | '.join(image_links)

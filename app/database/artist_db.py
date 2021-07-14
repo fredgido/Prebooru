@@ -45,7 +45,6 @@ def CreateArtistFromParameters(params):
 
 
 def UpdateArtistFromParameters(artist, updateparams, updatelist):
-    print("#1",updateparams, updatelist)
     update_results = []
     SetTimesvalues(updateparams)
     SetAllSiteAccounts(updateparams)
@@ -61,16 +60,21 @@ def UpdateArtistFromParameters(artist, updateparams, updatelist):
     update_results.append(AppendRelationshipCollections(artist, append_relationships, updateparams))
     if 'webpages' in updateparams:
         update_results.append(SetArtistWebpages(artist, updateparams['webpages']))
-    if 'profile' in updateparams:
-        update_results.append(AddArtistProfile(artist, updateparams['profile']))
+    # if 'profile' in updateparams:
+    #    update_results.append(AddArtistProfile(artist, updateparams['profile']))
     if any(update_results):
         print("Changes detected.")
         artist.updated = GetCurrentTime()
         SESSION.commit()
 
+
 def SetTimesvalues(params):
     if 'site_created' in params:
-        params['site_created'] = ProcessUTCTimestring(params['site_created'])
+        if type(params['site_created']) is str:
+            params['site_created'] = ProcessUTCTimestring(params['site_created'])
+        elif type(params['site_created']) is not datetime.datetime:
+            params['site_created'] = None
+
 
 def SetAllSiteAccounts(params):
     if params['current_site_account']:

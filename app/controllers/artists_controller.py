@@ -21,7 +21,6 @@ from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestVa
 bp = Blueprint("artist", __name__)
 
 CREATE_REQUIRED_PARAMS = ['site_id', 'site_artist_id']
-UPDATE_REQUIRED_PARAMS = []
 
 
 # Forms
@@ -115,9 +114,7 @@ def update(artist):
 
 def query_create():
     """Query source and create artist."""
-    params = {
-        'url': request.values.get('url'),
-    }
+    params = dict(url=request.values.get('url'))
     retdata = {'error': False, 'params': params}
     if params['url'] is None:
         return SetError(retdata, "Must include the artist URL.")
@@ -142,7 +139,7 @@ def query_create():
 
 # #### Route functions
 
-# ###### SHOW/INDEX
+# ###### SHOW
 
 
 @bp.route('/artists/<int:id>.json', methods=['GET'])
@@ -154,6 +151,9 @@ def show_json(id):
 def show_html(id):
     artist = GetOrAbort(Artist, id)
     return render_template("artists/show.html", artist=artist)
+
+
+# ###### INDEX
 
 
 @bp.route('/artists.json', methods=['GET'])
@@ -234,6 +234,7 @@ def update_json(id):
 
 @bp.route('/artists/query_create', methods=['POST'])
 def query_create_html():
+    """Query source and create artist."""
     results = query_create()
     if results['error']:
         flash(results['message'], 'error')
@@ -242,19 +243,14 @@ def query_create_html():
     return redirect(url_for('artist.show_html', id=results['item']['id']))
 
 
-@bp.route('/artists/query_create.json', methods=['POST'])
-def query_create_json():
-    try:
-        return query_create()
-    except Exception as e:
-        return {'error': True, 'message': "Unhandled exception occurred creating artist: %s" % (str(e))}
-
-
 @bp.route('/artists/<int:id>/query_update', methods=['POST'])
 def query_update_html(id):
     """Query source and update artist."""
     artist = GetOrAbort(Artist, id)
-    BASE_SOURCE.UpdateArtist(artist)
+    source = BASE_SOURCE._Source(artist.site_id)
+    updateparams = source.GetArtistData(artist.site_artist_id)
+    updatelist = list(updateparams.keys())
+    UpdateArtistFromParameters(artist, updateparams, updatelist)
     flash("Artist updated.")
     return redirect(url_for('artist.show_html', id=id))
 
@@ -269,16 +265,3 @@ def query_booru_html(id):
     else:
         flash('Artist updated.')
     return redirect(url_for('artist.show_html', id=id))
-
-
-@bp.route('/artists/<int:id>/query_booru.json', methods=['GET'])
-def query_booru_json(id):
-    artist = GetOrError(Artist, id)
-    if type(artist) is dict:
-        return artist
-    response = BASE_SOURCE.QueryArtistBoorus(artist)
-    if response['error']:
-        return response
-    response['artist'] = response['artist'].to_json()
-    response['boorus'] = [booru.to_json() for booru in response['boorus']]
-    return response

@@ -1,53 +1,14 @@
-{% extends 'layouts/base.html' %}
+{% extends 'notations/_base.html' %}
 
-{% block title %}New Notation
-    {% if form.pool_id.data %}
-        for pool #{{ form.pool_id.data }}
-    {% elif form.artist_id.data %}
-        for artist #{{ form.artist_id.data }}
-    {% elif form.illust_id.data %}
-        for illust #{{ form.illust_id.data }}
-    {% elif form.post_id.data %}
-        for post #{{ form.post_id.data }}
-    {% endif %}
-{% endblock %}
-
-{% block secondary_links %}{{ helpers.base.render_template("notations/_secondary_links.html", notation=notation) | safe }}{% endblock %}
+{% block title %}New Notation{% endblock %}
 
 {% block content %}
-    <div class="heading" style="font-size: 28px">
-        {% if helpers.notation.IsGeneralForm(form) %}
-            New notation
-        {% else %}
-            New notation:
-            {% if form.pool_id.data %}
-                <a href="{{ url_for('pool.show_html', id=form.pool_id.data) }}">pool #{{ form.pool_id.data }}</a>
-            {% elif form.artist_id.data %}
-                <a href="{{ url_for('artist.show_html', id=form.artist_id.data) }}">artist #{{ form.artist_id.data }}</a>
-            {% elif form.illust_id.data %}
-                <a href="{{ url_for('illust.show_html', id=form.illust_id.data) }}">illust #{{ form.illust_id.data }}</a>
-            {% elif form.post_id.data %}
-                <a href="{{ url_for('post.show_html', id=form.post_id.data) }}">post #{{ form.post_id.data }}</a>
-            {% endif %}
-        {% endif %}
-    </div>
-    <form method="POST" action="/notations">
+    <div class="heading" style="font-size: 28px">New {{ helpers.notation.FormHeader(form) }}</div>
+    <form method="POST" action="{{ notation.create_url }}">
         {{ form.csrf_token }}
-        {{ form.body.label }} {{ form.body(rows=20,cols=200) }}
-        {% if helpers.notation.IsGeneralForm(form) %}
-            {{ form.pool_id.label }} {{ form.pool_id }}
-            {{ form.artist_id.label }} {{ form.artist_id }}
-            {{ form.illust_id.label }} {{ form.illust_id }}
-            {{ form.post_id.label }} {{ form.post_id }}
-        {% elif form.pool_id.data %}
-            {{ form.pool_id(type='hidden') }}
-        {% elif form.artist_id.data %}
-            {{ form.artist_id(type='hidden') }}
-        {% elif form.illust_id.data %}
-            {{ form.illust_id(type='hidden') }}
-        {% elif form.post_id.data %}
-            {{ form.post_id(type='hidden') }}
-        {% endif %}
-        <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {{ field_input() }}
+        {% endfor %}
+        <input type="submit" value="Submit">
     </form>
 {% endblock %}

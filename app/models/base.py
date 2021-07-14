@@ -46,6 +46,22 @@ class JsonModel(DB.Model):
     def show_url(self):
         return url_for(self.__table__.name + ".show_html", id=self.id)
 
+    @property
+    def index_url(self):
+        return url_for(self.__table__.name + ".index_html")
+
+    @property
+    def create_url(self):
+        return url_for(self.__table__.name + ".create_html")
+
+    @property
+    def update_url(self):
+        return url_for(self.__table__.name + ".update_html", id=self.id)
+
+    @property
+    def delete_url(self):
+        return url_for(self.__table__.name + ".delete_html", id=self.id)
+
     def to_json(self):
         fields = self.__dataclass_fields__
         data = {}

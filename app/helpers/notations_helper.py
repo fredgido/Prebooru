@@ -1,19 +1,31 @@
+# APP/HELPERS/NOTATIONS_HELPERS.PY
+
+# ##PYTHON IMPORTS
 import re
 import html
-from flask import Markup, render_template
+from flask import Markup
 
+# ##LOCAL IMPORTS
 from .base_helper import ConvertStrToHTML
 
-HTTP_RG = re.compile(r'(\b(?:http|https)(?::\/{2}[\w]+)(?:[\/|\.]?)(?:[^\s<>\uff08\uff09\u3011\u3000"\[\]]*))',re.ASCII)
 
-def DisplayNotes(item):
-    if len(item.notations) == 0:
-        return ""
-    return render_template("notations/_list.html", notations=item.notations)
+# ##GLOBAL VARIABLES
 
-def Excerpt(notation):
-    lines = re.split(r'\r?\n', notation.body)
-    return ConvertStrToHTML(lines[0][:50] + ('...' if len(lines[0]) > 50 else ''))
+
+HTTP_RG = re.compile(r'(\b(?:http|https)(?::\/{2}[\w]+)(?:[\/|\.]?)(?:[^\s<>\uff08\uff09\u3011\u3000"\[\]]*))', re.ASCII)
+
+
+# ## FUNCTIONS
+
+# #### Helper functions
+
+
+def IsGeneralForm(form):
+    return (form.pool_id.data is None) and (form.artist_id.data is None) and (form.illust_id.data is None) and (form.post_id.data is None)
+
+
+# #### General functions
+
 
 def ConvertToHTML(notation):
     links = HTTP_RG.findall(notation.body)
@@ -28,8 +40,42 @@ def ConvertToHTML(notation):
     output_html = re.sub(r'\r?\n', '<br>', output_html)
     return Markup(output_html)
 
-def IsGeneralForm(form):
-    return (form.pool_id.data is None) and (form.artist_id.data is None) and (form.illust_id.data is None) and (form.post_id.data is None)
 
-def NotationBlock(notation):
-    return Markup(render_template("notations/_notation_block.html", notation=notation))
+# #### Route functions
+
+# ###### INDEX
+
+
+def Excerpt(notation):
+    lines = re.split(r'\r?\n', notation.body)
+    return ConvertStrToHTML(lines[0][:50] + ('...' if len(lines[0]) > 50 else ''))
+
+
+# ###### NEW/EDIT
+
+
+def FormTitle(form):
+    if form.pool_id.data:
+        return "for pool #%d" % form.pool_id.data
+    if form.artist_id.data:
+        return "for artist #%d" % form.artist_id.data
+    if form.illust_id.data:
+        return "for illust #%d" % form.illust_id.data
+    if form.post_id.data:
+        return "for post #%d" % form.post_id.data
+
+
+def FormHeader(form):
+    html_text = "notation"
+    if IsGeneralForm(form):
+        return html_text
+    html_text += ': '
+    if form.pool_id.data:
+        html_text += """<a href="{{ url_for('pool.show_html_text', id=%d) }}">pool #%d</a>""" % (form.pool_id.data, form.pool_id.data)
+    elif form.artist_id.data:
+        html_text += """<a href="{{ url_for('artist.show_html_text', id=%d) }}">artist #%d</a>""" % (form.artist_id.data, form.artist_id.data)
+    elif form.illust_id.data:
+        html_text += """<a href="{{ url_for('illust.show_html_text', id=%d) }}">illust #%d</a>""" % (form.illust_id.data, form.illust_id.data)
+    elif form.post_id.data:
+        html_text += """<a href="{{ url_for('post.show_html_text', id=%d) }}">post #%d</a>""" % (form.post_id.data, form.post_id.data)
+    return Markup(html_text)

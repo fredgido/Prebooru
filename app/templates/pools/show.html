@@ -39,7 +39,7 @@
                                     {% endif %}
                                     {% if helpers.base.HasItems(item.notations) %}
                                         <li><strong>Notations:</strong>
-                                            {{ helpers.notation.DisplayNotes(item) | safe }}
+                                            {{ helpers.base.RenderTemplate("notations/_list.html", notations=item.notations) }}
                                         </li>
                                     {% endif %}
                                 </ul>

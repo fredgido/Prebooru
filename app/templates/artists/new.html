@@ -3,7 +3,7 @@
 {% block title %}New Artist{% endblock %}
 
 {% block content %}
-    <form method="POST" action="/artists">
+    <form method="POST" action="{{ artist.create_url }}">
         {{ form.csrf_token }}
         {{ form.site_id.label }} {{ form.site_id }}
         {{ form.site_artist_id.label }} {{ form.site_artist_id }}

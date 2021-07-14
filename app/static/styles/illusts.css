@@ -17,12 +17,9 @@ div#illust-sidebar {
 div#illust-sidebar > section {
     margin-bottom: 1em;
 }
-div#artist-notations-container {
+div#illust-notations-container {
     max-height: 250px;
     overflow-y: auto;
-}
-div.illust-notation-block {
-    border: 1px solid #EEE;
 }
 div#illust-site-content {
     width: 70%;

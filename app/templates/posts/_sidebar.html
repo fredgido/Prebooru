@@ -72,7 +72,7 @@
                         <a href="{{ url_for('pool.show_html', id=pool_element.pool_id) }}">{{ pool_element.pool.name }}</a>
                         <span class="delete-control">
                             (
-                            <a href="{{ url_for('pool_element.delete_html', id=pool_element.id) }}" onclick="return confirm('Delete pool?') && Prebooru.linkDelete(this)">remove</a>
+                            <a href="{{ url_for('pool_element.delete_html', id=pool_element.id) }}" onclick="return Prebooru.deletePool(this)">remove</a>
                             )
                         </span>
                     </li>
@@ -124,7 +124,7 @@
         <ul>
             <li><a href="{{ post.file_url }}">Original file</a></li>
             <li><a href="javascript:prompt('Copy file link:', '{{ post.file_path.encode('unicode-escape').decode() }}');false;">File link</a></li>
-            <li><a href="{{ url_for('pool_element.create_html') }}" data-post-id="{{ post.id }}" onclick="return PostCreatePool(this)">Add pool</a></li>
+            <li><a href="{{ url_for('pool_element.create_html') }}" data-post-id="{{ post.id }}" onclick="return Prebooru.createPool(this, 'post')">Add pool</a></li>
             <li><a href="{{ url_for('notation.new_html', post_id=post.id) }}">Add notation</a></li>
         </ul>
     </section>

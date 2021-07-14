@@ -217,7 +217,6 @@ def index_html():
 def new_html():
     """HTML access point to create function."""
     form = GetIllustForm(**request.args)
-    ### SET SITE_ID HERE IF ARTIST AND ARTIST_ID EXISTS
     if form.artist_id.data is not None:
         artist = Artist.find(form.artist_id.data)
         if artist is None:
@@ -240,28 +239,7 @@ def create_html():
 
 @bp.route('/illusts.json', methods=['POST'])
 def create_json():
-    dataparams = GetDataParams(request, 'illust')
-    error = CheckDataParams(dataparams)
-    if error is not None:
-        return {'error': True, 'message': error, 'params': dataparams}
-    ConvertDataParams(dataparams)
-    print(dataparams)
-    illust = Illust.query.filter_by(site_id=dataparams['site_id'], site_illust_id=dataparams['site_illust_id']).first()
-    if illust is not None:
-        return {'error': True, 'message': "Illust already exists.", 'params': dataparams, 'illust': illust}
-    artist = Artist.query.filter_by(site_id=dataparams['site_id'], site_artist_id=dataparams['site_artist_id']).first()
-    if artist is None:
-        return {'error': True, 'message': "Artist does not exist.", 'params': dataparams}
-    dataparams['artist_id'] = artist.id
-    try:
-        illust = BASE_SOURCE.CreateDBIllustFromParams(dataparams)
-    except Exception as e:
-        print("Database exception!", e)
-        LogError('controllers.artists.create', "Unhandled exception occurred creating artist: %s" % (str(e)))
-        request.environ.get('werkzeug.server.shutdown')()
-        return {'error': True, 'message': 'Database exception! Check log file.'}
-    illust_json = illust.to_json() if illust is not None else illust
-    return {'error': False, 'illust': illust_json}
+    return create()
 
 
 # ###### UPDATE

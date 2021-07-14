@@ -24,21 +24,29 @@ class Notation(JsonModel):
     body = DB.Column(DB.UnicodeText, nullable=False)
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
-    _pools = DB.relationship(PoolNotation, backref='item', lazy=True, cascade='all,delete')
-    pools = association_proxy('_pools', 'pool')
+    _pool = DB.relationship(PoolNotation, lazy=True, uselist=False, cascade='all,delete', backref=DB.backref('item', lazy=True, uselist=False))
+    pool = association_proxy('_pool', 'pool')
 
     @property
-    def show_url(self):
-        return url_for("notation.show_html", id=self.id)
+    def append_type(self):
+        if self._pool is not None:
+            return 'pool'
+        if self.artist is not None:
+            return 'artist'
+        if self.illust is not None:
+            return 'illust'
+        if self.post is not None:
+            return 'post'
 
-    def delete(self):
-        pools = self.pools
-        DB.session.delete(self)
-        DB.session.commit()
-        for pool in pools:
-            pool._elements.reorder()
-        if len(pools) > 0:
-            DB.session.commit()
+    def append_id(self, type):
+        if type == 'pool':
+            return self._pool.pool_id
+        if type == 'artist':
+            return self.artist.id
+        if type == 'illust':
+            return self.illust.id
+        if type == 'post':
+            return self.post.id
 
     @staticmethod
     def searchable_attributes():

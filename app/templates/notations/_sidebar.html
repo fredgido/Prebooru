@@ -1,0 +1,41 @@
+<aside id="notation-sidebar">
+    {% if notation._pool is not none %}
+        <section id="notation-pool">
+            <h4>Pools</h4>
+            <ul>
+                <li><a href="{{ url_for('pool.show_html', id=notation.pool.id) }}">{{ notation.pool.name }}</a></li>
+            </ul>
+        </section>
+    {% endif %}
+    {% if notation.artist is not none %}
+        <section id="notation-artist">
+            <h4>Artist</h4>
+            <ul>
+                <li><a href="{{ url_for('artist.show_html', id=notation.artist.id) }}">{{ notation.artist.shortlink }}</a></li>
+            </ul>
+        </section>
+    {% endif %}
+    {% if notation.illust is not none %}
+        <section id="notation-illust">
+            <h4>Illust</h4>
+            <ul>
+                <li><a href="{{ url_for('illust.show_html', id=notation.illust.id) }}">{{ notation.illust.shortlink }}</a></li>
+            </ul>
+        </section>
+    {% endif %}
+    {% if notation.post is not none %}
+        <section id="notation-post">
+            <h4>Post</h4>
+            <ul>
+                <li><a href="{{ url_for('post.show_html', id=notation.post.id) }}">{{ notation.post.shortlink }}</a></li>
+            </ul>
+        </section>
+    {% endif %}
+    <section style="margin-top: 2em;">
+        <h4>Timestamps</h4>
+        <ul>
+            <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(notation.created) }}</li>
+            <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(notation.updated) }}</li>
+        </ul>
+    </section>
+</aside>
