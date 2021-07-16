@@ -249,6 +249,8 @@ def query_update_html(id):
     artist = GetOrAbort(Artist, id)
     source = BASE_SOURCE._Source(artist.site_id)
     updateparams = source.GetArtistData(artist.site_artist_id)
+    if 'webpages' in updateparams:
+        updateparams['webpages'] += ['-' + webpage.url for webpage in artist.webpages if webpage.url not in updateparams['webpages']]
     updatelist = list(updateparams.keys())
     UpdateArtistFromParameters(artist, updateparams, updatelist)
     flash("Artist updated.")

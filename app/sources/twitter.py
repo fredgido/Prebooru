@@ -13,8 +13,8 @@ from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.file import LoadDefault, PutGetJSON
 from ..logical.logger import LogError
 from ..database import twitter as DB, local as DBLOCAL
-from ..database.cache_db import GetApiArtist, SaveApiData
-from ..database.twitter import GetArtistParametersFromTwuser
+from ..database.cache_db import GetApiArtist, GetApiIllust, SaveApiData
+from ..database.twitter import GetArtistParametersFromTwuser, GetIllustParametersFromTweet
 from ..config import workingdirectory, datafilepath
 from ..sites import Site, GetSiteDomain, GetSiteId
 
@@ -649,7 +649,7 @@ def GetArtistData(site_artist_id):
         twuser = GetTwitterArtist(site_artist_id)
         if DBLOCAL.IsError(twuser):
             print("Error getting artist data!")
-            return {'active': False}
+            return {'active': False, 'requery': None}
         SaveApiData([twuser], 'id_str', Site.TWITTER.value, 'artist')
     return GetArtistParametersFromTwuser(twuser)
 
@@ -666,6 +666,18 @@ def UpdateIllust(illust, explicit=False, timeline=False):
             return
         DB.CacheLookupData([tweet], 'illust')
     DB.UpdateIllustFromTweet(illust, tweet)
+
+
+def GetIllustData(site_illust_id):
+    tweet = GetApiIllust(site_illust_id, Site.TWITTER.value)
+    if tweet is None:
+        tweet = GetTwitterIllust(site_illust_id)
+        if DBLOCAL.IsError(tweet):
+            print("Error getting illust data!")
+            return {'active': False, 'requery': None}
+        SaveApiData([tweet], 'id_str', Site.TWITTER.value, 'illust')
+    return GetIllustParametersFromTweet(tweet)
+
 
 # Create
 

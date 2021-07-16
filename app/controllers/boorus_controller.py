@@ -108,25 +108,6 @@ def update(booru):
     return retdata
 
 
-def query_create():
-    """Query Danbooru and create booru."""
-    params = {
-        'danbooru_id': request.values.get('danbooru_id', type=int),
-    }
-    retdata = {'error': False, 'params': params}
-    if params['danbooru_id'] is None:
-        return SetError(retdata, "Must include the Danbooru ID.")
-    booru = Booru.query.filter_by(danbooru_id=params['danbooru_id']).first()
-    if booru is not None:
-        retdata['item'] = booru.to_json()
-        return SetError(retdata, "Booru already exists: booru #%d" % booru.id)
-    results = CreateBooruFromID(params['danbooru_id'])
-    if results['error']:
-        return SetError(retdata, results['message'])
-    retdata.update(results)
-    return retdata
-
-
 # #### Route functions
 
 # ###### SHOW/INDEX
@@ -153,7 +134,7 @@ def index_json():
 def index_html():
     q = index()
     boorus = Paginate(q, request)
-    return render_template("boorus/index.html", boorus=boorus, booru=None)
+    return render_template("boorus/index.html", boorus=boorus, booru=Booru())
 
 
 # ###### CREATE
@@ -163,7 +144,7 @@ def index_html():
 def new_html():
     """HTML access point to create function."""
     form = GetBooruForm()
-    return render_template("boorus/new.html", form=form, booru=None)
+    return render_template("boorus/new.html", form=form, booru=Booru())
 
 
 @bp.route('/boorus', methods=['POST'])
@@ -219,7 +200,17 @@ def update_json(id):
 
 @bp.route('/boorus/query_create', methods=['POST'])
 def query_create_html():
-    results = query_create()
+    params = {
+        'danbooru_id': request.values.get('danbooru_id', type=int),
+    }
+    retdata = {'error': False, 'params': params}
+    if params['danbooru_id'] is None:
+        return SetError(retdata, "Must include the Danbooru ID.")
+    booru = Booru.query.filter_by(danbooru_id=params['danbooru_id']).first()
+    if booru is not None:
+        retdata['item'] = booru.to_json()
+        return SetError(retdata, "Booru already exists: booru #%d" % booru.id)
+    results = CreateBooruFromID(params['danbooru_id'])
     if results['error']:
         flash(results['message'], 'error')
         return redirect(request.referrer)

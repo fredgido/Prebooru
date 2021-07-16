@@ -3,7 +3,7 @@
         <section id="booru-site-info">
             <h4>Info</h4>
             <ul>
-                <li><span class="heading" style="font-size: 1.33em;"><a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a> <a href="https://danbooru.donmai.us/posts?tags={{ booru.current_name }}">&raquo;</a> </span></li>
+                <li><span class="heading"><a href="{{ helpers.booru.DanbooruPageLink(booru) }}">{{ booru.current_name }}</a> <a href="{{ helpers.booru.DanbooruPostSearch(booru) }}">&raquo;</a> </span></li>
                 <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
             </ul>
         </section>
@@ -11,7 +11,7 @@
             <h4>Names</h4>
             <ul>
                 {% for booru_name in booru.names %}
-                        <li>{{ booru_name.name }}</li>
+                    <li>{{ booru_name.name }}</li>
                 {% endfor %}
             </ul>
         </section>
@@ -19,13 +19,15 @@
             <h4>Artists</h4>
             <ul>
                 {% for artist in booru.artists %}
-                        <li><span class="heading" style="font-size: 1.33em;"><a href="{{ artist.show_url }}">{{ artist.shortlink }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a></span>
-                            <ul>
-                                <li><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></li>
-                                <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
-                                <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
-                            </ul>
-                        </li>
+                    <li><span class="heading"><a href="{{ artist.show_url }}">{{ artist.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></span>
+                        <ul>
+                            <li><strong>Site ID:</strong> {{ artist.site_artist_id }}</li>
+                            <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
+                            <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li><em>none</em></li>
                 {% endfor %}
             </ul>
         </section>

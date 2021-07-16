@@ -15,7 +15,7 @@ from ..logical.logger import LogError
 from ..models import Illust, Artist, Notation, Pool
 from ..sources import base as BASE_SOURCE
 from ..database import local as DBLOCAL
-from ..database.illust_db import CreateIllustFromParameters
+from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
     Paginate, GetDataParams, CustomNameForm, ParseType, GetOrAbort, GetOrError, SetError, HideInput, IntOrBlank,\
     NullifyBlanks, SetDefault, CheckParamRequirements, ParseStringList
@@ -329,6 +329,9 @@ def add_notation_json(id):
 @bp.route('/illusts/<int:id>/query_update', methods=['POST'])
 def query_update_html(id):
     illust = GetOrAbort(Illust, id)
-    BASE_SOURCE.UpdateIllust(illust)
+    source = BASE_SOURCE._Source(illust.site_id)
+    updateparams = source.GetIllustData(illust.site_illust_id)
+    updatelist = list(updateparams.keys())
+    UpdateIllustFromParameters(illust, updateparams, updatelist)
     flash("Illust updated.")
     return redirect(url_for('illust.show_html', id=id))

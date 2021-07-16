@@ -15,14 +15,13 @@
         </thead>
         <tbody>
             {% for booru in boorus.items %}
-                {% set outer_loop = loop %}
                 <tr id="booru-{{ booru.id }}">
-                    <td><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></td>
-                    <td>
+                    <td class="booru-id"><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></td>
+                    <td class="booru-info">
                         <span><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</span><br>
                         <span><strong>Current name:</strong> <a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a></span>
                     </td>
-                    <td>
+                    <td class="booru-names">
                          {% for booru_name in booru.names %}
                             {{ booru_name.name }}
                             {% if not loop.last %}
@@ -30,7 +29,7 @@
                             {% endif %}
                         {% endfor %}
                     </td>
-                    <td>
+                    <td class="booru-artists">
                          {% for artist in booru.artists %}
                             <a href="{{ artist.show_url }}">{{ artist.shortlink }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a>
                             {% if not loop.last %}
@@ -38,7 +37,7 @@
                             {% endif %}
                         {% endfor %}
                     </td>
-                    <td>
+                    <td class="booru-timestamps">
                         <strong>Created:</strong> {{ helpers.base.FormatTimestamp(booru.created) }}<br>
                         <strong>Updated:</strong> {{ helpers.base.FormatTimestamp(booru.updated) }}
                     </td>
@@ -48,4 +47,4 @@
     </table>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(boorus) | safe }}{% endblock %}
+{% block pages %}{{ helpers.base.PageNavigation(boorus) }}{% endblock %}

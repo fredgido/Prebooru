@@ -3,7 +3,8 @@
 {% block title %}New Booru{% endblock %}
 
 {% block content %}
-    <form method="POST" action="{{ url_for('booru.create_html') }}">
+    <div class="heading booru-form-heading">New booru</div>
+    <form method="POST" action="{{ booru.create_url }}">
         {{ form.csrf_token }}
         {% for field_name,field_input in helpers.base.FormIterator(form) %}
             {{ field_input() }}

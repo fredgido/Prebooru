@@ -1,26 +1,24 @@
-# APP/MODELS/ARTIST.PY
+# APP/MODELS/BOORU.PY
 
 # ##PYTHON IMPORTS
 import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
-from sqlalchemy.orm import aliased
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
 from .. import DB
-from ..sites import GetSiteDomain
-from .base import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
+from .base import JsonModel
 from .artist import Artist
-from .artist_url import ArtistUrl
 from .illust import Illust
-from .label import Label
-from .description import Description
-from .post import Post
 from .illust_url import IllustUrl
+from .post import Post
+from .label import Label
+
 
 # ##GLOBAL VARIABLES
+
 
 BooruNames = DB.Table(
     'booru_names',

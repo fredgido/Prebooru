@@ -116,8 +116,10 @@ def GetOrError(model, id):
 # #### Form helpers
 
 
-def HideInput(form, attr):
+def HideInput(form, attr, value=None):
     field = getattr(form, attr)
+    if value is not None:
+        field.data = value
     field.widget = HiddenInput()
     field._value = lambda: field.data
 

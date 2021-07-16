@@ -4,12 +4,14 @@ aside#post-sidebar {
     border: 2px solid #DDD;
     background: #F8F8F8;
     padding: 0.5em;
+    height: fit-content;
 }
 aside#post-sidebar > section {
     margin-bottom: 1em;
 }
 div#post-content {
     width: 1300px;
+    margin-left: 1em;
 }
 div#post-site-content {
     display: flex;

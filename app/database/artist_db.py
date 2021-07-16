@@ -66,6 +66,9 @@ def UpdateArtistFromParameters(artist, updateparams, updatelist):
         print("Changes detected.")
         artist.updated = GetCurrentTime()
         SESSION.commit()
+    if 'requery' in updateparams:
+        artist.requery = updateparams['requery']
+        SESSION.commit()
 
 
 def SetTimesvalues(params):
@@ -77,16 +80,16 @@ def SetTimesvalues(params):
 
 
 def SetAllSiteAccounts(params):
-    if params['current_site_account']:
+    if 'current_site_account' in params and params['current_site_account']:
         params['site_accounts'] = list(set(params['site_accounts'] + [params['current_site_account']]))
 
 
-def SetArtistWebpages(artist, webpages):
+def SetArtistWebpages(artist, params):
     print("AddArtistWebpages")
     existing_webpages = [webpage.url for webpage in artist.webpages]
     current_webpages = []
     is_dirty = False
-    for url in webpages:
+    for url in params:
         is_active = url[0] != '-'
         if not is_active:
             url = url[1:]
@@ -106,6 +109,7 @@ def SetArtistWebpages(artist, webpages):
         current_webpages.append(url)
     removed_webpages = set(existing_webpages).difference(current_webpages)
     for url in removed_webpages:
+        # These will only be removable from the edit artist interface
         artist_url = next(filter(lambda x: x.url == url, artist.webpages))
         SESSION.delete(artist_url)
         is_dirty = True

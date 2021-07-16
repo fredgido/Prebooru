@@ -60,6 +60,14 @@ def ConvertCreateParams(dataparams):
     return ConvertDataParams(dataparams)
 
 
+def ConvertUpdateParams(dataparams):
+    updateparams = ConvertDataParams(dataparams)
+    for key in list(updateparams.keys()):
+        if updateparams[key] is None:
+            del updateparams[key]
+    return updateparams
+
+
 # #### Route helpers
 
 
@@ -172,7 +180,8 @@ def update_html(id):
     PutMethodCheck(request)
     illust_url = GetOrAbort(IllustUrl, id)
     dataparams = GetDataParams(request, 'illust_url')
-    updateparams = ConvertCreateParams(dataparams)
+    updateparams = ConvertUpdateParams(dataparams)
+    print("#0", dataparams, updateparams)
     retdata = {'error': False, 'data': updateparams, 'params': dataparams}
     is_dirty = UpdateColumnAttributes(illust_url, ['url', 'height', 'width', 'order', 'active'], dataparams, updateparams)
     if is_dirty:

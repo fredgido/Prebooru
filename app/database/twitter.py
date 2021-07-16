@@ -26,6 +26,8 @@ https?://t\.co                         # Hostname
 
 # ##FUNCTIONS
 
+def FixupCRLF(text):
+    return re.sub(r'(?<!\r)\n', '\r\n', text)
 
 def ProcessTwitterTimestring(time_string):
     try:
@@ -87,6 +89,70 @@ def CreateIllustFromTweet(tweet, artist_id, commit=True):
     return illust
 
 
+def GetIllustParametersFromTweet(tweet):
+    current_time = GetCurrentTime()
+    return {
+        'site_id': Site.TWITTER.value,
+        'site_illust_id': int(tweet['id_str']),
+        'site_created': ProcessTwitterTimestring(tweet['created_at']),
+        'pages': len(tweet['extended_entities']['media']),
+        'score': tweet['favorite_count'],
+        'retweets': tweet['retweet_count'],
+        'replies': tweet['reply_count'] if 'reply_count' in tweet else None,
+        'quotes': tweet['quote_count'] if 'quote_count' in tweet else None,
+        'requery': GetCurrentTime() + datetime.timedelta(days=1),
+        'tags': GetIllustTags(tweet),
+        'commentaries': GetIllustCommentary(tweet),
+        'illust_urls': GetIllustUrls(tweet),
+        'active': True,
+    }
+
+
+def GetIllustTags(tweet):
+    tag_data = SafeGet(tweet, 'entities', 'hashtags') or []
+    return list(set(entry['text'].lower() for entry in tag_data))
+
+
+def GetIllustUrls(tweet):
+    return GetImageUrls(tweet) + GetVideoUrls(tweet)
+
+
+def GetImageUrls(tweet):
+    illust_urls = []
+    image_url_data = SafeGet(tweet, 'entities', 'media') or []
+    for i in range(len(image_url_data)):
+        url, site_id, dimensions = GetIllustUrlInfo(image_url_data[i])
+        if url is None:
+            continue
+        illust_urls.append({
+            'site_id': site_id,
+            'url': url,
+            'width': dimensions[0],
+            'height': dimensions[1],
+            'order': i + 1,
+            'active': True,
+        })
+    return illust_urls
+
+
+def GetVideoUrls(tweet):
+    url_data = SafeGet(tweet, 'extended_entities', 'media') or []
+    video_url_data = [url_entry for url_entry in url_data if url_entry['type'] in ['animated_gif', 'video']]
+    if len(video_url_data) == 0:
+        return []
+    url, site_id, dimensions = GetIllustUrlInfo(video_url_data[0])
+    if url is None:
+        return []
+    return [{
+        'site_id': site_id,
+        'url': url,
+        'width': dimensions[0],
+        'height': dimensions[1],
+        'order': 1,
+        'active': True,
+    }]
+
+
 def CreateIllustFromParameters(params):
     if 'site_created' in params:
         try:
@@ -103,7 +169,7 @@ def CreateIllustUrlFromParameters(params, illust):
 
 def AddIllustCommentary(illust, tweet):
     print("AddIllustCommentary")
-    commentary_text = GetTweetText(tweet)
+    commentary_text = GetIllustCommentary(tweet)
     if commentary_text == "":
         return
     current_commentaries = [commentary.body for commentary in illust.commentaries]
@@ -337,13 +403,12 @@ def ConvertText(twitter_data, key, *subkeys):
     return text
 
 
-def GetTweetText(twitter_data):
+def GetIllustCommentary(twitter_data):
     text = ConvertText(twitter_data, 'full_text', 'urls')
-    return SHORT_URL_REPLACE_RG.sub('', text).strip()
+    return FixupCRLF(SHORT_URL_REPLACE_RG.sub('', text).strip())
 
-
-def GetUserDescription(twitter_data):
-    return ConvertText(twitter_data, 'description', 'description', 'urls')
+def GetArtistProfile(twitter_data):
+    return FixupCRLF(ConvertText(twitter_data, 'description', 'description', 'urls'))
 
 
 def CreateArtistFromUser(twuser, commit=True):
@@ -364,7 +429,7 @@ def CreateArtistFromUser(twuser, commit=True):
         SESSION.commit()
         AddArtistName(artist, twuser['name'])
         AddArtistSiteAccount(artist, twuser['screen_name'])
-        AddArtistProfile(artist, GetUserDescription(twuser))
+        AddArtistProfile(artist, GetArtistProfile(twuser))
         AddArtistWebpages(artist, GetTwitterUserWebpages(twuser))
     return artist
 
@@ -380,9 +445,13 @@ def GetArtistParametersFromTwuser(twuser):
         'active': True,
         'names': [twuser['name']],
         'site_accounts': [twuser['screen_name']],
-        'profiles': GetUserDescription(twuser) or None,
+        'profiles': GetArtistProfile(twuser) or None,
         'webpages': GetTwitterUserWebpages(twuser),
     }
+
+
+
+
 
 def CreateArtistFromParameters(params):
     if params['site_created'] is not None:
@@ -419,7 +488,7 @@ def UpdateArtistFromUser(artist, twuser):
         dirty = True
     dirty = AddArtistName(artist, twuser['name']) or dirty
     dirty = AddArtistSiteAccount(artist, twuser['screen_name']) or dirty
-    dirty = AddArtistProfile(artist, GetUserDescription(twuser)) or dirty
+    dirty = AddArtistProfile(artist, GetArtistProfile(twuser)) or dirty
     dirty = UpdateArtistWebpages(artist, twuser) or dirty
     UpdateTimestamps(artist, dirty)
     if dirty:

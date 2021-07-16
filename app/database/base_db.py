@@ -9,7 +9,6 @@ def UpdateColumnAttributes(item, attrs, dataparams):
     print("UpdateColumnAttributes", item, attrs, dataparams)
     is_dirty = False
     for attr in attrs:
-        print(getattr(item, attr) != dataparams[attr], getattr(item, attr), dataparams[attr])
         if getattr(item, attr) != dataparams[attr]:
             print("Setting basic attr:", attr, dataparams[attr])
             setattr(item, attr, dataparams[attr])

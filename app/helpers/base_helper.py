@@ -106,7 +106,7 @@ def FormIterator(form):
         def _builder(**kwargs):
             nonlocal field
             if type(field) is BooleanField:
-                built_markup = str(field.label) + field(value="0", type="hidden") + field(value="1")
+                built_markup = str(field.label) + field(value="1") + field(value="0", type="hidden")
             elif type(field.widget) is HiddenInput:
                 return AddContainer('div', str(field), classlist=['input', 'hidden']) if field.data is not None else ""
             else:

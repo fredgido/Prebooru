@@ -1,10 +1,10 @@
-# APP/DATABASE/ARTIST_DB.PY
+# APP/DATABASE/BOORU_DB.PY
 
 # ##LOCAL IMPORTS
 from .. import models, SESSION
 from ..logical.utility import GetCurrentTime
 from ..sources.base import GetArtistIdSource
-from ..sources.danbooru import GetArtistByID, GetArtistUrlsByArtistID
+from ..sources.danbooru import GetArtistByID
 from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections
 
 
@@ -77,7 +77,6 @@ def UpdateBooruFromParameters(booru, updateparams, updatelist):
 
 
 def QueryUpdateBooru(booru):
-    dirty = False
     booru_data = GetArtistByID(booru.danbooru_id)
     if booru_data['error']:
         return booru_data
@@ -96,7 +95,6 @@ def CheckArtistsBooru(booru):
     data = GetArtistByID(booru.danbooru_id, include_urls=True)
     if data['error']:
         return data
-    found_artists = {}
     existing_artist_ids = [artist.id for artist in booru.artists]
     artist_urls = [artist_url for artist_url in data['artist']['urls']]
     for artist_url in artist_urls:

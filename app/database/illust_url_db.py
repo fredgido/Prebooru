@@ -1,9 +1,9 @@
-# APP/DATABASE/ARTIST_DB.PY
+# APP/DATABASE/ILLUST_URL_DB.PY
 
-import datetime
-
+# ##LOCAL IMPORTS
 from .. import models, SESSION
 from .base_db import UpdateColumnAttributes
+
 
 # ##GLOBAL VARIABLES
 
@@ -22,6 +22,5 @@ def CreateIllustUrlFromParameters(createparams):
 
 
 def UpdateIllustUrlFromParameters(illust_url, updateparams, updatelist):
-    update_results = []
     update_columns = set(updatelist).intersection(COLUMN_ATTRIBUTES)
-    UpdateColumnAttributes(illust_url, update_columns, updateparams)
+    return UpdateColumnAttributes(illust_url, update_columns, updateparams)

@@ -1,4 +1,8 @@
 /****NEW/EDIT Page****/
+div.booru-form-heading {
+    font-size: 28px;
+    margin-top: 1em;
+}
 textarea#booru-name-string {
     width: 20em;
     height: 5em;
@@ -31,6 +35,9 @@ div#booru-site-content-1 {
 }
 div#booru-site-content-1 > section {
     margin-left: 1em;
+}
+div#booru-site-content-1 span.heading {
+    font-size: 1.33em;
 }
 section#booru-site-info {
     width: 25%;
