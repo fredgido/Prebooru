@@ -97,6 +97,7 @@ def danbooru_preprocess_upload():
         preprocess = PreprocessPost(post)
         if type(preprocess) is str:
             return ErrorResp(preprocess)
+    # NEED TO ADD BAD_ID/BAD_TWIITER_ID here for dead illusts
     return _CORS_JSON({'error': False, 'post_url': post_url, 'post': post.to_json(), 'profile_urls': profile_urls, 'illust_commentaries': illust_commentaries, 'illust': illust.to_json(), 'artist': illust.artist.to_json()})
 
 

@@ -24,8 +24,9 @@
                         </div>
                         {% if helpers.pool.ItemIsOfTypes(item, ['post', 'illust']) %}
                             <div style="display: block; vertical-align: top; max-height: 125px; overflow-y: auto; background-color: #F8F8F8; border: 1px solid #DDD; width: 310px; font-size: 14px;">
-                                <ul style="min-height: 120px; display: inline-block; width: 150px; vertical-align: top;">
-                                    <li><strong>Artists:</strong>
+                                <ul style="min-height: 120px; display: inline-block; width: 100px; vertical-align: top;">
+                                    <li style="margin-bottom: 0.5em;"><strong>Type:</strong> <code>{{ helpers.pool.MediaType(item) }}</code></li>
+                                    <li style="margin-bottom: 0.5em;"><strong>Artists:</strong>
                                         {% if helpers.pool.ItemIsOfType(item, 'post') %}
                                             {{ helpers.pool.DisplayArtists(item.artist_ids) | safe }}
                                         {% elif helpers.pool.ItemIsOfType(item, 'illust') %}
@@ -33,18 +34,19 @@
                                         {% endif %}
                                     </li>
                                     {% if helpers.pool.ItemIsOfType(item, 'post') %}
-                                        <li><strong>Illusts:</strong>
+                                        <li style="margin-bottom: 0.5em;"><strong>Illusts:</strong>
                                             {{ helpers.pool.DisplayIllusts(item.illust_ids) | safe }}
                                         </li>
                                     {% endif %}
+                                </ul>
+                                <ul style="min-height: 120px; display: inline-block; width: 160px; vertical-align: top;">
                                     {% if helpers.base.HasItems(item.notations) %}
                                         <li><strong>Notations:</strong>
-                                            {{ helpers.base.RenderTemplate("notations/_list.html", notations=item.notations) }}
+                                            {% with notations=item.notations %}
+                                                {% include "notations/_list.html" %}
+                                            {% endwith %}
                                         </li>
                                     {% endif %}
-                                </ul>
-                                <ul style="min-height: 120px; display: inline-block; width: 80px; vertical-align: top;">
-                                    <li><strong>Type:</strong> {{ helpers.pool.MediaType(item) }}</li>
                                 </ul>
                             </div>
                         {% endif %}
@@ -53,5 +55,5 @@
             {% endfor %}
         </div>
     </div>
-    {{ helpers.base.PageNavigation(elements) | safe }}
 {% endblock %}
+{% block pages %}{{ helpers.base.PageNavigation(elements) }}{% endblock %}

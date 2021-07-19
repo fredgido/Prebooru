@@ -331,6 +331,9 @@ def query_update_html(id):
     illust = GetOrAbort(Illust, id)
     source = BASE_SOURCE._Source(illust.site_id)
     updateparams = source.GetIllustData(illust.site_illust_id)
+    if updateparams['active']:
+        # These are only removable through the HTML/JSON UPDATE routes
+        updateparams['tags'] += [tag.name for tag in illust.tags if tag.name not in updateparams['tags']]
     updatelist = list(updateparams.keys())
     UpdateIllustFromParameters(illust, updateparams, updatelist)
     flash("Illust updated.")

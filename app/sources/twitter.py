@@ -482,9 +482,25 @@ def Prework(site_illust_id):
         print("Found error!")
         return twitter_data
     print("Getting tweet,user!")
-    tweets = GetGlobalObjects(twitter_data, 'tweets')
+    tweets = []
+    tweet_ids = set()
+    for i in range(len(twitter_data)):
+        tweet = SafeGet(twitter_data[i], 'result', 'legacy')
+        if tweet is None or tweet['id_str'] in tweet_ids:
+            continue
+        tweets.append(tweet)
+        tweet_ids.add(tweet['id_str'])
     DB.CacheTimelineData(tweets, 'illust')
-    users = GetGlobalObjects(twitter_data, 'users')
+    users = []
+    user_ids = set()
+    for i in range(len(twitter_data)):
+        id_str = SafeGet(twitter_data[i], 'result', 'core', 'user', 'rest_id')
+        user = SafeGet(twitter_data[i], 'result', 'core', 'user', 'legacy')
+        if user is None or id_str in user_ids:
+            continue
+        user['id_str'] = id_str
+        users.append(user)
+        user_ids.add(id_str)
     DB.CacheTimelineData(users, 'artist')
 
 """
@@ -566,8 +582,8 @@ def TwitterRequest(url, method='GET'):
         return {'error': True, 'message': "Error decoding response into JSON."}
     return {'error': False, 'body': data}
 
-
-def GetTwitterIllustTimeline(illust_id):
+"""
+def GetTwitterIllustTimeline1(illust_id):
     print("Getting twitter #%d" % illust_id)
     params = TWITTER_BASE_PARAMS.copy()
     url_params = urllib.parse.urlencode(params)
@@ -579,6 +595,72 @@ def GetTwitterIllustTimeline(illust_id):
     if tweet is None:
         return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
     return data['body']
+"""
+
+"""
+https://twitter.com/i/api/graphql/uvk82Jn4z84yUPI1rViRsg/TweetDetail?variables=%7B%22focalTweetId%22%3A%221412013529570287620%22%2C%22includePromotedContent%22%3Atrue%2C%22withHighlightedLabel%22%3Atrue%2C%22withCommunity%22%3Afalse%2C%22withTweetQuoteCount%22%3Atrue%2C%22withBirdwatchNotes%22%3Afalse%2C%22withBirdwatchPivots%22%3Afalse%2C%22withTweetResult%22%3Atrue%2C%22withReactions%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Afalse%2C%22withVoice%22%3Atrue%7D
+{
+    "focalTweetId": "1412013529570287620",
+    "includePromotedContent": true,
+    "withHighlightedLabel": true,
+    "withCommunity": false,
+    "withTweetQuoteCount": true,
+    "withBirdwatchNotes": false,
+    "withBirdwatchPivots": false,
+    "withTweetResult": true,
+    "withReactions": false,
+    "withSuperFollowsTweetFields": false,
+    "withSuperFollowsUserFields": false,
+    "withUserResults": false,
+    "withVoice": true
+}
+"""
+
+TWITTER_ILLUST_TIMELINE_GRAPHQL = {
+    "includePromotedContent": True,
+    "withHighlightedLabel": True,
+    "withCommunity": False,
+    "withTweetQuoteCount": True,
+    "withBirdwatchNotes": False,
+    "withBirdwatchPivots": False,
+    "withTweetResult": True,
+    "withReactions": False,
+    "withSuperFollowsTweetFields": False,
+    "withSuperFollowsUserFields": False,
+    "withUserResults": False,
+    "withVoice": True
+}
+
+def GetGraphQLTimelineEntries(data, found_tweets=[]):
+    for key in data:
+        if key == 'tweet_results':
+            found_tweets.append(data[key])
+        elif type(data[key]) is list:
+            for i in range(len(data[key])):
+                found_tweets = GetGraphQLTimelineEntries(data[key][i], found_tweets)
+        elif type(data[key]) is dict:
+            found_tweets = GetGraphQLTimelineEntries(data[key], found_tweets)
+    return found_tweets
+
+
+def GetTwitterIllustTimeline(illust_id):
+    print("Getting twitter #%d" % illust_id)
+    illust_id_str = str(illust_id)
+    jsondata = TWITTER_ILLUST_TIMELINE_GRAPHQL.copy()
+    jsondata['focalTweetId'] = illust_id_str
+    urladdons = urllib.parse.urlencode({'variables': json.dumps(jsondata)})
+    data = TwitterRequest("https://twitter.com/i/api/graphql/uvk82Jn4z84yUPI1rViRsg/TweetDetail?%s" % urladdons)
+    if data['error']:
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterTimelineIllust', data['message'])
+    found_tweets = GetGraphQLTimelineEntries(data['body'])
+    if len(found_tweets) == 0:
+        print("No tweets found!")
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterTimelineIllust', "No tweets found in data.")
+    tweet_ids = [SafeGet(tweet_entry, 'result', 'rest_id') for tweet_entry in found_tweets]
+    if illust_id_str not in tweet_ids:
+        print("Tweet ID not found:", illust_id, tweet_ids)
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterTimelineIllust', "Tweet not found: %d" % illust_id)
+    return found_tweets
 
 
 def GetTwitterIllust(illust_id):
@@ -589,6 +671,7 @@ def GetTwitterIllust(illust_id):
     if len(data['body']) == 0:
         return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
     return data['body'][0]
+
 
 
 def GetTwitterUserID(account):
@@ -616,10 +699,10 @@ def GetTwitterArtist(artist_id):
     urladdons = urllib.parse.urlencode({'variables': json.dumps(jsondata)})
     data = TwitterRequest('https://twitter.com/i/api/graphql/WN6Hck-Pwm-YP0uxVj1oMQ/UserByRestIdWithoutResults?%s' % urladdons)
     if data['error']:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', data['message'])
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', data['message'])
     twitterdata = data['body']
     if 'errors' in twitterdata and len(twitterdata['errors']):
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', '; '.join([error['message'] for error in twitterdata['errors']]))
+        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', 'Twitter error: ' + '; '.join([error['message'] for error in twitterdata['errors']]))
     userdata = SafeGet(twitterdata, 'data', 'user')
     if userdata is None or 'rest_id' not in userdata or 'legacy' not in userdata:
         return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', "Error parsing data: %s" % json.dumps(twitterdata))

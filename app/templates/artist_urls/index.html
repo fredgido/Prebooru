@@ -1,0 +1,28 @@
+{% extends 'artist_urls/_base.html' %}
+
+{% block title %}Artist URLs{% endblock %}
+
+{% block content %}
+    <table id="artist-urls-table" class="striped" width="80%">
+        <thead>
+            <tr>
+                <th width="10%">ID</th>
+                <th width="10%">Artist</th>
+                <th width="75%">URL</th>
+                <th width="5%">Active</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for artist_url in artist_urls.items %}
+                <tr id="artist-url-{{ artist_url.id }}">
+                    <td><a href="{{ artist_url.show_url }}">{{ artist_url.shortlink }}</a></td>
+                    <td><a href="{{ url_for('artist.show_html', id=artist_url.artist_id) }}">artist #{{ artist_url.artist_id }}</a></td>
+                    <td>{{ artist_url.url }}</td>
+                    <td>{{ artist_url.active | tojson }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block pages %}{{ helpers.base.PageNavigation(artist_urls) }}{% endblock %}

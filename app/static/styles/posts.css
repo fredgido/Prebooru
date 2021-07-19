@@ -31,3 +31,12 @@ div.post-commentaries-container {
 div.post-commentaries-block {
     margin: 0.25em;
 }
+section#image-container {
+    cursor: pointer;
+    margin-right: 1em;
+    margin-bottom: 1em;
+}
+section#image-container.fullsize img {
+    height: 100vh;
+    width: auto;
+}

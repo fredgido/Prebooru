@@ -1,0 +1,18 @@
+{% extends 'artist_urls/_base.html' %}
+
+{% block title %}
+    Artist URL for artist #{{ artist_url.artist_id }}
+ {% endblock %}
+
+{% block content %}
+    <div class="heading" style="font-size: 28px">
+        Artist URL: <a href="{{ url_for('artist.show_html', id=artist_url.artist_id) }}">artist #{{ artist_url.artist_id }}</a>
+    </div>
+    <div id="artist-url-content">
+        <ul>
+            <li><strong>ID:</strong> {{ artist_url.id }}</li>
+            <li><strong>URL:</strong> {{ helpers.base.UrlLink(artist_url.url) }}</li>
+            <li><strong>Active:</strong> {{ artist_url.active | tojson }}</li>
+        </ul>
+    </div>
+{% endblock %}

@@ -1,5 +1,5 @@
 <ul>
     {% for notation in notations %}
-        <li>{{ helpers.notation.ConvertToHTML(notation) }}</li>
+        <li><span style="word-break: break-word;">{{ helpers.notation.ConvertToHTML(notation) }}</span></li>
     {% endfor %}
 </ul>

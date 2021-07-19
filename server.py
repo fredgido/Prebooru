@@ -38,14 +38,15 @@ def StopServer(name, *args):
     filename = PID_FILENAME_FORMAT % name
     pid = next(iter(LoadDefault(filename, [])), None)
     if pid is not None:
-        print("Killing %s: %d" % (name, pid))
+        print("Stopping %s: %d" % (name, pid))
         p = psutil.Process(pid)
         p.terminate()
         try:
             p.wait(timeout=5)
         except psutil.TimeoutExpired:
+            print("Killing %s: %d" % (name, pid))
             p.kill()
-        #PutGetJSON(filename, 'w', [])
+        #PutGetJSON(    filename, 'w', [])
     else:
         print("Server %s not running." % name)
 

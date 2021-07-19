@@ -162,3 +162,10 @@ div.notation-block {
     padding: 5px;
     border: 1px solid #EEE;
 }
+footer {
+    margin: 1.5em;
+    padding: 0.5em;
+    text-align: center;
+    font-size: 1.25em;
+    border-top: 2px dotted #DDD;
+}

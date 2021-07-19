@@ -102,7 +102,7 @@ def GetIllustParametersFromTweet(tweet):
         'quotes': tweet['quote_count'] if 'quote_count' in tweet else None,
         'requery': GetCurrentTime() + datetime.timedelta(days=1),
         'tags': GetIllustTags(tweet),
-        'commentaries': GetIllustCommentary(tweet),
+        'commentaries': GetIllustCommentary(tweet) or None,
         'illust_urls': GetIllustUrls(tweet),
         'active': True,
     }
@@ -530,10 +530,10 @@ def UpdateArtistWebpages(artist, twuser):
 
 
 def CacheTimelineData(twitter_data, type):
-    tweet_ids = list(map(int, twitter_data.keys()))
+    tweet_ids = [int(item['id_str']) for item in twitter_data]
     cache_data = GetApiData(tweet_ids, type)
-    for key in twitter_data:
-        data_id = int(key)
+    for item in twitter_data:
+        data_id = int(item['id_str'])
         cache_item = next(filter(lambda x: x.data_id == data_id, cache_data), None)
         if not cache_item:
             print("CacheTimelineData - adding cache item:", type, data_id)
@@ -546,7 +546,7 @@ def CacheTimelineData(twitter_data, type):
             SESSION.add(cache_item)
         else:
             print("CacheTimelineData - updating cache item:", type, data_id, cache_item.id)
-        cache_item.data = twitter_data[key]
+        cache_item.data = item
         cache_item.expires = DaysFromNow(1)
     SESSION.commit()
 
