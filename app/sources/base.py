@@ -24,11 +24,10 @@ def GetImageSiteId(url):
     parse = urllib.parse.urlparse(url)
     return GetSiteId(parse.netloc)
 
-def GetSource(request_url, referrer_url):
+def GetPostSource(request_url):
     for source in SOURCES:
-        if source.UploadCheck(request_url, referrer_url):
+        if source.UploadCheck(request_url, None):
             return source
-
 
 def GetArtistSource(artist_url):
     for source in SOURCES:
@@ -110,7 +109,7 @@ def ProcessFileUpload(upload):
 
 
 def ProcessNetworkUpload(upload):
-    source = GetSource(upload.request_url, upload.referrer_url)
+    source = GetPostSource(upload.request_url)
     site_illust_id = source.GetIllustId(upload.request_url, upload.referrer_url)
     error = source.Prework(site_illust_id)
     if error is not None:

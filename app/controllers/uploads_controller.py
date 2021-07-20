@@ -4,55 +4,118 @@
 import requests
 from sqlalchemy.orm import selectinload
 from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
-from wtforms import StringField, IntegerField
-from wtforms.validators import DataRequired
+from wtforms import StringField, IntegerField, TextAreaField
 
 # ## LOCAL IMPORTS
 
-from ..logical.utility import EvalBoolString, IsTruthy, IsFalsey
-from ..logical.logger import LogError
+from ..logical.utility import EvalBoolString
 from ..models import Upload, Post, IllustUrl
 from ..sources import base as BASE_SOURCE
-from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams, ParseType
+from ..database.upload_db import CreateUploadFromParameters
+from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams,\
+    HideInput, GetMethodRedirect, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort
 
 
 # ## GLOBAL VARIABLES
 
+
 bp = Blueprint("upload", __name__)
 
+
 # ## FUNCTIONS
+
 
 def GetUploadForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
     class UploadForm(CustomNameForm):
-        illust_url_id = IntegerField('Illust URL ID', id='upload-illust-url-id', custom_name='upload[illust_url_id]', validators=[DataRequired()])
-        media_filepath = StringField('Media filepath', id='illust-media-filepath', custom_name='upload[media_filepath]', validators=[DataRequired()])
-        sample_filepath = StringField('Sample filepath', id='illust-sample-filepath', custom_name='upload[sample_filepath]')
+        illust_url_id = IntegerField('Illust URL ID', id='upload-illust-url-id', custom_name='upload[illust_url_id]')
+        media_filepath = StringField('Media filepath', id='upload-media-filepath', custom_name='upload[media_filepath]')
+        sample_filepath = StringField('Sample filepath', id='upload-sample-filepath', custom_name='upload[sample_filepath]')
+        request_url = StringField('Request URL', id='upload-request-url', custom_name='upload[sample_filepath]')
+        image_url_string = TextAreaField('Image URLs', id='upload-image-url-string', custom_name='upload[image_url_string]', description="Separated by carriage returns.")
     return UploadForm(**kwargs)
+
 
 #    Auxiliary
 
 
-def CheckParams(request):
-    messages = []
-    if request.values.get('url') is not None:
-        return
-    if request.values.get('media') is not None and request.values.get('url_id') is not None:
-        return
-    return "No URL or media information present!"
-
-def ConvertCreateParams(dataparams):
-    params = {}
-    params['illust_url_id'] = ParseType(dataparams, 'illust_url_id', int)
-    params['media_filepath'] = dataparams['media_filepath'] or None
-    params['sample_filepath'] = dataparams['sample_filepath'] or None
+def ConvertDataParams(dataparams):
+    params = GetUploadForm(**dataparams).data
+    if 'image_urls' in dataparams:
+        params['image_urls'] = dataparams['image_urls']
+    elif 'image_url_string' in dataparams:
+        dataparams['image_urls'] = params['image_urls'] = ParseStringList(dataparams, 'image_url_string', r'\r?\n')
+    params = NullifyBlanks(params)
     return params
 
+
+def ConvertCreateParams(dataparams):
+    createparams = ConvertDataParams(dataparams)
+    SetDefault(createparams, 'image_urls', [])
+    if createparams['illust_url_id']:
+        createparams['request_url'] = None
+        createparams['image_urls'] = []
+    elif createparams['request_url']:
+        createparams['illust_url_id'] = None
+    return createparams
+
+
 def CheckCreateParams(dataparams):
-    if dataparams['illust_url_id'] is None:
-        return "No illust URL ID present!"
-    if dataparams['media_filepath'] is None:
-        return "No media filepath present!"
+    if dataparams['illust_url_id'] is None and dataparams['request_url'] is None:
+        return ["Must include the illust URL ID or the request URL."]
+    if dataparams['illust_url_id'] and not dataparams['media_filepath']:
+        return ["Must include the media filepath for file uploads."]
+    return []
+
+
+def GetExistingUpload(createparams):
+    q = Upload.query
+    if createparams['illust_url_id']:
+        q = q.filter(Upload.illust_url_id == createparams['illust_url_id'])
+    elif createparams['request_url']:
+        q = q.filter(Upload.request_url == createparams['request_url'])
+    return q.first()
+
+
+# #### Route helpers
+
+
+def index():
+    params = ProcessRequestValues(request.values)
+    search = GetParamsValue(params, 'search', True)
+    q = Upload.query
+    q = q.options(selectinload(Upload.image_urls), selectinload(Upload.posts).lazyload(Post.illust_urls), selectinload(Upload.errors))
+    q = SearchFilter(q, search)
+    q = DefaultOrder(q, search)
+    return q
+
+
+def create():
+    force_download = request.values.get('force', type=EvalBoolString)
+    dataparams = GetDataParams(request, 'upload')
+    createparams = ConvertCreateParams(dataparams)
+    retdata = {'error': False, 'data': createparams, 'params': dataparams}
+    errors = CheckCreateParams(createparams)
+    if len(errors) > 0:
+        return SetError(retdata, '\n'.join(errors))
+    if not force_download:
+        upload = GetExistingUpload(createparams)
+        if upload is not None:
+            retdata['item'] = upload.to_json()
+            return SetError(retdata, "Upload already exists: upload #%d" % upload.id)
+    if createparams['request_url']:
+        source = BASE_SOURCE.GetPostSource(createparams['request_url'])
+        if source is None:
+            return SetError(retdata, "Upload source currently not handled for request url: %s" % createparams['request_url'])
+        createparams['image_urls'] = [url for url in createparams['image_urls'] if source.IsImageUrl(url)]
+    upload = CreateUploadFromParameters(createparams)
+    retdata['item'] = upload.to_json()
+    try:
+        requests.get('http://127.0.0.1:4000/check_uploads', timeout=2)
+    except Exception as e:
+        print("Unable to contact worker:", e)
+    return retdata
+
 
 #   Routes
 
@@ -64,8 +127,8 @@ def show_json(id):
 
 @bp.route('/uploads/<int:id>')
 def show_html(id):
-    upload = Upload.query.filter_by(id=id).first()
-    return render_template("uploads/show.html", upload=upload) if upload is not None else abort(404)
+    upload = GetOrAbort(Upload, id)
+    return render_template("uploads/show.html", upload=upload)
 
 
 @bp.route('/uploads.json', methods=['GET'])
@@ -78,94 +141,43 @@ def index_json():
 def index_html():
     q = index()
     uploads = Paginate(q, request)
-    return render_template("uploads/index.html", uploads=uploads)
-
-
-def index():
-    params = ProcessRequestValues(request.values)
-    search = GetParamsValue(params, 'search', True)
-    print("Params:", params, flush=True)
-    print("Search:", search, flush=True)
-    q = Upload.query
-    q = q.options(selectinload(Upload.image_urls), selectinload(Upload.posts).lazyload(Post.illust_urls),selectinload(Upload.errors))
-    q = SearchFilter(q, search)
-    #if 'request_url' in search:
-    #    q = q.filter_by(request_url=search['request_url'])
-    #if 'status' in search:
-    #    q = q.filter_by(status=search['status'])
-    """
-    if 'has_image_urls' in search:
-        if IsTruthy(search['has_image_urls']):
-            q = q.filter(Upload.image_urls.any())
-        elif IsFalsey(search['has_image_urls']):
-            q = q.filter(sqlalchemy.not_(Upload.image_urls.any()))
-    if 'has_errors' in search:
-        if IsTruthy(search['has_errors']):
-            q = q.filter(Upload.errors.any())
-        elif IsFalsey(search['has_errors']):
-            q = q.filter(sqlalchemy.not_(Upload.errors.any()))
-    """
-    q = DefaultOrder(q, search)
-    return q
+    return render_template("uploads/index.html", uploads=uploads, upload=Upload())
 
 
 @bp.route('/uploads/new', methods=['GET'])
 def new_html():
-    illust_url_id = request.args.get('illust_url_id', type=int)
-    if illust_url_id is not None:
-        illust_url = IllustUrl.find(illust_url_id)
+    """HTML access point to create function."""
+    illust_url = None
+    form = GetUploadForm(**request.args)
+    if form.illust_url_id.data is not None:
+        illust_url = IllustUrl.find(form.illust_url_id.data)
         if illust_url is None:
-            flash("Illust URL #%d does not exist.", 'error')
-            illust_url_id = None
-    form = GetUploadForm(illust_url_id=illust_url_id)
-    return render_template("uploads/new.html", form=form, upload=None, illust_url=illust_url)
+            flash("Illust URL #%d does not exist." % form.illust_url_id.data, 'error')
+            form.illust_url_id.data = None
+        elif illust_url.post is not None:
+            flash("Illust URL #%d already uploaded on post #%d." % (illust_url.id, illust_url.post.id), 'error')
+            form.illust_url_id.data = None
+            illust_url = None
+        else:
+            HideInput(form, 'illust_url_id', illust_url.id)
+            HideInput(form, 'request_url')
+            HideInput(form, 'image_url_string')
+    return render_template("uploads/new.html", form=form, upload=Upload(), illust_url=illust_url)
+
 
 @bp.route('/uploads', methods=['POST'])
 def create_html():
-    dataparams = GetDataParams(request, 'upload')
-    createparams = ConvertCreateParams(dataparams)
-    print(dataparams, createparams, request.values)
-    error = CheckCreateParams(createparams)
-    if error is not None:
-        return {'error': True, 'message': error, 'params': createparams}
-    upload_results = BASE_SOURCE.CreateFileUpload(createparams['media_filepath'], createparams['sample_filepath'], createparams['illust_url_id'])
-    if upload_results['error']:
-        flash(upload_results['message'], 'error')
-        form = GetUploadForm(**createparams)
-        return render_template("uploads/new.html", form=form, upload=None)
-    try:
-        requests.get('http://127.0.0.1:4000/check_uploads', timeout=2)
-    except Exception as e:
-        print("Unable to contact worker:", e)
-        flash("Unable to contact worker.")
-    return redirect(url_for('upload.show_html', id=upload_results['data'].id))
+    if GetMethodRedirect(request):
+        return index_html()
+    results = create()
+    if results['error']:
+        flash(results['message'], 'error')
+        return redirect(url_for('upload.new_html', **results['data']))
+    return redirect(url_for('upload.show_html', id=results['item']['id']))
+
 
 @bp.route('/uploads.json', methods=['POST'])
 def create_json():
-    error = CheckParams(request)
-    if error is not None:
-        return {'error': error}
-    request_url = request.values.get('url')
-    referrer_url = request.values.get('ref')
-    media_filepath = request.values.get('media')
-    sample_filepath = request.values.get('sample')
-    illust_url_id = request.values.get('url_id', type=int)
-    image_urls = request.values.getlist('image_urls[]')
-    force = request.values.get('force', type=EvalBoolString)
-    print("Create upload:", request_url, referrer_url, media_filepath, sample_filepath, illust_url_id, image_urls, force)
-    try:
-        if request_url is not None:
-            upload = BASE_SOURCE.CreateUpload(request_url, referrer_url, image_urls, force)
-        else:
-            upload = BASE_SOURCE.CreateFileUpload(media_filepath, sample_filepath, illust_url_id)
-    except Exception as e:
-        print("Database exception!", e)
-        LogError('controllers.uploads.create', "Unhandled exception occurred creating upload: %s" % (str(e)))
-        request.environ.get('werkzeug.server.shutdown')()
-        return {'error': True, 'message': 'Database exception! Check log file.'}
-    if not upload['error']:
-        try:
-            requests.get('http://127.0.0.1:4000/check_uploads', timeout=2)
-        except Exception as e:
-            print("Unable to contact worker:", e)
-    return upload
+    if GetMethodRedirect(request):
+        return index_json()
+    return create()

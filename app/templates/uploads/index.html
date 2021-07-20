@@ -1,4 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'uploads/_base.html' %}
+
+{% block title %}Upload # {{ upload.id }}{% endblock %}
 
 {% block content %}
     <table id="uploads-table" class="striped" width="100%">

@@ -1,0 +1,48 @@
+/****NEW/EDIT Page****/
+input#upload-media-filepath,
+input#upload-sample-filepath {
+    width: 100em;
+}
+input#upload-request-url {
+    width: 50em;
+}
+textarea#upload-image-url-string {
+    width: 50em;
+    height: 10em;
+}
+/****SHOW Page****/
+div#upload-content {
+    margin-top: 2em;
+    display: flex;
+}
+aside#upload-sidebar {
+    width: 20%;
+    border: 2px solid #DDD;
+    background: #F8F8F8;
+    padding: 0.5em;
+}
+aside#upload-sidebar > section {
+    margin-bottom: 1em;
+}
+div#upload-heading {
+    font-size: 32px;
+}
+div#upload-site-content {
+    width: 80%;
+    display: flex;
+}
+div#upload-site-content h4 {
+    text-decoration: underline;
+}
+div#upload-site-content > section {
+    margin-left: 2em;
+}
+section#upload-info {
+    width: 25%;
+}
+section#upload-sources {
+    width: 75%;
+}
+div#upload-posts {
+    margin-top: 2em;
+}

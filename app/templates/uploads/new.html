@@ -1,4 +1,4 @@
-{% extends 'layouts/base.html' %}
+{% extends 'uploads/_base.html' %}
 
 {% block title %}New Upload{% endblock %}
 
@@ -12,19 +12,15 @@
     </div>
     {% if illust_url != None %}
         <ul style="margin-left: 2em;">
-            <li><strong>URL:</strong> {{ illust_url.url }}</li>
+            <li><strong>URL:</strong> {{ illust_url.full_url }}</li>
             <li><strong>Dimensions:</strong> ( {{ illust_url.width }} x {{ illust_url.height }} )</li>
         </ul>
     {% endif %}
-    <form method="POST" action="/uploads">
+    <form method="POST" action="{{ upload.create_url }}">
         {{ form.csrf_token }}
-        {% if form.illust_url_id.data %}
-            {{ form.illust_url_id(type="hidden") }}
-        {% else %}
-            {{ form.illust_url_id.label }} {{ form.illust_url_id }}
-        {% endif %}
-        {{ form.media_filepath.label }} {{ form.media_filepath(style="width: 100em;") }}
-        {{ form.sample_filepath.label }} {{ form.sample_filepath(style="width: 100em;") }}
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {{ field_input() }}
+        {% endfor %}
         <input type="submit" value="Submit">
     </form>
 {% endblock %}

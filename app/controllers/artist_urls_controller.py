@@ -1,24 +1,11 @@
 # APP\CONTROLLERS\ILLUSTS.PY
 
 # ## PYTHON IMPORTS
-import json
-from flask import Blueprint, request, render_template, jsonify, redirect, url_for, flash
-from sqlalchemy.orm import selectinload, lazyload
-from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
-from wtforms.validators import DataRequired
+from flask import Blueprint, request, render_template
 
 # ## LOCAL IMPORTS
-
-from ..logical.utility import GetCurrentTime, EvalBoolString
-from ..logical.logger import LogError
-from ..models import Illust, Artist, ArtistUrl, Notation, Pool, IllustUrl
-from ..sources import base as BASE_SOURCE
-from ..sources.base import GetImageSiteId, GetImageSource
-from ..database import local as DBLOCAL
-from ..database.illust_url_db import CreateIllustUrlFromParameters
-from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate,\
-    GetDataParams, CustomNameForm, ParseType, GetOrAbort, GetOrError, SetError, PutMethodCheck, UpdateColumnAttributes,\
-    NullifyBlanks, CheckParamRequirements, HideInput
+from ..models import ArtistUrl
+from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate, GetOrAbort
 
 
 # ## GLOBAL VARIABLES

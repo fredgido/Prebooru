@@ -111,7 +111,7 @@ class Upload(JsonModel):
     def _source(self):
         from ..sources import base as BASE_SOURCE
         if self.request_url:
-            return BASE_SOURCE.GetSource(self.request_url, self.referrer_url)
+            return BASE_SOURCE.GetPostSource(self.request_url)
         elif self.illust_url_id:
             return BASE_SOURCE._Source(self.illust_url.site_id)
         raise Exception("Unable to find source for upload #%d" % self.id)

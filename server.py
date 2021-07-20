@@ -46,7 +46,7 @@ def StopServer(name, *args):
         except psutil.TimeoutExpired:
             print("Killing %s: %d" % (name, pid))
             p.kill()
-        #PutGetJSON(    filename, 'w', [])
+        PutGetJSON(filename, 'w', [])
     else:
         print("Server %s not running." % name)
 

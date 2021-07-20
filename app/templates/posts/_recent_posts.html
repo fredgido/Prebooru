@@ -1,7 +1,9 @@
 <div class="heading">
     <span id="recent-posts-heading">
         <u>Posts</u>
-        <a href="{{ post_search_link }}">&raquo;</a>
+        {% if post_search_link is not none %}
+            <a href="{{ post_search_link }}">&raquo;</a>
+        {% endif %}
     </span>
 </div>
 <div id="recent-posts-container">
