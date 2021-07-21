@@ -2,7 +2,7 @@ import urllib.parse
 from flask import render_template
 
 
-from ..sources import base as BASE_SOURCE
+from ..sources.base import GetSourceById
 
 def Preview(post):
     return render_template("posts/_preview.html", post=post)
@@ -14,7 +14,7 @@ def SimilarSearchLinks(post, format_url, proxy_url=None):
         illust = illust_url.illust
         if not illust.active:
             continue
-        source = BASE_SOURCE._Source(illust_url.site_id)
+        source = GetSourceById(illust_url.site_id)
         media_url = source.GetMediaUrl(illust_url)
         if source.IsVideoUrl(media_url):
             _, thumb_illust_url = source.VideoIllustDownloadUrls(illust)
@@ -49,7 +49,7 @@ def DanbooruPostBookmarkletLinks(post):
         illust = illust_url.illust
         if not illust.active:
             continue
-        source = BASE_SOURCE._Source(illust_url.site_id)
+        source = GetSourceById(illust_url.site_id)
         media_url = source.GetMediaUrl(illust_url)
         post_url = source.GetPostUrl(illust)
         query_string = urllib.parse.urlencode({'url': media_url, 'ref': post_url})

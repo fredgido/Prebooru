@@ -2,7 +2,7 @@ from . import pixiv
 from . import twitter
 
 SOURCES = [pixiv, twitter]
-DICT = {
+SOURCEDICT = {
     'PIXIV': pixiv,
     'PXIMG': pixiv,
     'TWITTER': twitter,

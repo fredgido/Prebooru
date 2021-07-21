@@ -118,7 +118,7 @@ def GetImageExtension(image_url):
 def GetMediaExtension(media_url):
     return GetImageExtension(media_url)
 
-def UploadCheck(request_url, referrer_url):
+def UploadCheck(request_url):
     return ARTWORKS_RG.match(request_url) or IMAGE_RG.match(request_url)
 
 def IsImageUrl(image_url):
@@ -141,7 +141,7 @@ def SmallImageUrl(image_url):
 def NormalizedImageUrl(image_url):
     return IMAGE_SERVER + NormalizeImageURL(image_url)
 
-def GetUploadType(request_url, referrer_url):
+def GetUploadType(request_url):
     artwork_match = ARTWORKS_RG.match(request_url)
     if artwork_match:
         return 'post'
@@ -150,7 +150,7 @@ def GetUploadType(request_url, referrer_url):
         return 'image'
 
 
-def GetIllustId(request_url, referrer_url):
+def GetIllustId(request_url):
     artwork_match = ARTWORKS_RG.match(request_url)
     if artwork_match:
         return int(artwork_match.group(1))

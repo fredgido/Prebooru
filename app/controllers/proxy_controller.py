@@ -7,7 +7,7 @@ from flask import Blueprint, request, render_template, abort, Markup, jsonify, r
 
 # ## LOCAL IMPORTS
 from ..logical.file import PutGetRaw
-from ..sources import base as BASE_SOURCE
+from ..sources.base import GetSourceById
 from ..models import Post
 from .base_controller import GetDataParams
 from ..config import DANBOORU_USERNAME, DANBOORU_APIKEY
@@ -31,7 +31,7 @@ def danbooru_upload():
             return "Illust #%d not on post #%d." % (post_id, illust_id)
     else:
         illust = post.illusts[0]
-    source = BASE_SOURCE._Source(illust.site_id)
+    source = GetSourceById(illust.site_id)
     post_url = source.GetPostUrl(illust)
     params = {
         'tag_string': 'source:' + post_url,
@@ -86,7 +86,7 @@ def danbooru_preprocess_upload():
             return ErrorResp("Illust #%d not on post #%d." % (post_id, illust_id))
     else:
         illust = post.illusts[0]
-    source = BASE_SOURCE._Source(illust.site_id)
+    source = GetSourceById(illust.site_id)
     post_url = source.GetPostUrl(illust)
     profile_urls = source.ArtistProfileUrls(illust.artist)
     illust_commentaries = source.IllustCommentaries(illust)

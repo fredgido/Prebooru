@@ -12,7 +12,7 @@ from ..logical.file import PutGetRaw
 from ..logical.utility import GetCurrentTime, GetBufferChecksum
 from ..database import local as DBLOCAL
 from ..models import Artist, Illust, IllustUrl, Notation, Post, Pool
-from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, ParseType, CustomNameForm
+from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, ParseType, CustomNameForm, GetOrAbort, GetOrError
 
 
 # ## GLOBAL VARIABLES
@@ -70,54 +70,26 @@ def index_pools_json():
 def index_html():
     q = index()
     posts = Paginate(q, request)
-    return render_template("posts/index.html", posts=posts)
+    return render_template("posts/index.html", posts=posts, post=Post())
 
 
 def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
-    print("Params:", params, flush=True)
-    print("Search:", search, flush=True)
     q = Post.query
     q = q.options(lazyload('*'))
     q = SearchFilter(q, search)
-    """
-    if 'artist_id' in search:
-        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(id=search['artist_id']))))
-        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).filter(Illust.artist_id == search['artist_id'])
-    if 'illust_id' in search:
-        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(id=search['illust_id'])))
-        q = q.unique_join(IllustUrl, Post.illust_urls).filter(IllustUrl.illust_id == search['illust_id'])
-    if 'site_illust_id' in search:
-        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_illust_id=search['site_illust_id'])))
-        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).filter(Illust.site_illust_id == search['site_illust_id'])
-    if 'isite_id' in search:
-        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(site_id=search['isite_id'])))
-        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).filter(Illust.site_id == search['isite_id'])
-    if 'site_artist_id' in search:
-        print("site_artist_id", search['site_artist_id'])
-        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).unique_join(Artist).filter(Artist.site_artist_id == search['site_artist_id'])
-        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_artist_id=search['site_artist_id']))))
-    if 'asite_id' in search:
-        #q = q.filter(Post.illust_urls.any(IllustUrl.illust.has(Illust.artist.has(site_id=search['asite_id']))))
-        q = q.unique_join(IllustUrl, Post.illust_urls).unique_join(Illust).unique_join(Artist).filter(Artist.site_id == search['asite_id'])
-    """
     q = DefaultOrder(q, search)
     return q
 
 @bp.route('/posts/<int:id>/update', methods=['GET'])
 def update_html(id):
-    post = Post.find(id)
-    if post is None:
-        abort(404)
-    #BASE_SOURCE.UpdateIllust(illust)
+    post = GetOrAbort(Post, id)
     return redirect(url_for('post.show_html', id=id))
 
 @bp.route('/posts/<int:id>/check.json', methods=['GET'])
 def check_json(id):
-    post = Post.find(id)
-    if post is None:
-        abort(404)
+    post = GetOrAbort(Post, id)
     buffer = PutGetRaw(post.file_path, 'rb')
     current_md5 = GetBufferChecksum(buffer)
     data_md5 = post.md5
@@ -125,9 +97,9 @@ def check_json(id):
 
 @bp.route('/posts/<int:id>/notation.json', methods=['POST'])
 def add_notation_json(id):
-    post = Post.find(id)
-    if post is None:
-        return {'error': True, 'message': "Post #%d not found." % id}
+    post = GetOrError(Post, id)
+    if type(artist) is dict:
+        return post
     dataparams = GetDataParams(request, 'post')
     if 'notation' not in dataparams or len(dataparams['notation'].strip()) == 0:
         return {'error': True, 'message': "Must include notation.", 'params': dataparams}

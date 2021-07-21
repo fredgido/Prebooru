@@ -5,7 +5,7 @@ import sys
 import urllib
 
 from ..sites import GetSiteKey, GetSiteId
-from ..sources import SOURCES, DICT as SOURCEDICT, danbooru
+from ..sources import SOURCES, SOURCEDICT, danbooru
 from ..models import Upload, IllustUrl, Booru, Label
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.uploader import UploadIllustUrl
@@ -26,7 +26,7 @@ def GetImageSiteId(url):
 
 def GetPostSource(request_url):
     for source in SOURCES:
-        if source.UploadCheck(request_url, None):
+        if source.UploadCheck(request_url):
             return source
 
 def GetArtistSource(artist_url):
@@ -58,8 +58,8 @@ def GetImageExtension(image_url):
 def GetMediaExtension(media_url):
     return GetImageExtension(media_url)
 
-def CreateUpload(request_url, referrer_url, image_urls, force):
-    source = GetSource(request_url, referrer_url)
+def CreateUpload(request_url, image_urls, force):
+    source = GetSource(request_url)
     if source is None:
         return {'error': True, 'message': "Not a valid URL."}
     type = source.GetUploadType(request_url)
@@ -67,7 +67,7 @@ def CreateUpload(request_url, referrer_url, image_urls, force):
     valid_image_urls = [url for url in image_urls if source.IsImageUrl(url)]
     #print(force, image_urls, valid_image_urls)
     if not force:
-        upload = Upload.query.filter_by(type=type, request_url=request_url, referrer_url=referrer_url).order_by(Upload.id.desc()).first()
+        upload = Upload.query.filter_by(type=type, request_url=request_url).order_by(Upload.id.desc()).first()
     if upload is None:
         return {'error': False, 'data': DBLOCAL.CreateUploadFromRequest(type, request_url, image_urls).to_json()}
     else:
@@ -110,7 +110,7 @@ def ProcessFileUpload(upload):
 
 def ProcessNetworkUpload(upload):
     source = GetPostSource(upload.request_url)
-    site_illust_id = source.GetIllustId(upload.request_url, upload.referrer_url)
+    site_illust_id = source.GetIllustId(upload.request_url)
     error = source.Prework(site_illust_id)
     if error is not None:
         DBLOCAL.AppendError(upload, error)
@@ -133,12 +133,12 @@ def ProcessNetworkUpload(upload):
     elif upload.type == 'image':
         DownloadSingleImage(illust, upload, source)
 
-def _Source(site_id):
+def GetSourceById(site_id):
     site_key = GetSiteKey(site_id)
     return SOURCEDICT[site_key]
 
 def QueryArtistBoorus(artist):
-    source = _Source(artist.site_id)
+    source = GetSourceById(artist.site_id)
     search_url = source.ArtistBooruSearchUrl(artist)
     artist_data = danbooru.GetArtistsByUrl(search_url)
     if artist_data['error']:
@@ -190,20 +190,20 @@ def QueryUpdateBooru(booru):
         DBLOCAL.SaveData()
 
 def ProcessArtist(artist):
-    source = _Source(artist.site_id)
+    source = GetSourceById(artist.site_id)
     source.UpdateDBArtist(artist)
 
 
 def UpdateArtist(artist):
-    source = _Source(artist.site_id)
+    source = GetSourceById(artist.site_id)
     source.UpdateArtist(artist)
 
 def UpdateIllust(artist):
-    source = _Source(artist.site_id)
+    source = GetSourceById(artist.site_id)
     source.UpdateIllust(artist)
 
 def QueryCreateArtist(site_id, site_artist_id):
-    source = _Source(site_id)
+    source = GetSourceById(site_id)
     return source.CreateArtist(site_artist_id)
 
 def CreateNewArtist(site_id, site_artist_id):
@@ -211,13 +211,13 @@ def CreateNewArtist(site_id, site_artist_id):
     source.CreateDBArtist(site_artist_id)
 
 def CreateDBArtistFromParams(params):
-    source = _Source(params['site_id'])
+    source = GetSourceById(params['site_id'])
     return source.CreateDBArtistFromParams(params)
 
 def CreateDBIllustFromParams(params):
-    source = _Source(params['site_id'])
+    source = GetSourceById(params['site_id'])
     return source.CreateDBIllustFromParams(params)
 
 def CreateDBIllustUrlFromParams(params, illust):
-    source = _Source(illust.site_id)
+    source = GetSourceById(illust.site_id)
     return source.CreateDBIllustUrlFromParams(params, illust)

@@ -1,6 +1,5 @@
 from . import base_helper as base
 from . import posts_helper as post
-from . import uploads_helper as upload
 from . import artists_helper as artist
 from . import illusts_helper as illust
 from . import notations_helper as notation

@@ -1,16 +1,15 @@
 # APP\CONTROLLERS\UPLOADS.PY
 
 # ## PYTHON IMPORTS
-import requests
 from sqlalchemy.orm import selectinload
-from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
+from flask import Blueprint, request, render_template, redirect, url_for, flash
 from wtforms import StringField, IntegerField, TextAreaField
 
 # ## LOCAL IMPORTS
-
 from ..logical.utility import EvalBoolString
 from ..models import Upload, Post, IllustUrl
-from ..sources import base as BASE_SOURCE
+from ..sources.base import GetPostSource
+from ..sources.local_source import WorkerCheckUploads
 from ..database.upload_db import CreateUploadFromParameters
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams,\
     HideInput, GetMethodRedirect, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort
@@ -104,16 +103,13 @@ def create():
             retdata['item'] = upload.to_json()
             return SetError(retdata, "Upload already exists: upload #%d" % upload.id)
     if createparams['request_url']:
-        source = BASE_SOURCE.GetPostSource(createparams['request_url'])
+        source = GetPostSource(createparams['request_url'])
         if source is None:
             return SetError(retdata, "Upload source currently not handled for request url: %s" % createparams['request_url'])
         createparams['image_urls'] = [url for url in createparams['image_urls'] if source.IsImageUrl(url)]
     upload = CreateUploadFromParameters(createparams)
     retdata['item'] = upload.to_json()
-    try:
-        requests.get('http://127.0.0.1:4000/check_uploads', timeout=2)
-    except Exception as e:
-        print("Unable to contact worker:", e)
+    WorkerCheckUploads()
     return retdata
 
 

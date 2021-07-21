@@ -2,7 +2,8 @@ import urllib.parse
 from flask import render_template, Markup
 
 from ..sites import GetSiteDomain, GetSiteKey
-from ..sources import DICT as SOURCEDICT, base as BASE_SOURCE
+from ..sources import SOURCEDICT
+from ..sources.base import GetSourceById
 from .base_helper import SearchUrlFor
 
 
@@ -54,7 +55,7 @@ def PostPreviews(illust):
     return Markup(render_template("pools/_post_previews.html", posts=posts))
 
 def DanbooruBatchUrl(illust):
-    source = BASE_SOURCE._Source(illust.site_id)
+    source = GetSourceById(illust.site_id)
     post_url = source.GetPostUrl(illust)
     query_string = urllib.parse.urlencode({'url': post_url})
     return 'https://danbooru.donmai.us/uploads/batch?' + query_string

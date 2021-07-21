@@ -1,10 +1,6 @@
-{% extends 'layouts/base.html' %}
+{% extends 'posts/_base.html' %}
 
 {% block title %}Posts{% endblock %}
-
-{% block css %}
-<link rel="stylesheet" href="{{ url_for('static', filename='styles/posts.css') }}">
-{% endblock %}
 
 {% block content %}
     <div id="posts-container">

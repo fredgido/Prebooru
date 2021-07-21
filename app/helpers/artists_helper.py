@@ -2,7 +2,7 @@
 
 # ##LOCAL IMPORTS
 from ..sites import GetSiteKey
-from ..sources import DICT as SOURCEDICT
+from ..sources import SOURCEDICT
 from .base_helper import SearchUrlFor
 
 

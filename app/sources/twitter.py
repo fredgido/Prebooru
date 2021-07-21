@@ -348,8 +348,8 @@ def IsVideoUrl(url):
     return bool(VIDEO1_RG.match(url) or VIDEO2_RG.match(url))
 
 
-def UploadCheck(request_url, referrer_url):
-    return IsPostUrl(request_url) or (referrer_url and IsPostUrl(referrer_url) and IsMediaUrl(request_url))
+def UploadCheck(request_url):
+    return IsPostUrl(request_url)
 
 
 def GetUploadType(request_url):
@@ -360,8 +360,8 @@ def GetUploadType(request_url):
 def SiteId():
     return GetSiteId('twitter.com')
 
-def GetIllustId(request_url, referrer_url):
-    return int((TWEET_RG.match(request_url) or TWEET_RG.match(referrer_url)).group(1))
+def GetIllustId(request_url):
+    return int(TWEET_RG.match(request_url).group(1))
 
 def GetArtistIdUrlId(artist_url):
     match = USERS2_RG.match(artist_url) or USERS3_RG.match(artist_url)

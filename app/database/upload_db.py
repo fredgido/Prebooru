@@ -1,15 +1,8 @@
-# APP/DATABASE/ARTIST_DB.PY
+# APP/DATABASE/UPLOAD_DB.PY
 
-import datetime
-
+# ## LOCAL IMPORTS
 from .. import models, SESSION
-from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
-from ..sites import Site
-from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections, AppendRelationshipCollections
-from .illust_url_db import UpdateIllustUrlFromParameters
-from .site_data_db import UpdateSiteDataFromParameters
-
-# ##GLOBAL VARIABLES
+from ..logical.utility import GetCurrentTime
 
 
 # ## FUNCTIONS
@@ -46,4 +39,3 @@ def AppendImageUrls(upload, image_urls):
     upload.image_urls.extend(append_urls)
     SESSION.add(upload)
     SESSION.commit()
-

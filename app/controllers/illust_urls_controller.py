@@ -12,7 +12,6 @@ from wtforms.validators import DataRequired
 from ..logical.utility import GetCurrentTime, EvalBoolString
 from ..logical.logger import LogError
 from ..models import Illust, Artist, Notation, Pool, IllustUrl
-from ..sources import base as BASE_SOURCE
 from ..sources.base import GetImageSiteId, GetImageSource
 from ..database import local as DBLOCAL
 from ..database.illust_url_db import CreateIllustUrlFromParameters

@@ -9,7 +9,7 @@ from wtforms.validators import DataRequired
 # ## LOCAL IMPORTS
 from ..logical.utility import EvalBoolString
 from ..models import Artist
-from ..sources import base as BASE_SOURCE
+from ..sources.base import GetSourceById, QueryArtistBoorus, GetArtistSource
 from ..database.local import IsError
 from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
@@ -118,7 +118,7 @@ def query_create():
     retdata = {'error': False, 'params': params}
     if params['url'] is None:
         return SetError(retdata, "Must include the artist URL.")
-    source = BASE_SOURCE.GetArtistSource(params['url'])
+    source = GetArtistSource(params['url'])
     if source is None:
         return SetError(retdata, "Not a valid artist URL.")
     site_id = source.SiteId()
@@ -247,7 +247,7 @@ def query_create_html():
 def query_update_html(id):
     """Query source and update artist."""
     artist = GetOrAbort(Artist, id)
-    source = BASE_SOURCE._Source(artist.site_id)
+    source = GetSourceById(artist.site_id)
     updateparams = source.GetArtistData(artist.site_artist_id)
     if updateparams['active']:
         # These are only removable through the HTML/JSON UPDATE routes
@@ -264,7 +264,7 @@ def query_update_html(id):
 def query_booru_html(id):
     """Query booru and create/update booru relationships."""
     artist = GetOrAbort(Artist, id)
-    response = BASE_SOURCE.QueryArtistBoorus(artist)
+    response = QueryArtistBoorus(artist)
     if response['error']:
         flash(response['message'])
     else:

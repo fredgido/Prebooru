@@ -44,7 +44,6 @@ class Upload(JsonModel):
     id: int
     subscription_id: IntOrNone
     request_url: StrOrNone
-    referrer_url: StrOrNone
     media_filepath: StrOrNone
     sample_filepath: StrOrNone
     illust_url_id: IntOrNone
@@ -59,7 +58,6 @@ class Upload(JsonModel):
 
     id = DB.Column(DB.Integer, primary_key=True)
     request_url = DB.Column(DB.String(255), nullable=True)
-    referrer_url = DB.Column(DB.String(255), nullable=True)
     successes = DB.Column(DB.Integer, nullable=False)
     failures = DB.Column(DB.Integer, nullable=False)
     type = DB.Column(DB.String(255), nullable=False)
@@ -88,7 +86,7 @@ class Upload(JsonModel):
     @property
     def site_illust_id(self):
         if self.request_url:
-            return self._source.GetIllustId(self.request_url, self.referrer_url)
+            return self._source.GetIllustId(self.request_url)
         elif self.illust_url.id:
             return self.illust_url.illust.site_illust_id
         raise Exception("Unable to find site illust ID for upload #%d" % self.id)
@@ -109,11 +107,11 @@ class Upload(JsonModel):
 
     @property
     def _source(self):
-        from ..sources import base as BASE_SOURCE
+        from ..sources.base import GetPostSource, GetSourceById
         if self.request_url:
-            return BASE_SOURCE.GetPostSource(self.request_url)
+            return GetPostSource(self.request_url)
         elif self.illust_url_id:
-            return BASE_SOURCE._Source(self.illust_url.site_id)
+            return GetSourceById(self.illust_url.site_id)
         raise Exception("Unable to find source for upload #%d" % self.id)
 
     # Stored properties
@@ -121,6 +119,6 @@ class Upload(JsonModel):
 
     @staticmethod
     def searchable_attributes():
-        basic_attributes = ['id', 'successes', 'failures', 'subscription_id', 'illust_url_id', 'request_url', 'referrer_url', 'type', 'status', 'media_filepath', 'sample_filepath', 'created']
+        basic_attributes = ['id', 'successes', 'failures', 'subscription_id', 'illust_url_id', 'request_url', 'type', 'status', 'media_filepath', 'sample_filepath', 'created']
         relation_attributes = ['image_urls', 'posts', 'errors']
         return basic_attributes + relation_attributes

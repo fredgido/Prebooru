@@ -13,7 +13,7 @@ from wtforms.widgets import HiddenInput
 from ..logical.utility import GetCurrentTime, EvalBoolString
 from ..logical.logger import LogError
 from ..models import Illust, Artist, Notation, Pool
-from ..sources import base as BASE_SOURCE
+from ..sources.base import GetSourceById, CreateDBIllustUrlFromParams
 from ..database import local as DBLOCAL
 from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
@@ -275,7 +275,7 @@ def create_illust_url_html(id):
     if error is not None:
         return {'error': True, 'message': error, 'params': createparams}
     createparams['illust_id'] = illust.id
-    BASE_SOURCE.CreateDBIllustUrlFromParams(createparams, illust)
+    CreateDBIllustUrlFromParams(createparams, illust)
     return redirect(url_for('illust.show_html', id=illust.id))
 
 
@@ -329,7 +329,7 @@ def add_notation_json(id):
 @bp.route('/illusts/<int:id>/query_update', methods=['POST'])
 def query_update_html(id):
     illust = GetOrAbort(Illust, id)
-    source = BASE_SOURCE._Source(illust.site_id)
+    source = GetSourceById(illust.site_id)
     updateparams = source.GetIllustData(illust.site_illust_id)
     if updateparams['active']:
         # These are only removable through the HTML/JSON UPDATE routes

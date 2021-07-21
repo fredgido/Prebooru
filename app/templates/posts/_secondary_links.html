@@ -1,7 +1,7 @@
 <menu id="secondary-menu">
     {{ helpers.base.SubnavLinkTo("Listing", 'post.index_html') }}
     {{ helpers.base.SubnavLinkTo("Upload", 'upload.create_html', attrs={'onclick': 'return Prebooru.promptArgPost(this, \'Enter the request URL to upload from:\', \'url\')'}) }}
-    {% if post != None %}
+    {% if post.id is not none %}
         |
         {{ helpers.base.SubnavLinkTo("Show", 'post.show_html', post.id) }}
     {% endif %}
