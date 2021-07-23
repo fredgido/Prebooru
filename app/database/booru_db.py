@@ -57,7 +57,7 @@ def CreateBooruFromID(danbooru_id):
         'names': [data['artist']['name']],
     }
     booru = CreateBooruFromParameters(createparams)
-    return {'error': False, 'item': booru.to_json()}
+    return {'error': False, 'data': createparams, 'item': booru.to_json()}
 
 
 # ###### Update

@@ -98,7 +98,7 @@ def check_json(id):
 @bp.route('/posts/<int:id>/notation.json', methods=['POST'])
 def add_notation_json(id):
     post = GetOrError(Post, id)
-    if type(artist) is dict:
+    if type(post) is dict:
         return post
     dataparams = GetDataParams(request, 'post')
     if 'notation' not in dataparams or len(dataparams['notation'].strip()) == 0:

@@ -1,6 +1,7 @@
 # APP/SOURCES/TWITTER.PY
 
 # ##PYTHON IMPORTS
+import os
 import re
 import time
 import json
@@ -8,7 +9,7 @@ import urllib
 import requests
 
 # ##LOCAL IMPORTS
-from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet
+from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet, DecodeJSON
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.file import LoadDefault, PutGetJSON
 from ..logical.logger import LogError
@@ -263,7 +264,9 @@ ARTIST_HREFURL = 'https://twitter.com/i/user/%d'
 
 
 def LoadGuestToken():
+    global TOKEN_TIMESTAMP
     try:
+        TOKEN_TIMESTAMP = os.path.getmtime(TOKEN_FILE)
         data = LoadDefault(TOKEN_FILE, {"token": None})
         print(data, type(data), type(data['token']))
         return str(data['token'])
@@ -273,6 +276,13 @@ def LoadGuestToken():
 
 def SaveGuestToken(guest_token):
     PutGetJSON(TOKEN_FILE, 'w', {"token": str(guest_token)})
+
+
+def CheckTokenFile():
+    global TOKEN_TIMESTAMP
+    last_timestamp = TOKEN_TIMESTAMP if 'TOKEN_TIMESTAMP' in globals() else None
+    TOKEN_TIMESTAMP = os.path.getmtime(TOKEN_FILE)
+    return last_timestamp == TOKEN_TIMESTAMP
 
 # Illust
 
@@ -528,7 +538,7 @@ def GetDBArtist(illust):
 
 def CheckGuestAuth(func):
     def wrapper(*args, **kwargs):
-        if 'twitter_headers' not in globals() or twitter_headers is None:
+        if 'twitter_headers' not in globals() or twitter_headers is None or not CheckTokenFile():
             AuthenticateGuest()
         return func(*args, **kwargs)
     return wrapper
@@ -551,6 +561,27 @@ def AuthenticateGuest(override=False):
     twitter_headers['x-guest-token'] = guest_token
 
 
+def ReauthenticationCheck(response):
+    if response.status_code == 401:
+        return True
+    if response.status_code != 403:
+        return False
+    try:
+        resp_json = response.json()
+    except Exception:
+        return False
+    print("Error JSON:", resp_json, resp_json.keys())
+    if 'errors' not in resp_json:
+        return False
+    if type(resp_json['errors']) is list:
+        error_code = SafeGet(resp_json, 'errors', 0, 'code')
+    elif type(resp_json['errors']) is str:
+        error_json = DecodeJSON(resp_json['errors'])
+        error_code = error_json and SafeGet(error_json, 'code')
+    else:
+        return False
+    return error_code in [200, 239]
+
 @CheckGuestAuth
 def TwitterRequest(url, method='GET'):
     reauthenticated = False
@@ -570,7 +601,7 @@ def TwitterRequest(url, method='GET'):
             #print("HTTP 401:", url, response.text)
             #LogError('sources.twitter.TwitterRequest', "HTTP 401 on URL %s: %s" % (url, response.text))
             #raise Exception("Unhandled HTTP code!")
-        if not reauthenticated and (response.status_code == 401 or (response.status_code == 403 and SafeGet(response.json(), 'errors', 0, 'code') in [200, 239])):
+        if not reauthenticated and ReauthenticationCheck(response):
             AuthenticateGuest(True)
             reauthenticated = True
         else:

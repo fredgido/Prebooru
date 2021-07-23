@@ -21,7 +21,7 @@ from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestVa
 bp = Blueprint("upload", __name__)
 
 
-# ## FUNCTIONS
+# Forms
 
 
 def GetUploadForm(**kwargs):
@@ -35,7 +35,9 @@ def GetUploadForm(**kwargs):
     return UploadForm(**kwargs)
 
 
-#    Auxiliary
+# ## FUNCTIONS
+
+# #### Helper functions
 
 
 def ConvertDataParams(dataparams):
@@ -76,7 +78,7 @@ def GetExistingUpload(createparams):
     return q.first()
 
 
-# #### Route helpers
+# #### Route auxiliary
 
 
 def index():

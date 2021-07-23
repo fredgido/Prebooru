@@ -11,7 +11,7 @@
         {{ form.csrf_token }}
         {% for field_name,field_input in helpers.base.FormIterator(form) %}
             {% if field_name == 'profile' %}
-                {{ field_input(description="Text here will be added to existing artist profiles.") }}
+                {{ field_input(description="Text here will be appended to existing artist profiles.") }}
             {% else %}
                 {{ field_input() }}
             {% endif %}

@@ -29,7 +29,7 @@ def ProcessTimestamp(timestring):
 
 def ProcessUTCTimestring(timestring):
     try:
-        return iso8601.parse_date(timestring)
+        return iso8601.parse_date(timestring).replace(tzinfo=None)
     except Exception:
         pass
 
@@ -151,6 +151,11 @@ def TimeAgo(timeval, precision=2):
 
 def AddDictEntry(indict,key,entry):
     indict[key] = indict[key] + [entry] if key in indict else [entry]
+
+def SetError(retdata, message):
+    retdata['error'] = True
+    retdata['message'] = message
+    return retdata
 
 '''
 DOESN'T WORK

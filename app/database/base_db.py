@@ -10,9 +10,11 @@ def UpdateColumnAttributes(item, attrs, dataparams):
     is_dirty = False
     for attr in attrs:
         if getattr(item, attr) != dataparams[attr]:
-            print("Setting basic attr:", attr, dataparams[attr])
+            print("Setting basic attr:", attr, getattr(item, attr), dataparams[attr])
             setattr(item, attr, dataparams[attr])
             is_dirty = True
+    if item.id is None:
+        SESSION.add(item)
     if is_dirty:
         SESSION.commit()
     return is_dirty
@@ -22,6 +24,8 @@ def UpdateRelationshipCollections(item, relationships, updateparams):
     """For updating multiple values to collection relationships with scalar values"""
     is_dirty = False
     for attr, subattr, model in relationships:
+        if updateparams[attr] is None:
+            continue
         collection = getattr(item, attr)
         current_values = [getattr(subitem, subattr) for subitem in collection]
         add_values = set(updateparams[attr]).difference(current_values)
@@ -30,6 +34,7 @@ def UpdateRelationshipCollections(item, relationships, updateparams):
             add_item = model.query.filter_by(**{subattr: value}).first()
             if add_item is None:
                 add_item = model(**{subattr: value})
+                SESSION.add(add_item)
             collection.append(add_item)
             is_dirty = True
         remove_values = set(current_values).difference(updateparams[attr])
@@ -57,6 +62,7 @@ def AppendRelationshipCollections(item, relationships, updateparams):
             add_item = model.query.filter_by(**{subattr: value}).first()
             if add_item is None:
                 add_item = model(**{subattr: value})
+                SESSION.add(add_item)
             collection.append(add_item)
             is_dirty = True
     if is_dirty:

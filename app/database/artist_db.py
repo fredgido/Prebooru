@@ -12,63 +12,13 @@ COLUMN_ATTRIBUTES = ['site_id', 'site_artist_id', 'current_site_account', 'site_
 UPDATE_SCALAR_RELATIONSHIPS = [('site_accounts', 'name', models.Label), ('names', 'name', models.Label)]
 APPEND_SCALAR_RELATIONSHIPS = [('profiles', 'body', models.Description)]
 
+CREATE_ALLOWED_ATTRIBUTES = ['site_id', 'site_artist_id', 'current_site_account', 'site_created', 'active', 'site_accounts', 'names', 'profiles']
+UPDATE_ALLOWED_ATTRIBUTES = ['site_id', 'site_artist_id', 'current_site_account', 'site_created', 'active', 'site_accounts', 'names', 'profiles']
+
 
 # ## FUNCTIONS
 
-
-def CreateArtistFromParameters(params):
-    current_time = GetCurrentTime()
-    data = {
-        'site_id': params['site_id'],
-        'site_artist_id': params['site_artist_id'],
-        'current_site_account': params['current_site_account'],
-        'site_created': ProcessUTCTimestring(params['site_created']),
-        'requery': current_time + datetime.timedelta(days=1),
-        'active': params['active'],
-        'created': current_time,
-        'updated': current_time,
-    }
-    artist = models.Artist(**data)
-    SESSION.add(artist)
-    SESSION.commit()
-    for name in params['names']:
-        AddArtistName(artist, name)
-    if params['current_site_account']:
-        params['site_accounts'] = list(set(params['site_accounts'] + [params['current_site_account']]))
-    for account in params['site_accounts']:
-        AddArtistSiteAccount(artist, account)
-    if len(params['webpages']):
-        AddArtistWebpages(artist, params['webpages'])
-    if params['profile']:
-        AddArtistProfile(artist, params['profile'])
-    return artist
-
-
-def UpdateArtistFromParameters(artist, updateparams, updatelist):
-    update_results = []
-    SetTimesvalues(updateparams)
-    SetAllSiteAccounts(updateparams)
-    update_columns = set(updatelist).intersection(COLUMN_ATTRIBUTES)
-    print("#2", update_columns)
-    update_results.append(UpdateColumnAttributes(artist, update_columns, updateparams))
-    update_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in updatelist]
-    print("#3", update_relationships)
-    update_results.append(UpdateRelationshipCollections(artist, update_relationships, updateparams))
-    # This needs to be fixed for profile adds
-    append_relationships = [relationship for relationship in APPEND_SCALAR_RELATIONSHIPS if relationship[0] in updatelist]
-    print("#3", append_relationships)
-    update_results.append(AppendRelationshipCollections(artist, append_relationships, updateparams))
-    if 'webpages' in updateparams:
-        update_results.append(SetArtistWebpages(artist, updateparams['webpages']))
-    # if 'profile' in updateparams:
-    #    update_results.append(AddArtistProfile(artist, updateparams['profile']))
-    if any(update_results):
-        print("Changes detected.")
-        artist.updated = GetCurrentTime()
-        SESSION.commit()
-    if 'requery' in updateparams:
-        artist.requery = updateparams['requery']
-        SESSION.commit()
+# #### Helper functions
 
 
 def SetTimesvalues(params):
@@ -84,8 +34,10 @@ def SetAllSiteAccounts(params):
         params['site_accounts'] = list(set(params['site_accounts'] + [params['current_site_account']]))
 
 
-def SetArtistWebpages(artist, params):
-    print("AddArtistWebpages")
+# #### Auxiliary functions
+
+
+def UpdateArtistWebpages(artist, params):
     existing_webpages = [webpage.url for webpage in artist.webpages]
     current_webpages = []
     is_dirty = False
@@ -118,66 +70,49 @@ def SetArtistWebpages(artist, params):
     return is_dirty
 
 
-#################################################################
+# #### Route DB functions
+
+# ###### Create
 
 
-def AddArtistName(artist, name_text):
-    current_names = [label.name for label in artist.names]
-    if name_text in current_names:
-        return False
-    lbl = models.Label.query.filter_by(name=name_text).first()
-    if lbl is None:
-        lbl = models.Label(name=name_text)
-    artist.names.append(lbl)
-    SESSION.commit()
-    return True
+def CreateArtistFromParameters(createparams):
+    current_time = GetCurrentTime()
+    SetTimesvalues(createparams)
+    SetAllSiteAccounts(createparams)
+    artist = models.Artist(created=current_time, updated=current_time, requery=(current_time + datetime.timedelta(days=1)))
+    settable_keylist = set(createparams.keys()).intersection(CREATE_ALLOWED_ATTRIBUTES)
+    update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
+    UpdateColumnAttributes(artist, update_columns, createparams)
+    create_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
+    UpdateRelationshipCollections(artist, create_relationships, createparams)
+    append_relationships = [relationship for relationship in APPEND_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
+    AppendRelationshipCollections(artist, append_relationships, createparams)
+    if 'webpages' in createparams:
+        print(artist, createparams['webpages'])
+        UpdateArtistWebpages(artist, createparams['webpages'])
+    return artist
 
 
-def AddArtistSiteAccount(artist, site_account_text):
-    current_site_accounts = [label.name for label in artist.site_accounts]
-    if site_account_text in current_site_accounts:
-        return False
-    lbl = models.Label.query.filter_by(name=site_account_text).first()
-    if lbl is None:
-        lbl = models.Label(name=site_account_text)
-    artist.site_accounts.append(lbl)
-    SESSION.commit()
-    return True
+# ###### Update
 
 
-def AddArtistProfile(artist, profile_text):
-    print("AddArtistProfile")
-    current_profiles = [descr.body for descr in artist.profiles]
-    if profile_text in current_profiles:
-        return False
-    descr = models.Description.query.filter_by(body=profile_text).first()
-    if descr is None:
-        descr = models.Description(body=profile_text)
-    artist.profiles.append(descr)
-    SESSION.commit()
-    return True
-
-
-def AddArtistWebpages(artist, webpages, commit=True):
-    print("AddArtistWebpages")
-    artist_urls = []
-    new_urls = []
-    for url in webpages:
-        is_active = url[0] != '-'
-        if not is_active:
-            url = url[1:]
-        artist_url = models.ArtistUrl.query.filter_by(artist_id=artist.id, url=url).first()
-        if artist_url is None:
-            data = {
-                'artist_id': artist.id,
-                'url': url,
-                'active': is_active,
-            }
-            artist_url = models.ArtistUrl(**data)
-            new_urls.append(artist_url)
-        artist_urls.append(artist_url)
-    if commit and len(new_urls):
-        SESSION.add_all(new_urls)
+def UpdateArtistFromParameters(artist, updateparams):
+    update_results = []
+    SetTimesvalues(updateparams)
+    SetAllSiteAccounts(updateparams)
+    settable_keylist = set(updateparams.keys()).intersection(UPDATE_ALLOWED_ATTRIBUTES)
+    update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
+    update_results.append(UpdateColumnAttributes(artist, update_columns, updateparams))
+    update_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
+    update_results.append(UpdateRelationshipCollections(artist, update_relationships, updateparams))
+    append_relationships = [relationship for relationship in APPEND_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
+    update_results.append(AppendRelationshipCollections(artist, append_relationships, updateparams))
+    if 'webpages' in updateparams:
+        update_results.append(UpdateArtistWebpages(artist, updateparams['webpages']))
+    if any(update_results):
+        print("Changes detected.")
+        artist.updated = GetCurrentTime()
         SESSION.commit()
-        print("Added artist webpages:", [webpage.url for webpage in new_urls])
-    return artist_urls
+    if 'requery' in updateparams:
+        artist.requery = updateparams['requery']
+        SESSION.commit()

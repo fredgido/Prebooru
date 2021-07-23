@@ -4,14 +4,14 @@
 import re
 import urllib
 from functools import reduce
-from flask import jsonify, render_template, abort, url_for
+from flask import jsonify, abort, url_for
 from sqlalchemy.sql.expression import case
 from wtforms import Form
-from flask_wtf import FlaskForm
 from wtforms.meta import DefaultMeta
 from wtforms.widgets import HiddenInput
 
 # ## LOCAL IMPORTS
+from ..logical.utility import EvalBoolString
 from ..logical.searchable import AllAttributeFilters
 
 
@@ -172,15 +172,26 @@ def SetError(retdata, message):
     return retdata
 
 
-def ParseType(params, key, parser):
-    try:
-        return parser(params[key])
-    except Exception as e:
-        return None
+def ParseArrayParameter(dataparams, array_key, string_key, separator):
+    if array_key in dataparams and type(dataparams[array_key]) is list:
+        return dataparams[array_key]
+    if string_key in dataparams:
+        return ParseStringList(dataparams, string_key, separator)
+
+
+def ParseBoolParameter(dataparams, bool_key):
+    return EvalBoolString(dataparams[bool_key]) if bool_key in dataparams else None
 
 
 def ParseStringList(params, key, separator):
     return [item.strip() for item in re.split(separator, params[key]) if item.strip() != ""]
+
+
+def ParseType(params, key, parser):
+    try:
+        return parser(params[key])
+    except Exception:
+        return None
 
 
 def CheckParamRequirements(params, requirements):
@@ -197,11 +208,11 @@ def IntOrBlank(data):
 def NullifyBlanks(data):
     def _Check(val):
         return type(val) is str and val.strip() == ""
-    return {k:(v if not _Check(v) else None) for (k,v) in data.items()}
+    return {k: (v if not _Check(v) else None) for (k, v) in data.items()}
 
 
 def SetDefault(indict, key, default):
-    indict[key] = indict[key] if key in indict else default
+    indict[key] = indict[key] if (key in indict and indict[key] is not None) else default
 
 
 # #### Update helpers

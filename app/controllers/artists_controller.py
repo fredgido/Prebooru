@@ -7,20 +7,29 @@ from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, Stri
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from ..logical.utility import EvalBoolString
 from ..models import Artist
-from ..sources.base import GetSourceById, QueryArtistBoorus, GetArtistSource
-from ..database.local import IsError
+from ..sources.base import GetSourceById, QueryArtistBoorus, GetArtistRequiredParams
 from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
-    DefaultOrder, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, ParseStringList, CheckParamRequirements,\
-    IntOrBlank, NullifyBlanks, SetDefault, PutMethodCheck, GetMethodRedirect
+    DefaultOrder, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, ParseArrayParameter, CheckParamRequirements,\
+    IntOrBlank, NullifyBlanks, SetDefault, PutMethodCheck, GetMethodRedirect, ParseBoolParameter
 
 # ## GLOBAL VARIABLES
 
 bp = Blueprint("artist", __name__)
 
 CREATE_REQUIRED_PARAMS = ['site_id', 'site_artist_id']
+VALUES_MAP = {
+    'site_accounts': 'site_accounts',
+    'site_account_string': 'site_accounts',
+    'names': 'names',
+    'name_string': 'names',
+    'webpages': 'webpages',
+    'webpage_string': 'webpages',
+    'profiles': 'profiles',
+    'profile': 'profiles',
+    **{k: k for k in Artist.__table__.columns.keys()},
+}
 
 
 # Forms
@@ -33,7 +42,7 @@ def GetArtistForm(**kwargs):
         site_artist_id = IntegerField('Site Artist ID', id='artist-site-artist-id', custom_name='artist[site_artist_id]', validators=[DataRequired()])
         current_site_account = StringField('Current Site Account', id='artist-current-site-account', custom_name='artist[current_site_account]')
         site_created = StringField('Site Created', id='artist-site-created', custom_name='artist[site_created]', description='Format must be ISO8601 timestamp (e.g. 2021-05-24T04:46:51).')
-        account_string = TextAreaField('Site Accounts', id='artist-account-string', custom_name='artist[account_string]', description="Separated by whitespace.")
+        site_account_string = TextAreaField('Site Accounts', id='artist-site-account-string', custom_name='artist[site_account_string]', description="Separated by whitespace.")
         name_string = TextAreaField('Site Names', id='artist-name-string', custom_name='artist[name_string]', description="Separated by carriage returns.")
         webpage_string = TextAreaField('Webpages', id='artist-webpage-string', custom_name='artist[webpage_string]', description="Separated by carriage returns. Prepend with '-' to mark as inactive.")
         profile = TextAreaField('Profile', id='artist-profile', custom_name='artist[profile]')
@@ -46,32 +55,34 @@ def GetArtistForm(**kwargs):
 # #### Helper functions
 
 
+def UniquenessCheck(dataparams, artist):
+    site_id = dataparams['site_id'] if 'site_id' in dataparams else artist.site_id
+    site_artist_id = dataparams['site_artist_id'] if 'site_artist_id' in dataparams else artist.site_artist_id
+    if site_id != artist.site_id or site_artist_id != artist.site_artist_id:
+        return Artist.query.filter_by(site_id=site_id, site_artist_id=site_artist_id).first()
+
+
 def ConvertDataParams(dataparams):
     params = GetArtistForm(**dataparams).data
-    if 'account_string' in dataparams:
-        dataparams['site_accounts'] = params['site_accounts'] = ParseStringList(dataparams, 'account_string', r'\s')
-    if 'name_string' in dataparams:
-        dataparams['names'] = params['names'] = ParseStringList(dataparams, 'name_string', r'\r?\n')
-    if 'webpage_string' in dataparams:
-        dataparams['webpages'] = params['webpages'] = ParseStringList(dataparams, 'webpage_string', r'\r?\n')
-    params['active'] = EvalBoolString(dataparams['active']) if 'active' in dataparams else None
+    params['site_accounts'] = ParseArrayParameter(dataparams, 'site_accounts', 'site_account_string', r'\s')
+    params['names'] = ParseArrayParameter(dataparams, 'names', 'name_string', r'\r?\n')
+    params['webpages'] = ParseArrayParameter(dataparams, 'webpages', 'webpage_string', r'\r?\n')
+    params['active'] = ParseBoolParameter(dataparams, 'active')
+    params['profiles'] = params['profile']
     params = NullifyBlanks(params)
     return params
 
 
 def ConvertCreateParams(dataparams):
     createparams = ConvertDataParams(dataparams)
-    SetDefault(createparams, 'site_accounts', [])
-    SetDefault(createparams, 'names', [])
-    SetDefault(createparams, 'webpages', [])
+    SetDefault(createparams, 'active', True)
     return createparams
 
 
 def ConvertUpdateParams(dataparams):
     updateparams = ConvertDataParams(dataparams)
-    for key in list(updateparams.keys()):
-        if updateparams[key] is None:
-            del updateparams[key]
+    updatelist = [VALUES_MAP[key] for key in dataparams if key in VALUES_MAP]
+    updateparams = {k: v for (k, v) in updateparams.items() if k in updatelist}
     return updateparams
 
 
@@ -95,10 +106,10 @@ def create():
     errors = CheckParamRequirements(createparams, CREATE_REQUIRED_PARAMS)
     if len(errors) > 0:
         return SetError(retdata, '\n'.join(errors))
-    artist = Artist.query.filter_by(site_id=createparams['site_id'], site_artist_id=dataparams['site_artist_id']).first()
-    if artist is not None:
-        createparams['site_artist_id'] = None
-        return SetError(retdata, "Artist already exists: artist #%d" % artist.id)
+    check_artist = UniquenessCheck(createparams, Artist())
+    if check_artist is not None:
+        retdata['item'] = check_artist.to_json()
+        return SetError(retdata, "Artist already exists: artist #%d" % check_artist.id)
     artist = CreateArtistFromParameters(createparams)
     retdata['item'] = artist.to_json()
     return retdata
@@ -107,32 +118,32 @@ def create():
 def update(artist):
     dataparams = GetDataParams(request, 'artist')
     updateparams = ConvertUpdateParams(dataparams)
-    updatelist = list(set(dataparams.keys()).intersection(updateparams.keys()))
-    UpdateArtistFromParameters(artist, updateparams, updatelist)
-    return {'error': False, 'item': artist.to_json(), 'params': dataparams, 'data': updateparams}
+    retdata = {'error': False, 'data': updateparams, 'params': dataparams}
+    check_artist = UniquenessCheck(updateparams, artist)
+    if check_artist is not None:
+        retdata['item'] = check_artist.to_json()
+        return SetError(retdata, "Artist already exists: artist #%d" % check_artist.id)
+    UpdateArtistFromParameters(artist, updateparams)
+    retdata['item'] = artist.to_json()
+    return retdata
 
 
 def query_create():
     """Query source and create artist."""
     params = dict(url=request.values.get('url'))
     retdata = {'error': False, 'params': params}
-    if params['url'] is None:
-        return SetError(retdata, "Must include the artist URL.")
-    source = GetArtistSource(params['url'])
-    if source is None:
-        return SetError(retdata, "Not a valid artist URL.")
-    site_id = source.SiteId()
-    ret = source.GetArtistId(params['url'])
-    if ret is None:
-        return SetError(retdata, "Unable to find site artist ID with URL.")
-    if IsError(ret):
-        return SetError(retdata, ret.message)
-    site_artist_id = int(ret)
-    artist = Artist.query.filter_by(site_id=site_id, site_artist_id=site_artist_id).first()
-    if artist is not None:
-        retdata['item'] = artist.to_json()
-        return SetError(retdata, "Artist already exists.")
-    artist = source.CreateArtist(site_artist_id)
+    retdata.update(GetArtistRequiredParams(params['url']))
+    if retdata['error']:
+        return retdata
+    check_artist = UniquenessCheck(retdata, Artist())
+    if check_artist is not None:
+        retdata['item'] = check_artist.to_json()
+        return SetError(retdata, "Artist already exists: artist #%d" % check_artist.id)
+    source = GetSourceById(retdata['site_id'])
+    createparams = retdata['data'] = source.GetArtistData(retdata['site_artist_id'])
+    if not createparams['active']:
+        return SetError(retdata, "Artist account does not exist!")
+    artist = CreateArtistFromParameters(createparams)
     retdata['item'] = artist.to_json()
     return retdata
 
@@ -166,7 +177,7 @@ def index_json():
 def index_html():
     q = index()
     artists = Paginate(q, request)
-    return render_template("artists/index.html", artists=artists, artist=None)
+    return render_template("artists/index.html", artists=artists, artist=Artist())
 
 
 # ###### CREATE
@@ -176,7 +187,7 @@ def index_html():
 def new_html():
     """HTML access point to create function."""
     form = GetArtistForm()
-    return render_template("artists/new.html", form=form, artist=None)
+    return render_template("artists/new.html", form=form, artist=Artist())
 
 
 @bp.route('/artists', methods=['POST'])
@@ -205,7 +216,7 @@ def edit_html(id):
     """HTML access point to update function."""
     artist = GetOrAbort(Artist, id)
     editparams = artist.to_json()
-    editparams['account_string'] = '\r\n'.join(site_account.name for site_account in artist.site_accounts)
+    editparams['site_account_string'] = '\r\n'.join(site_account.name for site_account in artist.site_accounts)
     editparams['name_string'] = '\r\n'.join(artist_name.name for artist_name in artist.names)
     editparams['webpage_string'] = '\r\n'.join((('' if webpage.active else '-') + webpage.url) for webpage in artist.webpages)
     form = GetArtistForm(**editparams)
@@ -216,7 +227,10 @@ def edit_html(id):
 def update_html(id):
     PutMethodCheck(request)
     artist = GetOrAbort(Artist, id)
-    update(artist)
+    results = update(artist)
+    if results['error']:
+        flash(results['message'], 'error')
+        return redirect(url_for('artist.edit_html', id=artist.id))
     return redirect(url_for('artist.show_html', id=artist.id))
 
 

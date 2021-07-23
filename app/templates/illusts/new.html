@@ -20,6 +20,6 @@
         {% for field_name,field_input in helpers.base.FormIterator(form) %}
             {{ field_input() }}
         {% endfor %}
-        <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
+        <input type="submit" value="Submit">
     </form>
 {% endblock %}

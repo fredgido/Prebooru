@@ -10,7 +10,7 @@ from wtforms.validators import DataRequired
 from ..models import Booru
 from ..database.booru_db import CreateBooruFromParameters, CreateBooruFromID, UpdateBooruFromParameters, QueryUpdateBooru, CheckArtistsBooru
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetOrAbort, GetOrError,\
-    PutMethodCheck, GetMethodRedirect, GetDataParams, SetError, SetDefault, CheckParamRequirements, NullifyBlanks, ParseStringList, CustomNameForm
+    PutMethodCheck, GetMethodRedirect, GetDataParams, SetError, CheckParamRequirements, NullifyBlanks, CustomNameForm, ParseArrayParameter
 
 
 # ## GLOBAL VARIABLES
@@ -20,8 +20,11 @@ bp = Blueprint("booru", __name__)
 
 
 CREATE_REQUIRED_PARAMS = ['danbooru_id', 'current_name']
-UPDATE_REQUIRED_PARAMS = []
-
+VALUES_MAP = {
+    'names': 'names',
+    'name_string': 'names',
+    **{k: k for k in Booru.__table__.columns.keys()},
+}
 
 # Forms
 
@@ -41,26 +44,28 @@ def GetBooruForm(**kwargs):
 # #### Helper functions
 
 
+def UniquenessCheck(dataparams, artist):
+    danbooru_id = dataparams['danbooru_id'] if 'danbooru_id' in dataparams else artist.danbooru_id
+    if danbooru_id != artist.danbooru_id:
+        return Booru.query.filter_by(danbooru_id=danbooru_id).first()
+
+
 def ConvertDataParams(dataparams):
     params = GetBooruForm(**dataparams).data
-    if 'name_string' in dataparams:
-        dataparams['names'] = params['names'] = [name.lower() for name in ParseStringList(dataparams, 'name_string', r'\s')]
+    params['names'] = [name.lower() for name in ParseArrayParameter(dataparams, 'names', 'name_string', r'\s')]
     params['current_name'] = params['current_name'].lower()
     params = NullifyBlanks(params)
     return params
 
 
 def ConvertCreateParams(dataparams):
-    createparams = ConvertDataParams(dataparams)
-    SetDefault(createparams, 'names', [])
-    return createparams
+    return ConvertDataParams(dataparams)
 
 
 def ConvertUpdateParams(dataparams):
     updateparams = ConvertDataParams(dataparams)
-    for key in list(updateparams.keys()):
-        if updateparams[key] is None:
-            del updateparams[key]
+    updatelist = [VALUES_MAP[key] for key in dataparams if key in VALUES_MAP]
+    updateparams = {k: v for (k, v) in updateparams.items() if k in updatelist}
     return updateparams
 
 
@@ -81,14 +86,13 @@ def create():
     dataparams = GetDataParams(request, 'booru')
     createparams = ConvertCreateParams(dataparams)
     retdata = {'error': False, 'data': createparams, 'params': dataparams}
-    print(dataparams, createparams)
     errors = CheckParamRequirements(createparams, CREATE_REQUIRED_PARAMS)
     if len(errors) > 0:
         return SetError(retdata, '\n'.join(errors))
-    booru = Booru.query.filter_by(danbooru_id=createparams['danbooru_id']).first()
-    if booru is not None:
-        createparams['danbooru_id'] = None
-        return SetError(retdata, "Booru already exists: booru #%d" % booru.id)
+    check_booru = UniquenessCheck(createparams, Booru())
+    if check_booru is not None:
+        retdata['item'] = check_booru.to_json()
+        return SetError(retdata, "Booru already exists: booru #%d" % check_booru.id)
     booru = CreateBooruFromParameters(createparams)
     retdata['item'] = booru.to_json()
     return retdata
@@ -98,19 +102,31 @@ def update(booru):
     dataparams = GetDataParams(request, 'booru')
     updateparams = ConvertUpdateParams(dataparams)
     retdata = {'error': False, 'data': updateparams, 'params': dataparams}
-    if 'danbooru_id' in updateparams and updateparams['danbooru_id'] != booru.danbooru_id:
-        check_booru = Booru.query.filter_by(danbooru_id=updateparams['danbooru_id']).first()
-        if check_booru is not None:
-            return SetError(retdata, "Booru already exists: booru #%d" % check_booru.id)
-    updatelist = list(set(dataparams.keys()).intersection(updateparams.keys()))
-    UpdateBooruFromParameters(booru, updateparams, updatelist)
+    check_booru = UniquenessCheck(updateparams, booru)
+    if check_booru is not None:
+        retdata['item'] = check_booru.to_json()
+        return SetError(retdata, "Booru already exists: booru #%d" % check_booru.id)
+    UpdateBooruFromParameters(booru, updateparams)
     retdata['item'] = booru.to_json()
+    return retdata
+
+
+def query_create():
+    params = dict(danbooru_id=request.values.get('danbooru_id', type=int))
+    retdata = {'error': False, 'params': params}
+    if params['danbooru_id'] is None:
+        return SetError(retdata, "Must include the Danbooru ID.")
+    check_booru = UniquenessCheck(params, Booru())
+    if check_booru is not None:
+        retdata['item'] = check_booru.to_json()
+        return SetError(retdata, "Booru already exists: booru #%d" % check_booru.id)
+    retdata.update(CreateBooruFromID(params['danbooru_id']))
     return retdata
 
 
 # #### Route functions
 
-# ###### SHOW/INDEX
+# ###### SHOW
 
 
 @bp.route('/boorus/<int:id>.json', methods=['GET'])
@@ -122,6 +138,9 @@ def show_json(id):
 def show_html(id):
     booru = GetOrAbort(Booru, id)
     return render_template("boorus/show.html", booru=booru)
+
+
+# ###### INDEX
 
 
 @bp.route('/boorus.json', methods=['GET'])
@@ -182,7 +201,10 @@ def edit_html(id):
 def update_html(id):
     PutMethodCheck(request)
     booru = GetOrAbort(Booru, id)
-    update(booru)
+    results = update(booru)
+    if results['error']:
+        flash(results['message'], 'error')
+        return redirect(url_for('booru.edit_html', id=booru.id))
     return redirect(url_for('booru.show_html', id=booru.id))
 
 
@@ -200,17 +222,7 @@ def update_json(id):
 
 @bp.route('/boorus/query_create', methods=['POST'])
 def query_create_html():
-    params = {
-        'danbooru_id': request.values.get('danbooru_id', type=int),
-    }
-    retdata = {'error': False, 'params': params}
-    if params['danbooru_id'] is None:
-        return SetError(retdata, "Must include the Danbooru ID.")
-    booru = Booru.query.filter_by(danbooru_id=params['danbooru_id']).first()
-    if booru is not None:
-        retdata['item'] = booru.to_json()
-        return SetError(retdata, "Booru already exists: booru #%d" % booru.id)
-    results = CreateBooruFromID(params['danbooru_id'])
+    results = query_create()
     if results['error']:
         flash(results['message'], 'error')
         return redirect(request.referrer)

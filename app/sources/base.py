@@ -9,7 +9,7 @@ from ..sources import SOURCES, SOURCEDICT, danbooru
 from ..models import Upload, IllustUrl, Booru, Label
 from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.uploader import UploadIllustUrl
-from ..logical.utility import GetHTTPFilename, GetFileExtension, GetCurrentTime
+from ..logical.utility import GetHTTPFilename, GetFileExtension, GetCurrentTime, SetError
 from ..database import local as DBLOCAL
 
 CURRENT_MODULE = sys.modules[__name__]
@@ -19,6 +19,21 @@ CURRENT_MODULE = sys.modules[__name__]
 IMAGE_HEADERS = {}
 
 # ##FUNCTIONS
+
+def GetArtistRequiredParams(url):
+    retdata = {'error': False}
+    source = GetArtistSource(url)
+    if source is None:
+        return SetError(retdata, "Not a valid artist URL.")
+    retdata['site_id'] = source.SiteId()
+    ret = source.GetArtistId(params['url'])
+    if ret is None:
+        return SetError(retdata, "Unable to find site artist ID with URL.")
+    if IsError(ret):
+        return SetError(retdata, ret.message)
+    retdata['site_artist_id'] = int(ret)
+    return retdata
+
 
 def GetImageSiteId(url):
     parse = urllib.parse.urlparse(url)

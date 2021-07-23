@@ -585,7 +585,7 @@ def GetApiData(data_ids, type):
     cache_data = []
     for i in range(0, len(data_ids), 100):
         sublist = data_ids[i: i + 100]
-        cache_data += _GetApiData(data_ids, type)
+        cache_data += _GetApiData(sublist, type)
     return cache_data
 
 
