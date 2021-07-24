@@ -2,8 +2,8 @@
 
 from .. import SESSION
 
-# ##GLOBAL VARIABLES
 
+# ##GLOBAL VARIABLES
 
 def UpdateColumnAttributes(item, attrs, dataparams):
     print("UpdateColumnAttributes", item, attrs, dataparams)

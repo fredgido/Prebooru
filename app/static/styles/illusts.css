@@ -1,11 +1,24 @@
-/****EDIT Page****/
+/***FORMS****/
 textarea#illust-tag-string {
     width: 20em;
     height: 5em;
 }
+input#illust-title {
+    width: 50em;
+}
 textarea#illust-commentary {
     width: 50em;
     height: 10em;
+}
+form > div.twitter-data,
+form > div.pixiv-data {
+    display: none;
+}
+form.twitter-data > div.twitter-data {
+    display: block;
+}
+form.pixiv-data > div.pixiv-data {
+    display: block;
 }
 /****SHOW Page****/
 div#illust-sidebar {

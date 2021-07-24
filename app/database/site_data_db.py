@@ -19,7 +19,7 @@ SITE_DATA_TYPE_DICT = {
 # ##FUNCTIONS
 
 
-def UpdateSiteDataFromParameters(site_data, illust_id, site_id, params, paramlist):
+def UpdateSiteDataFromParameters(site_data, illust_id, site_id, params):
     if site_data is not None:
         site_key = GetSiteKey(site_id)
         expected_type = SITE_DATA_TYPE_DICT[site_key]
@@ -29,12 +29,13 @@ def UpdateSiteDataFromParameters(site_data, illust_id, site_id, params, paramlis
             SESSION.commit()
             site_data = None
     if site_id == Site.TWITTER.value:
-        return UpdateTwitterSiteData(site_data, illust_id, params, paramlist)
+        return UpdateTwitterSiteData(site_data, illust_id, params)
 
 
-def UpdateTwitterSiteData(site_data, illust_id, params, paramlist):
-    print("UpdateTwitterSiteData")
+def UpdateTwitterSiteData(site_data, illust_id, params):
     if site_data is None:
         site_data = models.TwitterData(illust_id=illust_id)
-    columns = set(paramlist).intersection(TWITTER_COLUMN_ATTRIBUTES)
-    return UpdateColumnAttributes(site_data, columns, params)
+        SESSION.add(site_data)
+        SESSION.commit()
+    update_columns = set(params.keys()).intersection(TWITTER_COLUMN_ATTRIBUTES)
+    return UpdateColumnAttributes(site_data, update_columns, params)

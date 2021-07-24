@@ -223,9 +223,9 @@ def GenerateSimilarityPools(args):
     while True:
         print("\n%d/%d" % (page.page, page.pages))
         for sdata in page.items:
-            smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause1(sdata.image_hash)).all()
+            smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause1(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
             start_time = time.time()
-            score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 80.0)
+            score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 90.0)
             end_time = time.time()
             pool = SimilarityPool.query.filter_by(post_id=sdata.post_id).first()
             if pool is not None:

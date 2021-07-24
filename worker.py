@@ -5,6 +5,7 @@ import os
 import time
 from flask import request
 from sqlalchemy import not_
+from sqlalchemy.orm import Session
 import atexit
 import random
 import requests
@@ -14,7 +15,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 # ## LOCAL IMPORTS
 from app import database
-from app import SESSION, PREBOORU_APP
+from app import DB, SESSION, PREBOORU_APP
 from app.config import workingdirectory, datafilepath
 from app.cache import ApiData, MediaFile
 from app.models import Upload, Illust, Artist, Booru, Label
@@ -39,6 +40,8 @@ BOORU_SEM = threading.Semaphore()
 
 BOORU_ARTISTS_DATA = None
 BOORU_ARTISTS_FILE = workingdirectory + datafilepath + 'booru_artists_file.json'
+
+READ_ENGINE = DB.engine.execution_options(isolation_level="READ UNCOMMITTED")
 
 # ### FUNCTIONS
 
@@ -127,6 +130,10 @@ def CheckForNewArtistBoorus():
         BOORU_SEM.release()
         print("<booru semaphore release>")
 
+def GetPendingUploadIDs():
+    with Session(bind=READ_ENGINE) as session:
+        return [upload.id for upload in session.query(Upload).filter_by(status="pending").all()]
+
 @StaticVars(processing=False)
 def ProcessUploads():
     print("{ProcessUploads}")
@@ -136,8 +143,11 @@ def ProcessUploads():
         ProcessUploads.processing = True
         post_ids = []
         while True:
-            uploads = Upload.query.filter_by(status="pending").all()
-            for upload in uploads:
+            print("Current upload count:", SESSION.query(Upload).count())
+            upload_ids = GetPendingUploadIDs()
+            for upload_id in upload_ids:
+                # Must retrieve the upload with Flask session object for updating/appending to work
+                upload = Upload.find(upload_id)
                 if not ProcessUpload(upload):
                     break
                 post_ids.extend(upload.post_ids)

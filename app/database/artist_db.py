@@ -20,7 +20,6 @@ UPDATE_ALLOWED_ATTRIBUTES = ['site_id', 'site_artist_id', 'current_site_account'
 
 # #### Helper functions
 
-
 def SetTimesvalues(params):
     if 'site_created' in params:
         if type(params['site_created']) is str:
@@ -35,7 +34,6 @@ def SetAllSiteAccounts(params):
 
 
 # #### Auxiliary functions
-
 
 def UpdateArtistWebpages(artist, params):
     existing_webpages = [webpage.url for webpage in artist.webpages]
@@ -73,7 +71,6 @@ def UpdateArtistWebpages(artist, params):
 # #### Route DB functions
 
 # ###### Create
-
 
 def CreateArtistFromParameters(createparams):
     current_time = GetCurrentTime()

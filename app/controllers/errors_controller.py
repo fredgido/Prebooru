@@ -1,23 +1,12 @@
-# APP\CONTROLLERS\ILLUSTS.PY
+# APP\CONTROLLERS\ERRORS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-import json
-from flask import Blueprint, request, render_template, jsonify, redirect, url_for, flash
-from sqlalchemy.orm import selectinload, lazyload
-from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
-from wtforms.validators import DataRequired
+from flask import Blueprint, request, render_template, abort
 
 # ## LOCAL IMPORTS
-
-from ..logical.utility import GetCurrentTime, EvalBoolString
-from ..logical.logger import LogError
 from ..models import Error
-from ..sources.base import GetImageSiteId, GetImageSource
-from ..database import local as DBLOCAL
-from ..database.illust_url_db import CreateIllustUrlFromParameters
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate,\
-    GetDataParams, CustomNameForm, ParseType, GetOrAbort, GetOrError, SetError, PutMethodCheck, UpdateColumnAttributes,\
-    NullifyBlanks, CheckParamRequirements, HideInput
+    GetOrAbort, GetMethodRedirect
 
 
 # ## GLOBAL VARIABLES
@@ -28,7 +17,6 @@ bp = Blueprint("error", __name__)
 # ## FUNCTIONS
 
 # #### Route helpers
-
 
 def index():
     params = ProcessRequestValues(request.values)
@@ -41,9 +29,7 @@ def index():
 
 # #### Route functions
 
-
-# ###### SHOW/INDEX
-
+# ###### SHOW
 
 @bp.route('/errors/<int:id>.json', methods=['GET'])
 def show_json(id):
@@ -56,6 +42,8 @@ def show_html(id):
     return render_template("errors/show.html", error=error)
 
 
+# ###### INDEX
+
 @bp.route('/errors.json', methods=['GET'])
 def index_json():
     q = index()
@@ -67,3 +55,19 @@ def index_html():
     q = index()
     errors = Paginate(q, request)
     return render_template("errors/index.html", errors=errors, error=Error())
+
+
+# ###### CREATE
+
+@bp.route('/errors', methods=['POST'])
+def create_html():
+    if GetMethodRedirect(request):
+        return index_html()
+    abort(405)
+
+
+@bp.route('/errors.json', methods=['POST'])
+def create_json():
+    if GetMethodRedirect(request):
+        return index_json()
+    abort(405)

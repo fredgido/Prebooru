@@ -63,5 +63,14 @@ def DanbooruBatchUrl(illust):
 def IsGeneralForm(form):
     return (form.artist_id.data is None) or (form.site_id.data is None)
 
+def FormClass(form):
+    CLASS_MAP = {
+        None: "",
+        1: "pixiv-data",
+        3: "twitter-data",
+    }
+    return CLASS_MAP[form.site_id.data]
+
 def IllustUrlsOrdered(illust):
     return sorted(illust.urls, key=lambda x: x.order)
+

@@ -15,11 +15,36 @@
             New illust: <a href="{{ url_for('artist.show_html', id=form.artist_id.data) }}">artist #{{ form.artist_id.data }}</a>
         {% endif %}
     </div>
-    <form method="POST" action="/illusts">
+    <form id="form" class="{{ helpers.illust.FormClass(form) }}" method="POST" action="/illusts">
         {{ form.csrf_token }}
         {% for field_name,field_input in helpers.base.FormIterator(form) %}
-            {{ field_input() }}
+            {% if field_name == 'site_id' %}
+                {{ field_input(onclick="ChangeSite()") }}
+            {% else %}
+                {% set classlist = [] %}
+                {% if field_name in ['retweets', 'replies', 'quotes'] %}
+                    {% do classlist.append('twitter-data') %}
+                {% endif %}
+                {% if field_name in ['title', 'bookmarks', 'site_updated', 'site_uploaded'] %}
+                    {% do classlist.append('pixiv-data') %}
+                {% endif %}
+                {{ field_input(classlist=classlist) }}
+            {% endif %}
         {% endfor %}
         <input type="submit" value="Submit">
     </form>
+{% endblock %}
+
+{% block pagescript %}
+    <script>
+        const SITE_MAP = {
+            "": "",
+            "1": 'pixiv-data',
+            "3": 'twitter-data',
+        };
+        function ChangeSite() {
+            let site_id = document.getElementById("illust-site-id").value;
+            document.getElementById('form').className = SITE_MAP[site_id];
+        }
+    </script>
 {% endblock %}

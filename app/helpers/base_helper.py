@@ -110,11 +110,16 @@ def FormIterator(form):
             elif type(field.widget) is HiddenInput:
                 return AddContainer('div', str(field), classlist=['input', 'hidden']) if field.data is not None else ""
             else:
-                built_markup = str(field.label) + field
+                built_markup = str(field.label)
+                if 'onclick' in kwargs:
+                    built_markup += field(onclick=kwargs['onclick'])
+                else:
+                    built_markup += field
             description = kwargs['description'] if 'description' in kwargs else field.description
             if description:
                 built_markup += DescriptionText(description)
-            return AddContainer('div', built_markup, classlist=['input'])
+            classlist = ['input'] + kwargs['classlist'] if 'classlist' in kwargs else []
+            return AddContainer('div', built_markup, classlist=classlist)
         yield field_name, _builder
 
 def HasErrorMessages(messages):

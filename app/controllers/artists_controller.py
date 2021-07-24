@@ -34,7 +34,6 @@ VALUES_MAP = {
 
 # Forms
 
-
 def GetArtistForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
     class ArtistForm(CustomNameForm):
@@ -53,7 +52,6 @@ def GetArtistForm(**kwargs):
 # ## FUNCTIONS
 
 # #### Helper functions
-
 
 def UniquenessCheck(dataparams, artist):
     site_id = dataparams['site_id'] if 'site_id' in dataparams else artist.site_id
@@ -87,7 +85,6 @@ def ConvertUpdateParams(dataparams):
 
 
 # #### Route auxiliary functions
-
 
 def index():
     params = ProcessRequestValues(request.values)
@@ -152,7 +149,6 @@ def query_create():
 
 # ###### SHOW
 
-
 @bp.route('/artists/<int:id>.json', methods=['GET'])
 def show_json(id):
     return ShowJson(Artist, id)
@@ -165,7 +161,6 @@ def show_html(id):
 
 
 # ###### INDEX
-
 
 @bp.route('/artists.json', methods=['GET'])
 def index_json():
@@ -181,7 +176,6 @@ def index_html():
 
 
 # ###### CREATE
-
 
 @bp.route('/artists/new', methods=['GET'])
 def new_html():
@@ -209,7 +203,6 @@ def create_json():
 
 
 # ###### UPDATE
-
 
 @bp.route('/artists/<int:id>/edit', methods=['GET'])
 def edit_html(id):
@@ -245,7 +238,6 @@ def update_json(id):
 
 # ###### MISC
 
-
 @bp.route('/artists/query_create', methods=['POST'])
 def query_create_html():
     """Query source and create artist."""
@@ -268,8 +260,7 @@ def query_update_html(id):
         updateparams['webpages'] += ['-' + webpage.url for webpage in artist.webpages if webpage.url not in updateparams['webpages']]
         updateparams['names'] += [artist_name.name for artist_name in artist.names if artist_name.name not in updateparams['names']]
         updateparams['site_accounts'] += [site_account.name for site_account in artist.site_accounts if site_account.name not in updateparams['site_accounts']]
-    updatelist = list(updateparams.keys())
-    UpdateArtistFromParameters(artist, updateparams, updatelist)
+    UpdateArtistFromParameters(artist, updateparams)
     flash("Artist updated.")
     return redirect(url_for('artist.show_html', id=id))
 

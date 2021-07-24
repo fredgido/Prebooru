@@ -2,7 +2,7 @@
     {{ helpers.base.SubnavLinkTo("Listing", 'illust.index_html') }}
     {{ helpers.base.SubnavLinkTo("New", 'illust.new_html') }}
     {{ helpers.base.SubnavLinkTo("URLs", 'illust_url.index_html') }}
-    {% if illust != None %}
+    {% if illust.id != None %}
         |
         {{ helpers.base.SubnavLinkTo("Show", 'illust.show_html', illust.id) }}
         {{ helpers.base.SubnavLinkTo("Edit", 'illust.edit_html', illust.id) }}
