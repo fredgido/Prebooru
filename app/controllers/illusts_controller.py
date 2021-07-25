@@ -7,8 +7,8 @@ from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, Stri
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from ..models import Illust, Artist
-from ..sources.base import GetSourceById
+from ..models import Illust, Artist, SiteData
+from ..sources.base import GetSourceById, GetIllustRequiredParams
 from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
     Paginate, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, HideInput, IntOrBlank,\
@@ -26,9 +26,7 @@ VALUES_MAP = {
     'tag_string': 'tags',
     'commentaries': 'commentaries',
     'commentary': 'commentaries',
-    'retweets': 'retweets',
-    'replies': 'replies',
-    'quotes': 'quotes',
+    **{k: k for k in SiteData.__table__.columns.keys() if k not in ['id', 'illust_id', 'type']},
     **{k: k for k in Artist.__table__.columns.keys()},
 }
 
@@ -38,7 +36,7 @@ VALUES_MAP = {
 def GetIllustForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
     class IllustForm(CustomNameForm):
-        artist_id = IntegerField('Artist ID', id='illust-illust-id', custom_name='illust[artist_id]', validators=[DataRequired()])
+        artist_id = IntegerField('Artist ID', id='illust-illust-id', custom_name='illust[artist_id]', validators=[DataRequired()], description="This is the Prebooru artist ID.")
         site_id = SelectField('Site', choices=[("", ""), ('1', 'Pixiv'), ('3', 'Twitter')], id='illust-site-id', custom_name='illust[site_id]', validators=[DataRequired()], coerce=IntOrBlank)
         site_illust_id = IntegerField('Site Illust ID', id='illust-site-illust-id', custom_name='illust[site_illust_id]', validators=[DataRequired()])
         site_created = StringField('Site Created', id='illust-site-created', custom_name='illust[site_created]', description='Format must be ISO8601 timestamp (e.g. 2021-05-24T04:46:51).')
@@ -47,6 +45,7 @@ def GetIllustForm(**kwargs):
         pages = IntegerField('Pages', id='illust-pages', custom_name='illust[pages]')
         score = IntegerField('Score', id='illust-score', custom_name='illust[score]')
         bookmarks = IntegerField('Bookmarks', id='illust-bookmarks', custom_name='illust[bookmarks]')
+        views = IntegerField('Views', id='illust-views', custom_name='illust[views]')
         retweets = IntegerField('Retweets', id='illust-retweets', custom_name='illust[retweets]')
         replies = IntegerField('Replies', id='illust-replies', custom_name='illust[replies]')
         quotes = IntegerField('Quotes', id='illust-quotes', custom_name='illust[quotes]')
@@ -55,24 +54,6 @@ def GetIllustForm(**kwargs):
         commentary = TextAreaField('Commentary', id='illust-commentary', custom_name='illust[commentary]')
         active = BooleanField('Active', id='illust-active', custom_name='illust[active]')
     return IllustForm(**kwargs)
-
-
-def GetIllustUrlForm(**kwargs):
-    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
-    class IllustUrlForm(CustomNameForm):
-        url = StringField('URL', id='illust-url-url', custom_name='illust_url[url]', validators=[DataRequired()])
-        width = IntegerField('Width', id='illust-width', custom_name='illust_url[width]')
-        height = IntegerField('Height', id='illust-site-height', custom_name='illust_url[height]')
-        order = IntegerField('Order', id='illust-site-order', custom_name='illust_url[order]')
-        active = BooleanField('Active', id='illust-active', custom_name='illust_url[active]')
-    return IllustUrlForm(**kwargs)
-
-
-def GetAddPoolIllustForm(**kwargs):
-    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
-    class AddPoolIllustForm(CustomNameForm):
-        pool_id = IntegerField('Pool ID', id='illust-pool-id', custom_name='illust[pool_id]', validators=[DataRequired()])
-    return AddPoolIllustForm(**kwargs)
 
 
 # ## FUNCTIONS
@@ -90,7 +71,7 @@ def ConvertDataParams(dataparams):
     params = GetIllustForm(**dataparams).data
     params['tags'] = ParseArrayParameter(dataparams, 'tags', 'tag_string', r'\s')
     params['active'] = ParseBoolParameter(dataparams, 'active')
-    params['commentaries'] = params['profile']
+    params['commentaries'] = params['commentary']
     params = NullifyBlanks(params)
     return params
 
@@ -150,6 +131,33 @@ def update(illust):
         retdata['item'] = check_illust.to_json()
         return SetError(retdata, "Illust already exists: %s" % check_illust.shortlink)
     UpdateIllustFromParameters(illust, updateparams)
+    retdata['item'] = illust.to_json()
+    return retdata
+
+
+def query_create():
+    """Query source and create illust."""
+    params = dict(url=request.values.get('url'))
+    retdata = {'error': False, 'params': params}
+    retdata.update(GetIllustRequiredParams(params['url']))
+    if retdata['error']:
+        return retdata
+    check_illust = UniquenessCheck(retdata, Illust())
+    if check_illust is not None:
+        retdata['item'] = check_illust.to_json()
+        return SetError(retdata, "Illust already exists: %s" % check_illust.shortlink)
+    source = GetSourceById(retdata['site_id'])
+    createparams = retdata['data'] = source.GetIllustData(retdata['site_illust_id'])
+    if not createparams['active']:
+        return SetError(retdata, "Illust post does not exist!")
+    site_artist_id = source.GetArtistIdByIllustId(retdata['site_illust_id'])
+    if site_artist_id is None:
+        return SetError(retdata, "Unable to find site artist ID with URL.")
+    artist = Artist.query.filter_by(site_id=retdata['site_id'], site_artist_id=int(site_artist_id)).first()
+    if artist is None:
+        return SetError(retdata, "Unable to find Prebooru artist... artist must exist before creating an illust.")
+    createparams['artist_id'] = artist.id
+    illust = CreateIllustFromParameters(createparams)
     retdata['item'] = illust.to_json()
     return retdata
 
@@ -226,7 +234,12 @@ def create_json():
 def edit_html(id):
     """HTML access point to update function."""
     illust = GetOrAbort(Illust, id)
-    form = GetIllustForm(site_id=illust.site_id, site_illust_id=illust.site_illust_id, artist_id=illust.artist_id, pages=illust.pages, score=illust.score, active=illust.active)
+    editparams = illust.to_json()
+    editparams['tag_string'] = '\r\n'.join(tag.name for tag in illust.tags)
+    editparams.update({k: v for (k, v) in illust.site_data.to_json().items() if k not in ['id', 'illust_id', 'type']})
+    form = GetIllustForm(**editparams)
+    HideInput(form, 'artist_id', illust.id)
+    HideInput(form, 'site_id', illust.site_id)
     return render_template("illusts/edit.html", form=form, illust=illust)
 
 
@@ -250,33 +263,17 @@ def update_json(id):
     return update(illust)
 
 
-# ## POOLS
-
-# ########## SHOW/INDEX
-
-# Make a POOL_ELEMENTS_CONTROLLER instead of having the following
-
-@bp.route('/illusts/<int:id>/pools.json', methods=['GET'])
-def show_pools_json(id):
-    illust = GetOrError(Illust, id)
-    if type(illust) is dict:
-        return illust
-    pools = [pool.to_json() for pool in illust.pools]
-    return jsonify(pools)
-
-
-@bp.route('/illusts/pools.json', methods=['GET'])
-def index_pools_json():
-    illusts = index().all()
-    retvalue = {}
-    for illust in illusts:
-        id_str = str(illust.id)
-        pools = [pool.to_json() for pool in illust.pools]
-        retvalue[id_str] = pools
-    return retvalue
-
-
 # ###### Misc
+
+@bp.route('/illusts/query_create', methods=['POST'])
+def query_create_html():
+    """Query source and create illust."""
+    results = query_create()
+    if results['error']:
+        flash(results['message'], 'error')
+        return redirect(request.referrer)
+    flash('Illust created.')
+    return redirect(url_for('illust.show_html', id=results['item']['id']))
 
 
 @bp.route('/illusts/<int:id>/query_update', methods=['POST'])
@@ -287,7 +284,6 @@ def query_update_html(id):
     if updateparams['active']:
         # These are only removable through the HTML/JSON UPDATE routes
         updateparams['tags'] += [tag.name for tag in illust.tags if tag.name not in updateparams['tags']]
-    updatelist = list(updateparams.keys())
-    UpdateIllustFromParameters(illust, updateparams, updatelist)
+    UpdateIllustFromParameters(illust, updateparams)
     flash("Illust updated.")
     return redirect(url_for('illust.show_html', id=id))

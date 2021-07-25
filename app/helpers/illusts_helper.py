@@ -1,17 +1,28 @@
+import re
 import urllib.parse
 from flask import render_template, Markup
 
 from ..sites import GetSiteDomain, GetSiteKey
 from ..sources import SOURCEDICT
 from ..sources.base import GetSourceById
-from .base_helper import SearchUrlFor
+from .base_helper import SearchUrlFor, FormatTimestamp
 
+SITE_DATA_LABELS = {
+    'site_updated': 'Updated',
+    'site_uploaded': 'Uploaded',
+}
 
-def SiteDataIterator(illust):
+def SiteMetricIterator(illust):
     site_data_json = illust.site_data.to_json()
     for key,val in site_data_json.items():
-        if key not in ['id', 'type', 'illust_id']:
+        if key in ['retweets', 'replies', 'quotes', 'bookmarks', 'views']:
             yield key, val
+
+def SiteDateIterator(illust):
+    site_data_json = illust.site_data.to_json()
+    for key,val in site_data_json.items():
+        if key in ['site_updated', 'site_uploaded']:
+            yield SITE_DATA_LABELS[key], val
 
 def IllustHasImages(illust):
     site_key = GetSiteKey(illust.site_id)

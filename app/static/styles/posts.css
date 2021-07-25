@@ -37,6 +37,6 @@ section#image-container {
     margin-bottom: 1em;
 }
 section#image-container.fullsize img {
-    height: 100vh;
+    max-height: 100vh;
     width: auto;
 }

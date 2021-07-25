@@ -10,7 +10,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 # ##LOCAL IMPORTS
 from .. import DB
 from ..sites import GetSiteDomain, GetSiteKey
-from .base import JsonModel, DateTimeOrNull, RemoveKeys, IntOrNone
+from .base import JsonModel, DateTimeOrNull, RemoveKeys, IntOrNone, PolymorphicAccessorFactory
 from .tag import Tag
 from .illust_url import IllustUrl
 from .site_data import SiteData
@@ -74,12 +74,24 @@ class Illust(JsonModel):
     site_data = DB.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
     notations = DB.relationship(Notation, secondary=IllustNotations, lazy=True, backref=DB.backref('illust', uselist=False, lazy=True), cascade='all,delete')
     _pools = DB.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
-    pools = association_proxy('_pools', 'pool')
-    posts = association_proxy('urls', 'post')
     active = DB.Column(DB.Boolean, nullable=True)
     requery = DB.Column(DB.DateTime(timezone=False), nullable=True)
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
+
+    ## Association proxies
+
+    pools = association_proxy('_pools', 'pool')
+    posts = association_proxy('urls', 'post')
+    title = association_proxy('site_data', 'title', getset_factory=PolymorphicAccessorFactory)
+    retweets = association_proxy('site_data', 'retweets', getset_factory=PolymorphicAccessorFactory)
+    replies = association_proxy('site_data', 'replies', getset_factory=PolymorphicAccessorFactory)
+    quotes = association_proxy('site_data', 'quotes', getset_factory=PolymorphicAccessorFactory)
+    bookmarks = association_proxy('site_data', 'bookmarks', getset_factory=PolymorphicAccessorFactory)
+    site_updated = association_proxy('site_data', 'site_updated', getset_factory=PolymorphicAccessorFactory)
+    site_uploaded = association_proxy('site_data', 'site_uploaded', getset_factory=PolymorphicAccessorFactory)
+
+    ## Instance properties
 
     @property
     def site_domain(self):
@@ -120,6 +132,8 @@ class Illust(JsonModel):
             self.__source = SOURCEDICT[site_key]
         return self.__source
 
+    ## Instance methods
+
     def delete(self):
         pools = [pool for pool in self.pools]
         DB.session.delete(self)
@@ -128,7 +142,9 @@ class Illust(JsonModel):
             for pool in pools:
                 pool._elements.reorder()
             DB.session.commit()
-    
+
+    ## Class methods
+
     @staticmethod
     def searchable_attributes():
         basic_attributes = ['id', 'site_id', 'site_illust_id', 'site_created', 'artist_id', 'pages', 'score', 'active', 'created', 'updated', 'requery']

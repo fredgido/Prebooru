@@ -1,9 +1,20 @@
 # APP/DATABASE/BASE_DB.PY
 
+import datetime
+
 from .. import SESSION
+from ..logical.utility import ProcessUTCTimestring
 
 
 # ##GLOBAL VARIABLES
+
+def SetTimesvalue(params, key):
+    if key in params:
+        if type(params[key]) is str:
+            params[key] = ProcessUTCTimestring(params[key])
+        elif type(params[key]) is not datetime.datetime:
+            params[key] = None
+
 
 def UpdateColumnAttributes(item, attrs, dataparams):
     print("UpdateColumnAttributes", item, attrs, dataparams)

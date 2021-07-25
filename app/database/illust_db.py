@@ -4,7 +4,7 @@ import datetime
 
 from .. import models, SESSION
 from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
-from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections, AppendRelationshipCollections
+from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections, AppendRelationshipCollections, SetTimesvalue
 from .illust_url_db import UpdateIllustUrlFromParameters
 from .site_data_db import UpdateSiteDataFromParameters
 
@@ -23,11 +23,9 @@ UPDATE_ALLOWED_ATTRIBUTES = ['site_id', 'site_illust_id', 'site_created', 'pages
 # #### Helper functions
 
 def SetTimesvalues(params):
-    if 'site_created' in params:
-        if type(params['site_created']) is str:
-            params['site_created'] = ProcessUTCTimestring(params['site_created'])
-        elif type(params['site_created']) is not datetime.datetime:
-            params['site_created'] = None
+    SetTimesvalue(params, 'site_created')
+    SetTimesvalue(params, 'site_updated')
+    SetTimesvalue(params, 'site_uploaded')
 
 
 # #### Auxiliary functions
@@ -74,16 +72,17 @@ def CreateIllustFromParameters(createparams):
 
 # ###### UPDATE
 
-def UpdateIllustFromParameters(illust, updateparams, updatelist):
+def UpdateIllustFromParameters(illust, updateparams):
     update_results = []
     SetTimesvalues(updateparams)
-    update_columns = set(updatelist).intersection(COLUMN_ATTRIBUTES)
+    settable_keylist = set(updateparams.keys()).intersection(UPDATE_ALLOWED_ATTRIBUTES)
+    update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
     update_results.append(UpdateColumnAttributes(illust, update_columns, updateparams))
-    update_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in updatelist]
+    update_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
     update_results.append(UpdateRelationshipCollections(illust, update_relationships, updateparams))
-    append_relationships = [relationship for relationship in APPEND_SCALAR_RELATIONSHIPS if relationship[0] in updatelist]
+    append_relationships = [relationship for relationship in APPEND_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
     update_results.append(AppendRelationshipCollections(illust, append_relationships, updateparams))
-    update_results.append(UpdateSiteDataFromParameters(illust.site_data, illust.id, illust.site_id, updateparams, updatelist))
+    update_results.append(UpdateSiteDataFromParameters(illust.site_data, illust.id, illust.site_id, updateparams))
     if 'illust_urls' in updateparams:
         update_results.append(UpdateIllustUrls(illust, updateparams['illust_urls']))
     if any(update_results):

@@ -108,6 +108,14 @@ def GetDataIllustIDs(pixiv_data, type):
     except Exception:
         return []
 
+def IsPostUrl(url):
+    return False
+
+def GetPostUrl(illust):
+    return ILLUST_HREFURL % illust.site_illust_id
+
+def GetIllustUrl(site_illust_id):
+    return ILLUST_HREFURL % site_illust_id
 
 #   URL
 

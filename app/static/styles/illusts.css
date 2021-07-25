@@ -59,9 +59,14 @@ section#illust-tags {
 div#illust-site-content-2 {
     margin-top: 2em;
 }
+section#illust-title,
 section#illust-commentaries {
     margin-left: 1em;
     width: 90%;
+}
+div#illust-title-block {
+    padding: 0.5em;
+    font-weight: bold;
 }
 div#illust-commentaries-container {
     border: 1px solid #EEE;

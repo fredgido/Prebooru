@@ -1,6 +1,7 @@
 <menu id="secondary-menu">
     {{ helpers.base.SubnavLinkTo("Listing", 'illust.index_html') }}
     {{ helpers.base.SubnavLinkTo("New", 'illust.new_html') }}
+    {{ helpers.base.SubnavLinkTo("Create", 'illust.query_create_html', attrs={'onclick': 'return CreateIllustFromUrl(this)'}) }}
     {{ helpers.base.SubnavLinkTo("URLs", 'illust_url.index_html') }}
     {% if illust.id != None %}
         |

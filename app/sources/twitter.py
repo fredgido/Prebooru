@@ -757,14 +757,21 @@ def UpdateArtist(artist, explicit=False):
     DB.UpdateArtistFromUser(artist, twuser)
 
 
-def GetArtistData(site_artist_id):
+def GetArtistApiData(site_artist_id):
     twuser = GetApiArtist(site_artist_id, Site.TWITTER.value)
     if twuser is None:
         twuser = GetTwitterArtist(site_artist_id)
         if DBLOCAL.IsError(twuser):
             print("Error getting artist data!")
-            return {'active': False, 'requery': None}
+            return
         SaveApiData([twuser], 'id_str', Site.TWITTER.value, 'artist')
+    return twuser
+
+
+def GetArtistData(site_artist_id):
+    twuser = GetArtistApiData(site_artist_id)
+    if twuser is None:
+        return {'active': False, 'requery': None}
     return GetArtistParametersFromTwuser(twuser)
 
 
@@ -782,16 +789,27 @@ def UpdateIllust(illust, explicit=False, timeline=False):
     DB.UpdateIllustFromTweet(illust, tweet)
 
 
-def GetIllustData(site_illust_id):
+def GetIllustApiData(site_illust_id):
     tweet = GetApiIllust(site_illust_id, Site.TWITTER.value)
     if tweet is None:
         tweet = GetTwitterIllust(site_illust_id)
         if DBLOCAL.IsError(tweet):
             print("Error getting illust data!")
-            return {'active': False, 'requery': None}
+            return
         SaveApiData([tweet], 'id_str', Site.TWITTER.value, 'illust')
+    return tweet
+
+
+def GetIllustData(site_illust_id):
+    tweet = GetIllustApiData(site_illust_id)
+    if tweet is None:
+        return {'active': False, 'requery': None}
     return GetIllustParametersFromTweet(tweet)
 
+
+def GetArtistIdByIllustId(site_illust_id):
+    tweet = GetIllustApiData(site_illust_id)
+    return SafeGet(tweet, 'user', 'id_str')
 
 # Create
 

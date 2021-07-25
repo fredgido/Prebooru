@@ -7,6 +7,9 @@
                 <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
                 <li><strong>Illust ID:</strong> {{ illust.site_illust_id }}</li>
                 <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.site_created) }}</li>
+                 {% for key,val in helpers.illust.SiteDateIterator(illust) %}
+                    <li><strong>{{ key }}:</strong> {{ val }}</li>
+                {% endfor %}
                 <li><strong>Pages:</strong> {{ illust.pages }}</li>
                 <li><strong>Active:</strong> {{ illust.active }}</li>
             </ul>
@@ -14,10 +17,10 @@
         <section id="illust-metrics">
             <h4>Metrics</h4>
             <ul>
-                    <li><strong>Score:</strong> {{ illust.score }}</li>
-                     {% for key,val in helpers.illust.SiteDataIterator(illust) %}
-                        <li><strong>{{ key.title() }}:</strong> {{ val }}</li>
-                    {% endfor %}
+                <li><strong>Score:</strong> {{ illust.score }}</li>
+                 {% for key,val in helpers.illust.SiteMetricIterator(illust) %}
+                    <li><strong>{{ key.title() }}:</strong> {{ val }}</li>
+                {% endfor %}
             </ul>
         </section>
         <section id="illust-tags">
@@ -32,6 +35,12 @@
         </section>
     </div>
     <div id="illust-site-content-2">
+        {% if illust.title is not none %}
+            <section id ="illust-title">
+                <h4>Title</h4>
+                <div id="illust-title-block">{{ illust.title }}</div>
+            </section>
+        {% endif %}
         <section id ="illust-commentaries">
             <h4>Commentaries</h4>
             {% if helpers.base.HasItems(illust.commentaries) %}

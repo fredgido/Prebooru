@@ -8,9 +8,10 @@ from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
-from ..models import Pool, Post, Illust, Notation, IllustUrl
+from ..models import Pool, Post, Illust, Notation, IllustUrl, PoolPost, PoolIllust, PoolNotation
 from ..database import local as DBLOCAL
 from ..logical.utility import GetCurrentTime
+from ..logical.searchable import NumericMatching
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
     DefaultOrder, GetDataParams, CustomNameForm, GetPage, GetLimit, ParseType
 
@@ -95,13 +96,22 @@ def AddTypeElement(pool, itemclass, itemtype, id, dataparams):
     return {'error': False, 'pool': pool.to_json(), 'type': itemtype, 'item': item.to_json(), 'data': pool_ids, 'params': dataparams}
 
 
-def IndexQuery():
+def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
     print("Params:", params, flush=True)
     print("Search:", search, flush=True)
     q = Pool.query
     q = SearchFilter(q, search)
+    if 'post_id' in search:
+        q = q.unique_join(PoolPost, Pool._elements)
+        q = q.filter(NumericMatching(PoolPost, 'post_id', search['post_id']))
+    elif 'illust_id' in search:
+        q = q.unique_join(PoolIllust, Pool._elements)
+        q = q.filter(NumericMatching(PoolIllust, 'illust_id', search['illust_id']))
+    elif 'notation_id' in search:
+        q = q.unique_join(PoolNotation, Pool._elements)
+        q = q.filter(NumericMatching(PoolNotation, 'notation_id', search['notation_id']))
     q = DefaultOrder(q, search)
     return q
 
@@ -126,13 +136,13 @@ def show_html(id):
 
 @bp.route('/pools.json', methods=['GET'])
 def index_json():
-    q = IndexQuery()
+    q = index()
     return IndexJson(q, request)
 
 
 @bp.route('/pools', methods=['GET'])
 def index_html():
-    q = IndexQuery()
+    q = index()
     pools = Paginate(q, request)
     return render_template("pools/index.html", pools=pools, pool=None)
 

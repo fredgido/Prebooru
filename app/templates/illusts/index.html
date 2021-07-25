@@ -23,11 +23,14 @@
                         <span><strong>Domain:</strong> {{ illust.site_domain }}</span><br>
                         <span><strong>Illust ID:</strong> {{ illust.site_illust_id }}</span><br>
                         <span><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.site_created) }}</span><br>
+                         {% for key,val in helpers.illust.SiteDateIterator(illust) %}
+                            <span><strong>{{ key }}:</strong> {{ val }}</span><br>
+                        {% endfor %}
                         <span><strong>Pages:</strong> {{ illust.pages }}</span>
                     </td>
                     <td>
                         <span><strong>Score:</strong> {{ illust.score }}</span><br>
-                         {% for key,val in helpers.illust.SiteDataIterator(illust) %}
+                         {% for key,val in helpers.illust.SiteMetricIterator(illust) %}
                             <span><strong>{{ key.title() }}:</strong> {{ val }}</span>
                             {% if not loop.last %}
                                 <br>

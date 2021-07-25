@@ -3,15 +3,23 @@
 {% block title %}Edit - Illust #{{ illust.id }}{% endblock %}
 
 {% block content %}
-    <form method="POST" action="/illusts/{{illust.id}}">
+    <form id="form" class="{{ helpers.illust.FormClass(form) }}" method="POST" action="{{ illust.update_url }}">
         <input type="hidden" name="_method" value="put">
         {{ form.csrf_token }}
-        {{ form.site_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.site_id(style="display: block;") }}
-        {{ form.site_illust_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.site_illust_id(style="display: block;") }}
-        {{ form.artist_id.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.artist_id(style="display: block;") }}
-        {{ form.pages.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.pages(style="display: block;") }}
-        {{ form.score.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.score(style="display: block;") }}
-        {{ form.active.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.active(style="display: block;") }}
-        <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {% set classlist = [] %}
+            {% if field_name in ['retweets', 'replies', 'quotes'] %}
+                {% do classlist.append('twitter-data') %}
+            {% endif %}
+            {% if field_name in ['title', 'bookmarks', 'site_updated', 'site_uploaded', 'replies', 'views'] %}
+                {% do classlist.append('pixiv-data') %}
+            {% endif %}
+            {% if field_name == 'commentary' %}
+                {{ field_input(description="Text here will be appended to existing artist profiles.") }}
+            {% else %}
+                {{ field_input(classlist=classlist) }}
+            {% endif %}
+        {% endfor %}
+        <input type="submit" value="Submit">
     </form>
 {% endblock %}

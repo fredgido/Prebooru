@@ -11,6 +11,7 @@ from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
 from ..logical.uploader import UploadIllustUrl
 from ..logical.utility import GetHTTPFilename, GetFileExtension, GetCurrentTime, SetError
 from ..database import local as DBLOCAL
+from ..database.local import IsError
 
 CURRENT_MODULE = sys.modules[__name__]
 
@@ -26,12 +27,27 @@ def GetArtistRequiredParams(url):
     if source is None:
         return SetError(retdata, "Not a valid artist URL.")
     retdata['site_id'] = source.SiteId()
-    ret = source.GetArtistId(params['url'])
+    ret = source.GetArtistId(url)
     if ret is None:
         return SetError(retdata, "Unable to find site artist ID with URL.")
     if IsError(ret):
         return SetError(retdata, ret.message)
     retdata['site_artist_id'] = int(ret)
+    return retdata
+
+
+def GetIllustRequiredParams(url):
+    retdata = {'error': False}
+    source = GetIllustSource(url)
+    if source is None:
+        return SetError(retdata, "Not a valid illust URL.")
+    retdata['site_id'] = source.SiteId()
+    ret = source.GetIllustId(url)
+    if ret is None:
+        return SetError(retdata, "Unable to find site illust ID with URL.")
+    if IsError(ret):
+        return SetError(retdata, ret.message)
+    retdata['site_illust_id'] = int(ret)
     return retdata
 
 
@@ -47,6 +63,11 @@ def GetPostSource(request_url):
 def GetArtistSource(artist_url):
     for source in SOURCES:
         if source.IsArtistUrl(artist_url):
+            return source
+
+def GetIllustSource(illust_url):
+    for source in SOURCES:
+        if source.IsPostUrl(illust_url):
             return source
 
 def GetArtistIdSource(artist_url):

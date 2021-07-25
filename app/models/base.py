@@ -28,8 +28,20 @@ def StrOrNone(data):
 def RemoveKeys(data, keylist):
     return {k: data[k] for k in data if k not in keylist}
 
-# Classes
 
+def PolymorphicAccessorFactory(collection_type, proxy):
+    def getter(obj):
+        if not hasattr(obj, proxy.value_attr):
+            return
+        return getattr(obj, proxy.value_attr)
+    def setter(obj, value):
+        if not hasattr(obj, proxy.value_attr):
+            return
+        setattr(obj, proxy.value_attr, value)
+    return getter, setter
+
+
+# Classes
 
 class JsonModel(DB.Model):
     __abstract__ = True

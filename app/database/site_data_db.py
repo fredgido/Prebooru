@@ -10,14 +10,15 @@ from .base_db import UpdateColumnAttributes
 
 
 TWITTER_COLUMN_ATTRIBUTES = ['retweets', 'replies', 'quotes']
+PIXIV_COLUMN_ATTRIBUTES = ['title', 'bookmarks', 'replies', 'views', 'site_updated', 'site_uploaded']
 
 SITE_DATA_TYPE_DICT = {
     'TWITTER': 'twitter_data',
+    'PIXIV': 'pixiv_data',
 }
 
 
 # ##FUNCTIONS
-
 
 def UpdateSiteDataFromParameters(site_data, illust_id, site_id, params):
     if site_data is not None:
@@ -30,6 +31,8 @@ def UpdateSiteDataFromParameters(site_data, illust_id, site_id, params):
             site_data = None
     if site_id == Site.TWITTER.value:
         return UpdateTwitterSiteData(site_data, illust_id, params)
+    if site_id == Site.PIXIV.value:
+        return UpdatePixivSiteData(site_data, illust_id, params)
 
 
 def UpdateTwitterSiteData(site_data, illust_id, params):
@@ -38,4 +41,13 @@ def UpdateTwitterSiteData(site_data, illust_id, params):
         SESSION.add(site_data)
         SESSION.commit()
     update_columns = set(params.keys()).intersection(TWITTER_COLUMN_ATTRIBUTES)
+    return UpdateColumnAttributes(site_data, update_columns, params)
+
+
+def UpdatePixivSiteData(site_data, illust_id, params):
+    if site_data is None:
+        site_data = models.PixivData(illust_id=illust_id)
+        SESSION.add(site_data)
+        SESSION.commit()
+    update_columns = set(params.keys()).intersection(PIXIV_COLUMN_ATTRIBUTES)
     return UpdateColumnAttributes(site_data, update_columns, params)
