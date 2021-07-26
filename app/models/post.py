@@ -3,9 +3,11 @@
 # ##PYTHON IMPORTS
 import itertools
 import datetime
+from types import SimpleNamespace
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
+from sqlalchemy.orm import lazyload
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
@@ -16,7 +18,7 @@ from .error import Error
 from .illust_url import IllustUrl
 from .notation import Notation
 from .pool_element import PoolPost, pool_element_delete
-
+from ..similarity import SimilarityPool
 
 # ##GLOBAL VARIABLES
 
@@ -88,6 +90,10 @@ class Post(JsonModel):
         return url_for("post.show_html", id=self.id)
 
     @property
+    def related_posts(self):
+        return [post for post in UniqueObjects(itertools.chain(*[illust.posts for illust in self.illusts])) if post.id != self.id]
+
+    @property
     def illusts(self):
         return UniqueObjects([illust_url.illust for illust_url in self.illust_urls])
 
@@ -107,6 +113,37 @@ class Post(JsonModel):
     def artist_ids(self):
         return list(set(illust.artist_id for illust in self.illusts))
 
+    @property
+    def similar_pool_id(self):
+        if not hasattr(self, '_similar_pool_id'):
+            self.similar_posts
+        return self._similar_pool_id
+
+    @property
+    def similar_post_count(self):
+        if not hasattr(self, '_similar_post_count'):
+            self.similar_posts
+        return self._similar_post_count
+
+    @property
+    def similar_posts(self):
+        if not hasattr(self, '_similar_posts'):
+            setattr(self, '_similar_posts', [])
+            pool = SimilarityPool.query.filter_by(post_id=self.id).first()
+            setattr(self, '_similar_pool_id', pool.id if pool is not None else None)
+            if pool is None or len(pool.elements) == 0:
+                setattr(self, '_similar_post_count', 0)
+                return self._similar_posts
+            setattr(self, '_similar_post_count', len(pool.elements))
+            sorted_elements = sorted(pool.elements, key=lambda x: x.score, reverse=True)[:10]
+            similar_post_ids = [element.post_id for element in sorted_elements]
+            similar_posts = Post.query.options(lazyload('*')).filter(Post.id.in_(similar_post_ids))
+            for element in sorted_elements:
+                data = SimpleNamespace(element=element, pool=pool, post=None)
+                data.post = next(filter(lambda x: x.id == element.post_id, similar_posts), None)
+                self._similar_posts.append(data)
+        return self._similar_posts
+
     id = DB.Column(DB.Integer, primary_key=True)
     width = DB.Column(DB.Integer, nullable=False)
     height = DB.Column(DB.Integer, nullable=False)
@@ -125,7 +162,7 @@ class Post(JsonModel):
 
     def delete(self):
         pools = [pool for pool in self.pools]
-        #self.uploads.clear()
+        # self.uploads.clear()
         DB.session.delete(self)
         DB.session.commit()
         if len(pools) > 0:
@@ -138,4 +175,3 @@ class Post(JsonModel):
         basic_attributes = ['id', 'width', 'height', 'size', 'file_ext', 'md5', 'created']
         relation_attributes = ['illust_urls', 'notations', 'errors']
         return basic_attributes + relation_attributes
-

@@ -14,3 +14,5 @@ from . import boorus_controller as booru
 from . import proxy_controller as proxy
 from . import static_controller as static
 from . import similarity_controller as similarity
+from . import similarity_pools_controller as similarity_pool
+from . import similarity_pool_elements_controller as similarity_pool_element

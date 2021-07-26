@@ -186,6 +186,11 @@ def ParseBoolParameter(dataparams, bool_key):
 def ParseStringList(params, key, separator):
     return [item.strip() for item in re.split(separator, params[key]) if item.strip() != ""]
 
+def ParseItem(value, parser):
+    try:
+        return parser(value)
+    except Exception:
+        return None
 
 def ParseType(params, key, parser):
     try:
@@ -193,6 +198,10 @@ def ParseType(params, key, parser):
     except Exception:
         return None
 
+def ParseListType(params, key, parser):
+    if key not in params or type(params[key]) is not list:
+        return None
+    return [subitem for subitem in [ParseItem(item, parser) for item in params[key]] if subitem is not None]
 
 def CheckParamRequirements(params, requirements):
     return reduce(lambda acc, x: acc + (["%s not present or invalid." % x] if params[x] is None else []), requirements, [])

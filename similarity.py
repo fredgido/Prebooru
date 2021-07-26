@@ -13,6 +13,7 @@ import distance
 import requests
 from io import BytesIO
 from sqlalchemy import func
+from sqlalchemy.orm import selectinload
 import threading
 from argparse import ArgumentParser
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -25,8 +26,9 @@ from app.cache import MediaFile
 from app.similarity.similarity_result import SimilarityResult, HASH_SIZE
 from app.similarity.similarity_result3 import SimilarityResult3
 from app.similarity.similarity_pool import SimilarityPool
+from app.similarity.similarity_pool_element import SimilarityPoolElement
 from app.logical.file import PutGetRaw, CreateDirectory
-from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow, GetFileExtension, GetHTTPFilename
+from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow, GetFileExtension, GetHTTPFilename, AddDictEntry
 from app.logical.network import GetHTTPFile
 from app.storage import CACHE_DATA_DIRECTORY, CACHE_NETWORK_URLPATH
 import app.sources.twitter
@@ -167,6 +169,39 @@ def GeneratePostSimilarity(post):
     ratio = round(post.width / post.height, 4)
     simresult = SimilarityResult(post_id=post.id, image_hash=str(image_hash), ratio=ratio)
     SESSION.add(simresult)
+    PopulateSimilarityPools(simresult)
+
+def PopulateSimilarityPools(sdata):
+    current_time = GetCurrentTime()
+    smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause1(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
+    start_time = time.time()
+    score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 90.0)
+    print("Score results:", score_results)
+    end_time = time.time()
+    pool = SimilarityPool.query.filter_by(post_id=sdata.post_id).first()
+    if pool is None:
+        pool = SimilarityPool(post_id=sdata.post_id, created=current_time)
+        SESSION.add(pool)
+    pool.total_results = len(smatches)
+    pool.calculation_time = round(end_time - start_time, 2)
+    pool.updated=current_time
+    SESSION.commit()
+    if len(score_results) == 0:
+        print("No matching results found.")
+        return
+    pool.update(score_results)
+    result_post_ids = [result['post_id'] for result in score_results]
+    result_pools = SimilarityPool.query.filter(SimilarityPool.post_id.in_(result_post_ids)).all()
+    for result in score_results:
+        inverse_result = {'post_id': sdata.post_id, 'score': result['score']}
+        print("Adding inverse result:", inverse_result)
+        pool = next(filter(lambda x: x.post_id == result['post_id'], result_pools), None)
+        if pool is None:
+            pool = SimilarityPool(post_id=sdata.post_id, updated=current_time, created=current_time, total_results=0, calculation_time=0.0)
+            SESSION.add(pool)
+            SESSION.commit()
+        pool.append(inverse_result)
+
 
 def RegeneratePostSimilarity(result,post):
     image = Image.open(post.preview_path)
@@ -218,33 +253,105 @@ def GenerateSimilarityResults(args):
     print("Done!")
 
 def GenerateSimilarityPools(args):
-    page = SimilarityResult.query.paginate(per_page=100)
+    query = SimilarityResult.query
+    if args.lastid is not None:
+        query = query.filter(SimilarityResult.post_id >= args.lastid)
+    page = query.paginate(per_page=100)
     print("Generate similarity results:")
     while True:
         print("\n%d/%d" % (page.page, page.pages))
         for sdata in page.items:
-            smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause1(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
+            current_time = GetCurrentTime()
             start_time = time.time()
+            smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause1(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
             score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 90.0)
             end_time = time.time()
-            pool = SimilarityPool.query.filter_by(post_id=sdata.post_id).first()
-            if pool is not None:
-                if len(pool.elements) > 0:
-                    print('S', end="", flush=True)
-                    continue
-            else:
-                pool = SimilarityPool(post_id=sdata.post_id, created=GetCurrentTime())
-                SESSION.add(pool)
-            pool.total_results = len(smatches)
-            pool.calculation_time = round(end_time - start_time, 2)
-            pool.updated=GetCurrentTime()
+            main_pool = SimilarityPool.query.filter_by(post_id=sdata.post_id).first()
+            if main_pool is None:
+                main_pool = SimilarityPool(post_id=sdata.post_id, created=current_time)
+                SESSION.add(main_pool)
+            main_pool.total_results = len(smatches)
+            main_pool.calculation_time = round(end_time - start_time, 2)
+            main_pool.updated = current_time
             SESSION.commit()
-            pool.update(score_results)
+            sibling_post_ids = [result['post_id'] for result in score_results]
+            sibling_pools = SimilarityPool.query.options(selectinload(SimilarityPool.elements)).filter(SimilarityPool.post_id.in_(sibling_post_ids)).all()
+            INDEX_POOL_BY_POST_ID = {pool.post_id: pool for pool in sibling_pools}
+            add_pools = []
+            for post_id in sibling_post_ids:
+                if post_id not in INDEX_POOL_BY_POST_ID:
+                    pool = SimilarityPool(post_id=post_id, created=current_time, updated=current_time, calculation_time=0.0, total_results=0)
+                    add_pools.append(pool)
+                    INDEX_POOL_BY_POST_ID[post_id] = pool
+            if len(add_pools) > 0:
+                SESSION.add_all(add_pools)
+                SESSION.commit()
+            # Need to check for existing score results
+            main_post_ids = [element.post_id for element in main_pool.elements]
+            INDEX_POST_IDS_BY_POST_ID = {pool.post_id: [element.post_id for element in pool.elements] for pool in sibling_pools}
+            for result in score_results:
+                if result['post_id'] in main_post_ids:
+                    spe1 = next(filter(lambda x: x.post_id == result['post_id'], main_pool.elements))
+                else:
+                    spe1 = SimilarityPoolElement(pool_id=main_pool.id, **result)
+                    SESSION.add(spe1)
+                    SESSION.commit()
+                sibling_pool_post_ids = INDEX_POST_IDS_BY_POST_ID[result['post_id']] if result['post_id'] in INDEX_POST_IDS_BY_POST_ID else []
+                if sdata.post_id in sibling_pool_post_ids:
+                    sibling_pool = INDEX_POOL_BY_POST_ID[result['post_id']]
+                    spe2 = next(filter(lambda x: x.post_id == sdata.post_id, sibling_pool.elements))
+                else:
+                    sibling_pool_id = INDEX_POOL_BY_POST_ID[result['post_id']].id
+                    spe2 = SimilarityPoolElement(pool_id=sibling_pool_id, post_id=sdata.post_id, score=result['score'])
+                    SESSION.add(spe2)
+                    SESSION.commit()
+                spe1.sibling_id = spe2.id
+                spe2.sibling_id = spe1.id
+                SESSION.commit()
             print('.', end="", flush=True)
         if not page.has_next:
             break
-        page = SimilarityResult.query.paginate(page=page.next_num, per_page=100)
+        page = page.next()
     print("Done!")
+
+
+def FixupSimilarityPools(args):
+    print("Getting all similarity pools.")
+    all_similarity_pools = SimilarityPool.query.all()
+    print("Getting all pools elements.")
+    all_pool_elements = SimilarityPoolElement.query.all()
+    POOL_MAP = {pool.id: pool.post_id for pool in all_similarity_pools}
+    ELEMENT_POST_MAP = {pool.post_id: [] for pool in all_similarity_pools}
+    ELEMENT_INDEX_BY_POOL_POST_ID = {}
+    for element in all_pool_elements:
+        post_id = POOL_MAP[element.pool_id]
+        AddDictEntry(ELEMENT_POST_MAP, post_id, element.post_id)
+        indexkey = str(element.pool_id) + '-' + str(element.post_id)
+        ELEMENT_INDEX_BY_POOL_POST_ID[indexkey] = element
+    POOL_INDEX_BY_POST_ID = {}
+    for pool in all_similarity_pools:
+        POOL_INDEX_BY_POST_ID[pool.post_id] = pool
+    for post_id_1 in ELEMENT_POST_MAP:
+        post_ids_1 = ELEMENT_POST_MAP[post_id_1]
+        for post_id_2 in post_ids_1:
+            post_ids_2 = ELEMENT_POST_MAP[post_id_2]
+            if post_id_1 not in post_ids_2:
+                print(post_id_1, post_id_2, post_ids_1, post_ids_2)
+                pool_id_1 = POOL_MAP[post_id_1]
+                pool_id_2 = POOL_MAP[post_id_2]
+                print("Finding element.")
+                #element_2 = next(filter(lambda x: x.pool_id == pool_id_1 and x.post_id == post_id_2, all_pool_elements))
+                indexkey = str(pool_id_1) + '-' + str(post_id_2)
+                element_2 = ELEMENT_INDEX_BY_POOL_POST_ID[indexkey]
+                print("Finding pool.")
+                #pool_2 = next(filter(lambda x: x.post_id == post_id_2, all_similarity_pools))
+                pool_2 = POOL_INDEX_BY_POST_ID[post_id_2]
+                print(element_2, pool_2)
+                score_result = {'post_id': post_id_1, 'score': element_2.score}
+                print(score_result)
+                #input("####CHECK####")
+                pool_2.append(**score_result)
+                #input("####BREAK####")
 
 def CompareSimilarityResults(args):
     page = SimilarityResult.query.paginate(per_page=100)
@@ -413,10 +520,11 @@ def StartServer(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Worker to process uploads.")
-    parser.add_argument('type', choices=['generate', 'pools', 'compare', 'comparepost', 'transfer', 'server'])
+    parser.add_argument('type', choices=['generate', 'pools', 'compare', 'comparepost', 'transfer', 'server', 'fixup'])
     parser.add_argument('--logging', required=False, default=False, action="store_true", help="Display the SQL commands.")
     parser.add_argument('--expunge', required=False, default=False, action="store_true", help="Expunge all similarity records.")
     parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")
+    parser.add_argument('--lastid', required=False, type=int, help="Sets the last post ID to use.")
     args = parser.parse_args()
     if args.logging:
         import logging
@@ -433,5 +541,7 @@ if __name__ == '__main__':
         ComparePostSimilarity(args)
     elif args.type == 'transfer':
         TransferSimilarityResults(args)
+    elif args.type == 'fixup':
+        FixupSimilarityPools(args)
     elif args.type == 'server':
         StartServer(args)

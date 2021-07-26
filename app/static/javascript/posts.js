@@ -7,3 +7,10 @@ Posts.createUpload = function(obj) {
     }
     return false;
 }
+
+Posts.deleteSimilarPost = function(obj) {
+    if (confirm('Remove item from similar posts?')) {
+        Prebooru.linkDelete(obj);
+    }
+    return false;
+}

@@ -61,6 +61,8 @@ PREBOORU_APP.register_blueprint(controllers.error.bp)
 PREBOORU_APP.register_blueprint(controllers.proxy.bp)
 PREBOORU_APP.register_blueprint(controllers.static.bp)
 PREBOORU_APP.register_blueprint(controllers.similarity.bp)
+PREBOORU_APP.register_blueprint(controllers.similarity_pool.bp)
+PREBOORU_APP.register_blueprint(controllers.similarity_pool_element.bp)
 
 PREBOORU_APP.jinja_env.globals.update(helpers=helpers)
 PREBOORU_APP.jinja_env.add_extension('jinja2.ext.do')

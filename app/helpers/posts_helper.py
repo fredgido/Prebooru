@@ -3,6 +3,7 @@ from flask import render_template
 
 
 from ..sources.base import GetSourceById
+from .base_helper import SearchUrlFor
 
 def Preview(post):
     return render_template("posts/_preview.html", post=post)
@@ -41,6 +42,10 @@ def Ascii2DSearchLinks(post):
 
 def IQDBOrgSearchLinks(post):
     return SimilarSearchLinks(post, 'https://iqdb.org/?url=')
+
+def RelatedPostsSearch(post):
+    illust_ids_str = ','.join([str(illust.id) for illust in post.illusts])
+    return SearchUrlFor('post.index_html', illust_urls={'illust_id': illust_ids_str})
 
 def DanbooruPostBookmarkletLinks(post):
     image_links = []
