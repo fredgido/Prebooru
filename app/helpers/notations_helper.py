@@ -3,17 +3,25 @@
 # ##PYTHON IMPORTS
 import re
 import html
-from flask import Markup
+from flask import Markup, url_for
 
 # ##LOCAL IMPORTS
 from .base_helper import ConvertStrToHTML
-
+from . import artists_helper as ARTIST
+from . import illusts_helper as ILLUST
 
 # ##GLOBAL VARIABLES
 
 
 HTTP_RG = re.compile(r'(\b(?:http|https)(?::\/{2}[\w]+)(?:[\/|\.]?)(?:[^\s<>\uff08\uff09\u3011\u3000"\[\]]*))', re.ASCII)
 
+APPEND_ATTRS = ['_pool', 'artist', 'illust', 'post']
+APPEND_KEY_DICT = {
+    '_pool': 'pool',
+    'artist': 'artist',
+    'illust': 'illust',
+    'post': 'post',
+}
 
 # ## FUNCTIONS
 
@@ -51,6 +59,25 @@ def Excerpt(notation):
     return ConvertStrToHTML(lines[0][:50] + ('...' if len(lines[0]) > 50 else ''))
 
 
+# ###### SHOW
+
+def ItemLinkTitle(item):
+    if item.__table__.name == 'pool':
+        return item.name
+    if item.__table__.name == 'artist':
+        return ARTIST.ShortLink(item)
+    if item.__table__.name == 'illust':
+        return ILLUST.ShortLink(item)
+    return item.shortlink.title()
+
+def HasAppendItem(notation):
+    return any((getattr(notation, attr) is not None) for attr in ['_pool', 'artist', 'illust', 'post'])
+
+
+def AppendKey(notation):
+    return next((key, getattr(notation, key)) for (attr, key) in APPEND_KEY_DICT.items() if (getattr(notation, attr) is not None))
+
+
 # ###### NEW/EDIT
 
 
@@ -71,11 +98,11 @@ def FormHeader(form):
         return html_text
     html_text += ': '
     if form.pool_id.data:
-        html_text += """<a href="{{ url_for('pool.show_html_text', id=%d) }}">pool #%d</a>""" % (form.pool_id.data, form.pool_id.data)
+        html_text += """<a href="%s">pool #%d</a>""" % (url_for('pool.show_html', id=form.pool_id.data), form.pool_id.data)
     elif form.artist_id.data:
-        html_text += """<a href="{{ url_for('artist.show_html_text', id=%d) }}">artist #%d</a>""" % (form.artist_id.data, form.artist_id.data)
+        html_text += """<a href="%s">artist #%d</a>""" % (url_for('artist.show_html', id=form.artist_id.data), form.artist_id.data)
     elif form.illust_id.data:
-        html_text += """<a href="{{ url_for('illust.show_html_text', id=%d) }}">illust #%d</a>""" % (form.illust_id.data, form.illust_id.data)
+        html_text += """<a href="%s">illust #%d</a>""" % (url_for('illust.show_html', id=form.illust_id.data), form.illust_id.data)
     elif form.post_id.data:
-        html_text += """<a href="{{ url_for('post.show_html_text', id=%d) }}">post #%d</a>""" % (form.post_id.data, form.post_id.data)
+        html_text += """<a href="%s">post #%d</a>""" % (url_for('post.show_html', id=form.post_id.data), form.post_id.data)
     return Markup(html_text)

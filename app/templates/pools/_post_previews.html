@@ -1,8 +1,8 @@
-<div style="display: flex; flex-wrap: wrap; flex-direction: row; width: 315px;">
+<div class="pool-display-illust">
     {% for post in posts %}
-        <article class="illust-post" style="width: 150px; height: 150px; padding: 2px;">
+        <article class="illust-post">
             <a href="{{ post.show_url }}">
-                <img style="max-width: 150px; max-height: 150px;" src="{{ post.preview_url }}">
+                <img src="{{ post.preview_url }}">
             </a>
         </article>
     {% endfor %}

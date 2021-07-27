@@ -169,7 +169,7 @@ def GeneratePostSimilarity(post):
     ratio = round(post.width / post.height, 4)
     simresult = SimilarityResult(post_id=post.id, image_hash=str(image_hash), ratio=ratio)
     SESSION.add(simresult)
-    PopulateSimilarityPools(simresult)
+    #PopulateSimilarityPools(simresult)
 
 def PopulateSimilarityPools(sdata):
     current_time = GetCurrentTime()

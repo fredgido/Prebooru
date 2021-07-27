@@ -1,0 +1,27 @@
+{% extends 'layouts/base.html' %}
+
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/pools.css') }}">{% endblock %}
+
+{% block secondary_links %}{% include "pools/_secondary_links.html" %}{% endblock %}
+
+{% macro itemlist(item_ids, item_type) -%}
+    <ul>
+        {% for item_id in item_ids  %}
+            <li>
+                <span class="thin-list">
+                    <a href="{{ url_for( item_type + '.show_html', id=item_id) }}">{{item_type}} #{{ item_id }}</a>
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+{%- endmacro %}
+
+{% macro notationlist(notations) -%}
+    <ul>
+        {% for notation in notations %}
+            <li>
+                <span class="notation-list-item thin-list">{{ helpers.notation.ConvertToHTML(notation) }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+{%- endmacro %}

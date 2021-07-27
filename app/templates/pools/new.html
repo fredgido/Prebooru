@@ -1,13 +1,14 @@
-{% extends 'layouts/base.html' %}
+{% extends 'pools/_base.html' %}
 
 {% block title %}New Pool{% endblock %}
 
-{% block secondary_links %}{{ helpers.base.render_template("pools/_secondary_links.html", pool=pool) | safe }}{% endblock %}
-
 {% block content %}
-    <form method="POST" action="/pools">
+    <div class="form-heading heading">New pool</div>
+    <form method="POST" action="{{ pool.create_url }}">
         {{ form.csrf_token }}
-        {{ form.name.label(style="display: block; font-weight: bold; font-size: 24px;") }} {{ form.name(style="display: block;") }}
-        <input style="display: block; font-weight: bold; height: 30px; width: 60px; margin-top: 20px;" type="submit" value="Submit">
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {{ field_input() }}
+        {% endfor %}
+        <input type="submit" value="Submit">
     </form>
 {% endblock %}

@@ -8,8 +8,10 @@ from .base_db import UpdateColumnAttributes
 
 # ##GLOBAL VARIABLES
 
-
 COLUMN_ATTRIBUTES = ['body']
+
+CREATE_ALLOWED_ATTRIBUTES = ['body']
+UPDATE_ALLOWED_ATTRIBUTES = ['body']
 
 ID_MODEL_DICT = {
     'pool_id': models.Pool,
@@ -25,26 +27,21 @@ ID_MODEL_DICT = {
 
 # ###### Create
 
-
 def CreateNotationFromParameters(createparams):
     current_time = GetCurrentTime()
-    data = {
-        'body': createparams['body'],
-        'created': current_time,
-        'updated': current_time,
-    }
-    notation = models.Notation(**data)
-    SESSION.add(notation)
-    SESSION.commit()
+    notation = models.Notation(created=current_time, updated=current_time)
+    settable_keylist = set(createparams.keys()).intersection(CREATE_ALLOWED_ATTRIBUTES)
+    update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
+    UpdateColumnAttributes(notation, update_columns, createparams)
     return notation
 
 
 # ###### Update
 
-
-def UpdateNotationFromParameters(notation, updateparams, updatelist):
+def UpdateNotationFromParameters(notation, updateparams):
     update_results = []
-    update_columns = set(updatelist).intersection(COLUMN_ATTRIBUTES)
+    settable_keylist = set(updateparams.keys()).intersection(UPDATE_ALLOWED_ATTRIBUTES)
+    update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
     update_results.append(UpdateColumnAttributes(notation, update_columns, updateparams))
     if any(update_results):
         print("Changes detected.")
@@ -53,7 +50,6 @@ def UpdateNotationFromParameters(notation, updateparams, updatelist):
 
 
 # ###### Delete
-
 
 def DeleteNotation(notation):
     pool = notation.pool
@@ -65,7 +61,6 @@ def DeleteNotation(notation):
 
 
 # #### Misc functions
-
 
 def AppendToItem(notation, append_key, dataparams):
     model = ID_MODEL_DICT[append_key]

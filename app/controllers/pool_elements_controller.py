@@ -7,18 +7,21 @@ from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
-from ..models import Pool, Post, Illust, Notation, PoolElement
-from ..database import local as DBLOCAL
-from ..logical.utility import GetCurrentTime
-from .base_controller import GetDataParams, CustomNameForm, ParseType, ReferrerCheck, DeleteMethodCheck, GetOrAbort
+from ..models import Pool, PoolElement
+from ..database.pool_element_db import CreatePoolElementFromParameters, DeletePoolElement
+from .base_controller import GetDataParams, CustomNameForm, ReferrerCheck, DeleteMethodCheck, GetOrAbort, GetOrError,\
+    CheckParamRequirements, SetError, HideInput
 
 
 # ## GLOBAL VARIABLES
 
 bp = Blueprint("pool_element", __name__)
 
-# Forms
+CREATE_REQUIRED_PARAMS = ['pool_id']
 
+APPEND_KEYS = ['illust_id', 'post_id', 'notation_id']
+
+# Forms
 
 def GetPoolElementForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -34,79 +37,55 @@ def GetPoolElementForm(**kwargs):
 
 # #### Helper functions
 
-
 def CheckCreateParams(dataparams):
-    if dataparams['pool_id'] is None:
-        return "No pool ID present!"
     if (dataparams['illust_id'] is None) and (dataparams['post_id'] is None) and (dataparams['notation_id'] is None):
         return "No illust, post, or notation ID specified!"
 
 
-def ConvertCreateParams(dataparams):
-    params = {}
-    params['pool_id'] = ParseType(dataparams, 'pool_id', int)
-    params['illust_id'] = ParseType(dataparams, 'illust_id', int)
-    params['post_id'] = ParseType(dataparams, 'post_id', int)
-    params['notation_id'] = ParseType(dataparams, 'notation_id', int)
-    return params
-
-
-def AddTypeElement(pool, itemclass, itemtype, id, dataparams):
-    item = itemclass.find(id)
-    if item is None:
-        return {'error': True, 'message': "%s not found." % itemtype, 'dataparams': dataparams}
-    pool_ids = [pool.id for pool in item.pools]
-    print("Pool IDs:", pool_ids)
-    if pool.id in pool_ids:
-        return {'error': True, 'message': "%s #%d already added to pool #%d." % (itemtype, item.id, pool.id), 'dataparams': dataparams}
-    pool.updated = GetCurrentTime()
-    pool.elements.append(item)
-    DBLOCAL.SaveData()
-    pool_ids += [pool.id]
-    return {'error': False, 'pool': pool.to_json(), 'type': itemtype, 'item': item.to_json(), 'data': pool_ids, 'dataparams': dataparams}
+def ConvertDataParams(dataparams):
+    return GetPoolElementForm(**dataparams).data
 
 
 # #### Route Helpers
 
-
-def create(request):
+def create():
     dataparams = GetDataParams(request, 'pool_element')
-    createparams = ConvertCreateParams(dataparams)
+    createparams = ConvertDataParams(dataparams)
+    retdata = {'error': False, 'data': createparams, 'params': dataparams}
+    errors = CheckParamRequirements(createparams, CREATE_REQUIRED_PARAMS)
+    if len(errors) > 0:
+        return SetError(retdata, '\n'.join(errors))
     check = CheckCreateParams(createparams)
     if check is not None:
-        return {'error': True, 'message': check, 'dataparams': createparams}
+        return SetError(retdata, check)
     pool = Pool.find(createparams['pool_id'])
     if pool is None:
-        return {'error': True, 'message': "Pool not found.", 'dataparams': createparams}
-    if createparams['illust_id'] is not None:
-        return AddTypeElement(pool, Illust, 'illust', createparams['illust_id'], createparams)
-    if createparams['post_id'] is not None:
-        return AddTypeElement(pool, Post, 'post', createparams['post_id'], createparams)
-    if createparams['notation_id'] is not None:
-        return AddTypeElement(pool, Notation, 'notation', createparams['notation_id'], createparams)
+        return SetError(retdata, "Pool #d not found." % createparams['pool_id'])
+    retdata.update(CreatePoolElementFromParameters(pool, createparams))
+    return retdata
+
+
+def delete(pool_element):
+    DeletePoolElement(pool_element)
 
 
 # #### Route functions
 
 # ########## CREATE
 
-
 @bp.route('/pool_elements/new', methods=['GET'])
 def new_html():
     """HTML access point to the create pool element function."""
-    '''
-    pool_id = request.args.get('pool_id', type=int)
-    illust_id = request.args.get('illust_id', type=int)
-    post_id = request.args.get('post_id', type=int)
-    notation_id = request.args.get('notation_id', type=int)
-    '''
     form = GetPoolElementForm(**request.args)
+    if any((getattr(form, attr).data is not None) for attr in APPEND_KEYS):
+        for key in APPEND_KEYS:
+            HideInput(form, key)
     return render_template("pool_elements/new.html", form=form)
 
 
 @bp.route('/pool_elements', methods=['POST'])
 def create_html():
-    result = create(request)
+    result = create()
     if result['error']:
         flash(result['message'], 'error')
         if ReferrerCheck('pool_element.new_html', request):
@@ -119,17 +98,24 @@ def create_html():
 
 @bp.route('/pool_elements.json', methods=['POST'])
 def create_json():
-    return create(request)
+    return create()
 
+
+# ########## CREATE
 
 @bp.route('/pool_elements/<int:id>', methods=['POST', 'DELETE'])
 def delete_html(id):
     DeleteMethodCheck(request)
     pool_element = GetOrAbort(PoolElement, id)
-    pool = pool_element.pool
-    DBLOCAL.RemoveData(pool_element)
-    pool._elements.reorder()
-    DBLOCAL.SaveData()
+    delete(pool_element)
     flash("Removed from pool.")
     return redirect(request.referrer)
 
+
+@bp.route('/pool_elements/<int:id>.json', methods=['POST', 'DELETE'])
+def delete_json(id):
+    DeleteMethodCheck(request)
+    pool_element = GetOrError(PoolElement, id)
+    if type(pool_element) is dict:
+        return pool_element
+    return {'error': False}

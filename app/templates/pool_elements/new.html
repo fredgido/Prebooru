@@ -1,44 +1,14 @@
 {% extends 'layouts/base.html' %}
 
-{% block title %}New pool element
-    {% if form.illust_id.data %}
-        for illust #{{ form.illust_id.data }}
-    {% elif form.post_id.data %}
-        for post #{{ form.post_id.data }}
-    {% elif form.notation_id.data %}
-        for notation #{{ form.notation_id.data }}
-    {% endif %}
-{% endblock %}
+{% block title %}New pool element{% endblock %}
 
 {% block content %}
-    <div class="heading" style="font-size: 28px">
-        {% if helpers.pool.IsGeneralForm(form) %}
-            New pool element
-        {% else %}
-            New pool element:
-            {% if form.illust_id.data %}
-                <a href="{{ url_for('illust.show_html', id=form.illust_id.data) }}">illust #{{ form.illust_id.data }}</a>
-            {% elif form.post_id.data %}
-                <a href="{{ url_for('post.show_html', id=form.post_id.data) }}">post #{{ form.post_id.data }}</a>
-            {% elif form.notation_id.data %}
-                <a href="{{ url_for('notation.show_html', id=form.notation_id.data) }}">notation #{{ form.notation_id.data }}</a>
-            {% endif %}
-        {% endif %}
-    </div>
+    <div class="heading" style="font-size: 28px">New {{ helpers.pool_element.FormHeader(form) }}</div>
     <form method="POST" action="/pool_elements">
         {{ form.csrf_token }}
-        {{ form.pool_id.label }} {{ form.pool_id }}
-        {% if helpers.pool.IsGeneralForm(form) %}
-            {{ form.illust_id.label }} {{ form.illust_id }}
-            {{ form.post_id.label }} {{ form.post_id }}
-            {{ form.notation_id.label }} {{ form.notation_id }}
-        {% elif form.illust_id.data %}
-            {{ form.illust_id(type='hidden') }}
-        {% elif form.post_id.data %}
-            {{ form.post_id(type='hidden') }}
-        {% elif form.notation_id.data %}
-            {{ form.notation_id(type='hidden') }}
-        {% endif %}
+        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+            {{ field_input() }}
+        {% endfor %}
         <input type="submit" value="Submit">
     </form>
 {% endblock %}

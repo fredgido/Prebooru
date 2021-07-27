@@ -162,6 +162,9 @@ div.notation-block {
     padding: 5px;
     border: 1px solid #EEE;
 }
+span.notation-list-item {
+    word-break: break-word;
+}
 footer {
     margin: 1.5em;
     padding: 0.5em;

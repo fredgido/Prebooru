@@ -6,13 +6,6 @@
         <div id="notation-heading" class="heading">{{ notation.shortlink.title() }}</div>
         <div id="notation-content">
             {% include "notations/_sidebar.html" %}
-            <div id="notation-site-content">
-                <section id="notation-body">
-                    <h4>Body</h4>
-                    <div class="notation-block">
-                        {{ helpers.notation.ConvertToHTML(notation) }}
-                    </div>
-                </section>
-            </div>
+            {% include "notations/_site_content.html" %}
         </div>
 {% endblock %}

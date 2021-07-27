@@ -180,7 +180,7 @@ def index_html():
 @bp.route('/artists/new', methods=['GET'])
 def new_html():
     """HTML access point to create function."""
-    form = GetArtistForm()
+    form = GetArtistForm(**request.args)
     return render_template("artists/new.html", form=form, artist=Artist())
 
 

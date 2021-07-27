@@ -3,7 +3,6 @@
 # ##PYTHON IMPORTS
 import datetime
 from dataclasses import dataclass
-from flask import url_for
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
@@ -11,8 +10,8 @@ from .. import DB
 from .base import JsonModel
 from .pool_element import PoolNotation
 
-# ##GLOBAL VARIABLES
 
+# ##GLOBAL VARIABLES
 
 @dataclass
 class Notation(JsonModel):
