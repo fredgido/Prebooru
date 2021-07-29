@@ -1,61 +1,25 @@
 {% extends 'posts/_base.html' %}
+{% from 'posts/_macros.html' import post_preview %}
 
 {% block title %}Post # {{ post.id }}{% endblock %}
 
 {% block content %}
-    <div id="sidebar-container" style="display: flex;">
-        {{ helpers.base.RenderTemplate("posts/_sidebar.html", post=post) }}
+    <div id="sidebar-container">
+        {% include "posts/_sidebar.html" %}
         <div id="post-content">
             <section id="image-container" onclick="ResizeImage(this)">
                 <picture>
                     <img src="{{ post.sample_url }}">
                 </picture>
             </section>
-            {{ helpers.base.RenderTemplate("posts/_site_content.html", post=post) }}
+            {% include "posts/_site_content.html" %}
         </div>
     </div>
     {% with posts=post.related_posts, post_search_link=helpers.post.RelatedPostsSearch(post) %}
-        {% if posts | length > 0 %}
-            <div id="related-posts" style="margin-top: 2em;">
-                <div class="heading">
-                    <span id="recent-posts-heading" style="font-size: 32px;">
-                        Related posts
-                        {% if post_search_link is not none %}
-                            <a href="{{ post_search_link }}">&raquo;</a>
-                        {% endif %}
-                    </span>
-                </div>
-                <div id="recent-posts-container">
-                     {% for post in posts %}
-                        <div class="recent-post-block">
-                            {{ helpers.post.Preview(post) | safe }}
-                        </div>
-                    {% else %}
-                        <span class="explanation">There are no posts.</span>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
+        {% include "posts/_related_posts.html" %}
     {% endwith %}
     {% if post.similar_pool_id is not none %}
-        <div id="similar-posts">
-            <div id="similar-posts-heading" class="heading">Similar posts (&thinsp;<a href="{{ url_for('similarity_pool.show_html', id=post.similar_pool_id) }}">{{ post.similar_post_count }}</a>&thinsp;)</div>
-            <div id="similar-posts-container">
-                {% for post_data in post.similar_posts %}
-                    <div class="similar-post-block">
-                        <div><strong><a href="{{ url_for('similarity_pool.show_html', id=post_data.element.sibling.pool_id) }}">{{ post_data.post.shortlink }}</strong></a>&emsp;(&thinsp;<a style="color: red;" href="{{ post_data.element.delete_url }}" onclick="return Posts.deleteSimilarPost(this)">remove</a>&thinsp;)</div>
-                        <article class="post similar-post">
-                            <a href="{{ post_data.post.show_url }}">
-                                <img src="{{ post_data.post.preview_url }}">
-                            </a>
-                        </article>
-                        <div><strong>Score:</strong> {{ post_data.element.score }}</div>
-                    </div>
-                {% else %}
-                    <span class="explanation">There are no similar posts.</span>
-                {% endfor %}
-            </div>
-        </div>
+        {% include "posts/_similar_posts.html" %}
     {% endif %}
 {% endblock %}
 

@@ -1,12 +1,14 @@
+# APP/HELPERS/POSTS_HELPER.PY
+
+# ##PYTHON IMPORTS
 import urllib.parse
-from flask import render_template
 
-
+# ##LOCAL IMPORTS
 from ..sources.base import GetSourceById
 from .base_helper import SearchUrlFor
 
-def Preview(post):
-    return render_template("posts/_preview.html", post=post)
+
+# ## FUNCTIONS
 
 def SimilarSearchLinks(post, format_url, proxy_url=None):
     image_links = []
@@ -22,30 +24,30 @@ def SimilarSearchLinks(post, format_url, proxy_url=None):
             small_url = source.GetMediaUrl(thumb_illust_url)
         else:
             small_url = source.SmallImageUrl(media_url)
-        #print("Small:", small_url)
         encoded_url = urllib.parse.quote_plus(small_url)
         href_url = format_url + encoded_url
-        html = '<a href="%s">illust #%d</a>' % (href_url, illust.id )
+        html = '<a href="%s">illust #%d</a>' % (href_url, illust.id)
         image_links.append(html)
     if len(image_links) == 0 and proxy_url is not None:
         image_links.append('<a href="%s?post_id=%d">file</a>' % (proxy_url, post.id))
     return ' | '.join(image_links)
 
+
 def DanbooruSearchLinks(post):
     return SimilarSearchLinks(post, 'https://danbooru.donmai.us/iqdb_queries?url=', '/proxy/danbooru_iqdb')
+
 
 def SauceNAOSearchLinks(post):
     return SimilarSearchLinks(post, 'https://saucenao.com/search.php?db=999&url=', '/proxy/saucenao')
 
+
 def Ascii2DSearchLinks(post):
     return SimilarSearchLinks(post, 'https://ascii2d.net/search/url/', '/proxy/ascii2d')
+
 
 def IQDBOrgSearchLinks(post):
     return SimilarSearchLinks(post, 'https://iqdb.org/?url=')
 
-def RelatedPostsSearch(post):
-    illust_ids_str = ','.join([str(illust.id) for illust in post.illusts])
-    return SearchUrlFor('post.index_html', illust_urls={'illust_id': illust_ids_str})
 
 def DanbooruPostBookmarkletLinks(post):
     image_links = []
@@ -64,3 +66,7 @@ def DanbooruPostBookmarkletLinks(post):
     if len(image_links) == 0:
         image_links.append('<a href="https://danbooru.donmai.us/uploads/new?prebooru_post_id=%d" target="_blank">file</a>' % post.id)
     return ' | '.join(image_links)
+
+def RelatedPostsSearch(post):
+    illust_ids_str = ','.join([str(illust.id) for illust in post.illusts])
+    return SearchUrlFor('post.index_html', illust_urls={'illust_id': illust_ids_str})

@@ -6,6 +6,7 @@ from wtforms import IntegerField, BooleanField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import Illust, IllustUrl
 from ..sources.base import GetImageSiteId, GetImageSource
 from ..database.illust_url_db import CreateIllustUrlFromParameters, UpdateIllustUrlFromParameters
@@ -196,9 +197,8 @@ def edit_html(id):
     return render_template("illust_urls/edit.html", form=form, illust_url=illust_url)
 
 
-@bp.route('/illust_urls/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/illust_urls/<int:id>', methods=['PUT'])
 def update_html(id):
-    PutMethodCheck(request)
     illust_url = GetOrAbort(IllustUrl, id)
     results = update(illust_url)
     if results['error']:
@@ -207,9 +207,8 @@ def update_html(id):
     return redirect(url_for('illust.show_html', id=illust_url.illust_id))
 
 
-@bp.route('/illust_urls/<int:id>.json', methods=['POST', 'PUT'])
+@bp.route('/illust_urls/<int:id>.json', methods=['PUT'])
 def update_json(id):
-    PutMethodCheck(request)
     illust_url = GetOrError(IllustUrl, id)
     if type(illust_url) is dict:
         return illust_url

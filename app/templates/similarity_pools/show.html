@@ -1,4 +1,5 @@
 {% extends 'layouts/base.html' %}
+{% from 'posts/_macros.html' import post_preview %}
 
 {% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/similar_posts.css') }}">{% endblock %}
 
@@ -9,7 +10,7 @@
         <div class="heading" style="font-size: 32px">Similarity Pool: <a href="{{ post.show_url }}">{{ post.shortlink }}</a></div>
         <div style="margin-top: 1em;">
             <div id="posts-container" style="">
-                {% include "posts/_preview.html" %}
+                {{ post_preview(post) }}
             </div>
             <div style="font-size: 20px; margin-top: 1em;">
                 <strong>Controls:</strong>

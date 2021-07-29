@@ -1,3 +1,5 @@
+{% from 'layouts/_macros.html' import items_list, items_block %}
+
 <div id="artist-site-content">
     <div id="artist-site-content-1">
         <section id="artist-site-info">
@@ -15,32 +17,8 @@
         <section id="artist-labels">
             <h4>Labels</h4>
             <ul>
-                <li><strong>Names:</strong>
-                    {% for artist_name in artist.names %}
-                        {% if loop.first %}
-                            <ul>
-                        {% endif %}
-                            <li>{{ artist_name.name }}</li>
-                        {% if loop.last %}
-                            </ul>
-                        {% endif %}
-                    {% else %}
-                        <em>none</em>
-                    {% endfor %}
-                </li>
-                <li><strong>Accounts:</strong>
-                    {% for site_account in artist.site_accounts %}
-                        {% if loop.first %}
-                            <ul>
-                        {% endif %}
-                            <li>{{ site_account.name }}</li>
-                        {% if loop.last %}
-                            </ul>
-                        {% endif %}
-                    {% else %}
-                        <em>none</em>
-                    {% endfor %}
-                </li>
+                <li><strong>Names:</strong> {{ items_list(artist.names, 'name') }}</li>
+                <li><strong>Accounts:</strong> {{ items_list(artist.site_accounts, 'name') }}</li>
             </ul>
         </section>
         <section id="artist-webpages">
@@ -61,16 +39,11 @@
         <section id="artist-profiles">
             <h4>Profiles</h4>
             <div id="artist-profiles-container">
-                {% for profile in artist.profiles %}
+                {% call(profile) items_block(artist.profiles, 'profiles') %}
                     <div class="artist-profiles-block">
                         {{ helpers.base.ConvertStrToHTML(profile.body) }}
                     </div>
-                    {% if not loop.last %}
-                        <hr>
-                    {% endif %}
-                {% else %}
-                    <span class="explanation">There are no profiles.</span>
-                {% endfor %}
+                {% endcall %}
             </div>
         </div>
     </div>

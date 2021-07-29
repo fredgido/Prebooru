@@ -1,0 +1,7 @@
+{% macro post_preview(post) -%}
+    <article class="post">
+        <a href="{{ post.show_url }}">
+            <img src="{{ post.preview_url }}">
+        </a>
+    </article>
+{%- endmacro %}

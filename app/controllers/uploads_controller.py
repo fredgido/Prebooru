@@ -12,7 +12,7 @@ from ..sources.base import GetPostSource
 from ..sources.local_source import WorkerCheckUploads
 from ..database.upload_db import CreateUploadFromParameters
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams,\
-    HideInput, GetMethodRedirect, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort
+    HideInput, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort
 
 
 # ## GLOBAL VARIABLES
@@ -22,7 +22,6 @@ bp = Blueprint("upload", __name__)
 
 
 # Forms
-
 
 def GetUploadForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -38,6 +37,14 @@ def GetUploadForm(**kwargs):
 # ## FUNCTIONS
 
 # #### Helper functions
+
+def UniquenessCheck(createparams, upload):
+    q = Upload.query
+    if createparams['illust_url_id']:
+        q = q.filter(Upload.illust_url_id == createparams['illust_url_id'])
+    elif createparams['request_url']:
+        q = q.filter(Upload.request_url == createparams['request_url'])
+    return q.first()
 
 
 def ConvertDataParams(dataparams):
@@ -69,17 +76,7 @@ def CheckCreateParams(dataparams):
     return []
 
 
-def GetExistingUpload(createparams):
-    q = Upload.query
-    if createparams['illust_url_id']:
-        q = q.filter(Upload.illust_url_id == createparams['illust_url_id'])
-    elif createparams['request_url']:
-        q = q.filter(Upload.request_url == createparams['request_url'])
-    return q.first()
-
-
-# #### Route auxiliary
-
+# #### Route auxiliary functions
 
 def index():
     params = ProcessRequestValues(request.values)
@@ -100,10 +97,10 @@ def create():
     if len(errors) > 0:
         return SetError(retdata, '\n'.join(errors))
     if not force_download:
-        upload = GetExistingUpload(createparams)
-        if upload is not None:
-            retdata['item'] = upload.to_json()
-            return SetError(retdata, "Upload already exists: upload #%d" % upload.id)
+        check_upload = UniquenessCheck(createparams)
+        if check_upload is not None:
+            retdata['item'] = check_upload.to_json()
+            return SetError(retdata, "Upload already exists: upload #%d" % check_upload.id)
     if createparams['request_url']:
         source = GetPostSource(createparams['request_url'])
         if source is None:
@@ -115,8 +112,9 @@ def create():
     return retdata
 
 
-#   Routes
+# #### Route functions
 
+# ###### SHOW
 
 @bp.route('/uploads/<int:id>.json')
 def show_json(id):
@@ -128,6 +126,8 @@ def show_html(id):
     upload = GetOrAbort(Upload, id)
     return render_template("uploads/show.html", upload=upload)
 
+
+# ###### INDEX
 
 @bp.route('/uploads.json', methods=['GET'])
 def index_json():
@@ -141,6 +141,8 @@ def index_html():
     uploads = Paginate(q, request)
     return render_template("uploads/index.html", uploads=uploads, upload=Upload())
 
+
+# ###### CREATE
 
 @bp.route('/uploads/new', methods=['GET'])
 def new_html():
@@ -165,8 +167,6 @@ def new_html():
 
 @bp.route('/uploads', methods=['POST'])
 def create_html():
-    if GetMethodRedirect(request):
-        return index_html()
     results = create()
     if results['error']:
         flash(results['message'], 'error')
@@ -176,6 +176,4 @@ def create_html():
 
 @bp.route('/uploads.json', methods=['POST'])
 def create_json():
-    if GetMethodRedirect(request):
-        return index_json()
     return create()

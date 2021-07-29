@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from flask import Blueprint, request, render_template, abort, Markup, jsonify, redirect
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..logical.file import PutGetRaw
 from ..sources.base import GetSourceById
 from ..models import Post
@@ -69,8 +70,9 @@ def ErrorResp(message):
     print("ErrorResp:", message)
     return _CORS_JSON({'error': True, 'message': message})
 
-@bp.route('/proxy/danbooru_preprocess_upload.json', methods=['POST'])
-def danbooru_preprocess_upload():
+
+@bp.route('/proxy/danbooru_upload_data.json', methods=['POST'])
+def danbooru_upload_data():
     post_id = request.values.get('post_id', type=int)
     if post_id is None:
         return ErrorResp("Must include post ID.")
@@ -90,6 +92,18 @@ def danbooru_preprocess_upload():
     post_url = source.GetPostUrl(illust)
     profile_urls = source.ArtistProfileUrls(illust.artist)
     illust_commentaries = source.IllustCommentaries(illust)
+    tags = source.BAD_ID_TAGS.copy() if not illust.active else []
+    tags += list(set([booru.current_name for booru in illust.artist.boorus]))
+    return _CORS_JSON({'error': False, 'post_url': post_url, 'tags': tags, 'post': post.to_json(), 'profile_urls': profile_urls, 'illust_commentaries': illust_commentaries, 'illust': illust.to_json(), 'artist': illust.artist.to_json()})
+
+@bp.route('/proxy/danbooru_preprocess_upload.json', methods=['POST'])
+def danbooru_preprocess_upload():
+    post_id = request.values.get('post_id', type=int)
+    if post_id is None:
+        return ErrorResp("Must include post ID.")
+    post = Post.find(post_id)
+    if post is None:
+        return ErrorResp("Post #d not found." % post_id)
     check = CheckPreprocess(post)
     if type(check) is str:
         return ErrorResp(check)
@@ -97,9 +111,7 @@ def danbooru_preprocess_upload():
         preprocess = PreprocessPost(post)
         if type(preprocess) is str:
             return ErrorResp(preprocess)
-    # NEED TO ADD BAD_ID/BAD_TWIITER_ID here for dead illusts
-    return _CORS_JSON({'error': False, 'post_url': post_url, 'post': post.to_json(), 'profile_urls': profile_urls, 'illust_commentaries': illust_commentaries, 'illust': illust.to_json(), 'artist': illust.artist.to_json()})
-
+    return _CORS_JSON({'error': False})
 
 @bp.route('/proxy/danbooru_create_upload.json', methods=['post'])
 def danbooru_create_upload():

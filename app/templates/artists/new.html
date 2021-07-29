@@ -1,13 +1,13 @@
 {% extends 'artists/_base.html' %}
+{% from 'layouts/_macros.html' import render_form %}
 
 {% block title %}New Artist{% endblock %}
 
 {% block content %}
-    <form method="POST" action="{{ artist.create_url }}">
-        {{ form.csrf_token }}
-        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+    <div class="form-heading heading">New Artist</div>
+    {% call render_form(form, 'POST', artist.create_url) %}
+        {% for _, field_input in helpers.base.FormIterator(form) %}
             {{ field_input() }}
         {% endfor %}
-        <input type="submit" value="Submit">
-    </form>
+    {% endcall %}
 {% endblock %}

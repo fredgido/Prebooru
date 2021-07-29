@@ -7,12 +7,13 @@ from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, Stri
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import Artist
 from ..sources.base import GetSourceById, QueryArtistBoorus, GetArtistRequiredParams
 from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
     DefaultOrder, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, ParseArrayParameter, CheckParamRequirements,\
-    IntOrBlank, NullifyBlanks, SetDefault, PutMethodCheck, GetMethodRedirect, ParseBoolParameter
+    IntOrBlank, NullifyBlanks, SetDefault, PutMethodCheck, GetMethodRedirect, ParseBoolParameter, HideInput
 
 # ## GLOBAL VARIABLES
 
@@ -186,8 +187,6 @@ def new_html():
 
 @bp.route('/artists', methods=['POST'])
 def create_html():
-    if GetMethodRedirect(request):
-        return index_html()
     results = create()
     if results['error']:
         flash(results['message'], 'error')
@@ -197,8 +196,6 @@ def create_html():
 
 @bp.route('/artists.json', methods=['POST'])
 def create_json():
-    if GetMethodRedirect(request):
-        return index_json()
     return create()
 
 
@@ -213,12 +210,15 @@ def edit_html(id):
     editparams['name_string'] = '\r\n'.join(artist_name.name for artist_name in artist.names)
     editparams['webpage_string'] = '\r\n'.join((('' if webpage.active else '-') + webpage.url) for webpage in artist.webpages)
     form = GetArtistForm(**editparams)
+    if artist.illust_count > 0:
+        # Artists with illusts cannot have their critical identifiers changed
+        HideInput(form, 'site_id')
+        HideInput(form, 'site_artist_id')
     return render_template("artists/edit.html", form=form, artist=artist)
 
 
-@bp.route('/artists/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/artists/<int:id>', methods=['PUT'])
 def update_html(id):
-    PutMethodCheck(request)
     artist = GetOrAbort(Artist, id)
     results = update(artist)
     if results['error']:
@@ -227,9 +227,8 @@ def update_html(id):
     return redirect(url_for('artist.show_html', id=artist.id))
 
 
-@bp.route('/artists/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/artists/<int:id>', methods=['PUT'])
 def update_json(id):
-    PutMethodCheck(request)
     artist = GetOrError(Artist, id)
     if type(artist) is dict:
         return artist

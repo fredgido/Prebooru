@@ -1,3 +1,5 @@
+{% from 'posts/_macros.html' import post_preview %}
+
 <div class="heading">
     <span id="recent-posts-heading">
         <u>Posts</u>
@@ -9,7 +11,7 @@
 <div id="recent-posts-container">
      {% for post in posts %}
         <div class="recent-post-block">
-            {{ helpers.post.Preview(post) | safe }}
+            {{ post_preview(post) }}
         </div>
     {% else %}
         <span class="explanation">There are no posts.</span>

@@ -1,26 +1,19 @@
 {% extends 'uploads/_base.html' %}
+{% from 'layouts/_macros.html' import render_form %}
 
 {% block title %}New Upload{% endblock %}
 
 {% block content %}
-    <div class="heading" style="font-size: 28px">
-        {% if illust_url == None %}
-            New upload
-        {% else %}
-            New upload: <a href="{{ url_for('illust.show_html', id=illust_url.illust_id) }}">illust #{{ illust_url.illust_id }}</a>
-        {% endif %}
-    </div>
-    {% if illust_url != None %}
+    <div class="form-heading heading">New upload{{ helpers.upload.FormTitleApellation(illust_url) }}</div>
+    {% if illust_url is not none %}
         <ul style="margin-left: 2em;">
             <li><strong>URL:</strong> {{ illust_url.full_url }}</li>
             <li><strong>Dimensions:</strong> ( {{ illust_url.width }} x {{ illust_url.height }} )</li>
         </ul>
     {% endif %}
-    <form method="POST" action="{{ upload.create_url }}">
-        {{ form.csrf_token }}
-        {% for field_name,field_input in helpers.base.FormIterator(form) %}
+    {% call render_form(form, 'POST', upload.create_url) %}
+        {% for _, field_input in helpers.base.FormIterator(form) %}
             {{ field_input() }}
         {% endfor %}
-        <input type="submit" value="Submit">
-    </form>
+    {% endcall %}
 {% endblock %}

@@ -1,3 +1,5 @@
+{% from 'posts/_macros.html' import post_preview %}
+
 <section id="video-posts">
     <h3>Video URLs</h3>
     <div class="video-post-info">
@@ -10,8 +12,8 @@
         </ul>
     </div>
     <div class="video-post-preview">
-        {% if illust.video_illust_url.post != None %}
-            {{ helpers.post.Preview(illust.video_illust_url.post) | safe }}
+        {% if illust.video_illust_url.post is not none %}
+            {{ post_preview(illust.video_illust_url.post) }}
         {% else %}
             <em>No post.</em>
         {% endif %}

@@ -1,4 +1,7 @@
 /****SHOW Page****/
+div#sidebar-container {
+    display: flex;
+}
 aside#post-sidebar {
     width: 20%;
     border: 2px solid #DDD;
@@ -43,9 +46,11 @@ section#image-container.fullsize img {
     max-height: 100vh;
     width: auto;
 }
+div#related-posts,
 div#similar-posts {
     margin-top: 2em;
 }
+div#related-posts-heading,
 div#similar-posts-heading {
     font-size: 28px;
 }

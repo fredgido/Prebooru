@@ -1,3 +1,5 @@
+{% from 'posts/_macros.html' import post_preview %}
+
 <section id="image-posts">
     <h3>Image URLs</h3>
     <div id="image-posts-container">
@@ -14,7 +16,7 @@
                 </div>
                 <div class="image-post-preview">
                     {% if illust_url.post != None %}
-                        {{ helpers.post.Preview(illust_url.post) | safe }}
+                        {{ post_preview(illust_url.post) }}
                     {% else %}
                         <em>No post.</em> ( <a href="{{ url_for('upload.new_html', illust_url_id=illust_url.id) }}">upload</a> )
                     {% endif %}

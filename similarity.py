@@ -107,7 +107,8 @@ def check_similarity():
         print("Image hash:", image_hash)
         #smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause2(image_hash)).all()
         ratio = round(image.width / image.height, 4)
-        smatches = GetSimilarMatches(image_hash, ratio)
+        smatches = SimilarityResult.query.filter(SimilarityResult.ratio_clause(ratio), SimilarityResult.cross_similarity_clause2(image_hash)).all()
+        #smatches = GetSimilarMatches(image_hash, ratio)
         print("Similar matches:", len(smatches))
         start_time = time.time()
         score_results = CheckSimilarMatchScores(smatches, image_hash, 90.0)
@@ -164,14 +165,76 @@ def GetSimilarMatches(image_hash, ratio):
     return q.all()
 
 def GeneratePostSimilarity(post):
+    print("GeneratePostSimilarity")
     image = Image.open(post.preview_path)
     image_hash = imagehash.whash(image, hash_size=HASH_SIZE)
     ratio = round(post.width / post.height, 4)
     simresult = SimilarityResult(post_id=post.id, image_hash=str(image_hash), ratio=ratio)
     SESSION.add(simresult)
-    #PopulateSimilarityPools(simresult)
+    SESSION.commit()
+    PopulateSimilarityPools2(simresult)
+
+
+def PopulateSimilarityPools2(sdata):
+    print("PopulateSimilarityPools2")
+    current_time = GetCurrentTime()
+    start_time = time.time()
+    print("Simdata:", sdata)
+    smatches = SimilarityResult.query.filter(SimilarityResult.ratio_clause(sdata.ratio), SimilarityResult.cross_similarity_clause2(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
+    score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 90.0)
+    end_time = time.time()
+    main_pool = SimilarityPool.query.filter_by(post_id=sdata.post_id).first()
+    if main_pool is None:
+        main_pool = SimilarityPool(post_id=sdata.post_id, created=current_time)
+        SESSION.add(main_pool)
+    main_pool.total_results = len(smatches)
+    main_pool.calculation_time = round(end_time - start_time, 2)
+    main_pool.updated = current_time
+    SESSION.commit()
+    if len(score_results) == 0:
+        print("No results found for post #%d." % sdata.post_id)
+        return
+    print("Score results:", score_results)
+    sibling_post_ids = [result['post_id'] for result in score_results]
+    sibling_pools = SimilarityPool.query.options(selectinload(SimilarityPool.elements)).filter(SimilarityPool.post_id.in_(sibling_post_ids)).all()
+    INDEX_POOL_BY_POST_ID = {pool.post_id: pool for pool in sibling_pools}
+    print("Indexing pool...")
+    add_pools = []
+    for post_id in sibling_post_ids:
+        if post_id not in INDEX_POOL_BY_POST_ID:
+            pool = SimilarityPool(post_id=post_id, created=current_time, updated=current_time, calculation_time=0.0, total_results=0)
+            add_pools.append(pool)
+            INDEX_POOL_BY_POST_ID[post_id] = pool
+    if len(add_pools) > 0:
+        SESSION.add_all(add_pools)
+        SESSION.commit()
+    # Need to check for existing score results
+    main_post_ids = [element.post_id for element in main_pool.elements]
+    INDEX_POST_IDS_BY_POST_ID = {pool.post_id: [element.post_id for element in pool.elements] for pool in sibling_pools}
+    for result in score_results:
+        print("Creating score result sibling pairs:", result)
+        if result['post_id'] in main_post_ids:
+            spe1 = next(filter(lambda x: x.post_id == result['post_id'], main_pool.elements))
+        else:
+            spe1 = SimilarityPoolElement(pool_id=main_pool.id, **result)
+            SESSION.add(spe1)
+            SESSION.commit()
+        sibling_pool_post_ids = INDEX_POST_IDS_BY_POST_ID[result['post_id']] if result['post_id'] in INDEX_POST_IDS_BY_POST_ID else []
+        if sdata.post_id in sibling_pool_post_ids:
+            sibling_pool = INDEX_POOL_BY_POST_ID[result['post_id']]
+            spe2 = next(filter(lambda x: x.post_id == sdata.post_id, sibling_pool.elements))
+        else:
+            sibling_pool_id = INDEX_POOL_BY_POST_ID[result['post_id']].id
+            spe2 = SimilarityPoolElement(pool_id=sibling_pool_id, post_id=sdata.post_id, score=result['score'])
+            SESSION.add(spe2)
+            SESSION.commit()
+        spe1.sibling_id = spe2.id
+        spe2.sibling_id = spe1.id
+        SESSION.commit()
+
 
 def PopulateSimilarityPools(sdata):
+    print("PopulateSimilarityPools")
     current_time = GetCurrentTime()
     smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause1(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
     start_time = time.time()
@@ -261,54 +324,7 @@ def GenerateSimilarityPools(args):
     while True:
         print("\n%d/%d" % (page.page, page.pages))
         for sdata in page.items:
-            current_time = GetCurrentTime()
-            start_time = time.time()
-            smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause1(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
-            score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 90.0)
-            end_time = time.time()
-            main_pool = SimilarityPool.query.filter_by(post_id=sdata.post_id).first()
-            if main_pool is None:
-                main_pool = SimilarityPool(post_id=sdata.post_id, created=current_time)
-                SESSION.add(main_pool)
-            main_pool.total_results = len(smatches)
-            main_pool.calculation_time = round(end_time - start_time, 2)
-            main_pool.updated = current_time
-            SESSION.commit()
-            sibling_post_ids = [result['post_id'] for result in score_results]
-            sibling_pools = SimilarityPool.query.options(selectinload(SimilarityPool.elements)).filter(SimilarityPool.post_id.in_(sibling_post_ids)).all()
-            INDEX_POOL_BY_POST_ID = {pool.post_id: pool for pool in sibling_pools}
-            add_pools = []
-            for post_id in sibling_post_ids:
-                if post_id not in INDEX_POOL_BY_POST_ID:
-                    pool = SimilarityPool(post_id=post_id, created=current_time, updated=current_time, calculation_time=0.0, total_results=0)
-                    add_pools.append(pool)
-                    INDEX_POOL_BY_POST_ID[post_id] = pool
-            if len(add_pools) > 0:
-                SESSION.add_all(add_pools)
-                SESSION.commit()
-            # Need to check for existing score results
-            main_post_ids = [element.post_id for element in main_pool.elements]
-            INDEX_POST_IDS_BY_POST_ID = {pool.post_id: [element.post_id for element in pool.elements] for pool in sibling_pools}
-            for result in score_results:
-                if result['post_id'] in main_post_ids:
-                    spe1 = next(filter(lambda x: x.post_id == result['post_id'], main_pool.elements))
-                else:
-                    spe1 = SimilarityPoolElement(pool_id=main_pool.id, **result)
-                    SESSION.add(spe1)
-                    SESSION.commit()
-                sibling_pool_post_ids = INDEX_POST_IDS_BY_POST_ID[result['post_id']] if result['post_id'] in INDEX_POST_IDS_BY_POST_ID else []
-                if sdata.post_id in sibling_pool_post_ids:
-                    sibling_pool = INDEX_POOL_BY_POST_ID[result['post_id']]
-                    spe2 = next(filter(lambda x: x.post_id == sdata.post_id, sibling_pool.elements))
-                else:
-                    sibling_pool_id = INDEX_POOL_BY_POST_ID[result['post_id']].id
-                    spe2 = SimilarityPoolElement(pool_id=sibling_pool_id, post_id=sdata.post_id, score=result['score'])
-                    SESSION.add(spe2)
-                    SESSION.commit()
-                spe1.sibling_id = spe2.id
-                spe2.sibling_id = spe1.id
-                SESSION.commit()
-            print('.', end="", flush=True)
+            PopulateSimilarityPools2(sdata)
         if not page.has_next:
             break
         page = page.next()
@@ -422,6 +438,9 @@ def ProcessSimilarity():
         while True:
             if not ProcessSimilaritySet():
                 break
+        while True:
+            if not ProcessSimilarityPool():
+                break
     finally:
         SEM.release()
         print("\n<semaphore release>")
@@ -438,6 +457,21 @@ def ProcessSimilaritySet():
             GeneratePostSimilarity(post)
             print('.', end="", flush=True)
         SESSION.commit()
+        if not page.has_next:
+            return True
+        page = page.next()
+
+def ProcessSimilarityPool():
+    max_post_id = SESSION.query(func.max(SimilarityPool.post_id)).scalar()
+    page = SimilarityResult.query.filter(SimilarityResult.post_id > max_post_id).paginate(per_page=100)
+    if len(page.items) == 0:
+        return False
+    print("Process similarity pool:", max_post_id)
+    while True:
+        print("\n%d/%d" % (page.page, page.pages))
+        for sdata in page.items:
+            PopulateSimilarityPools2(sdata)
+            print('.', end="", flush=True)
         if not page.has_next:
             return True
         page = page.next()

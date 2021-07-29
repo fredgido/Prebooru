@@ -4,6 +4,7 @@
 from flask import Blueprint, request, render_template
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import ArtistUrl
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate, GetOrAbort
 

@@ -8,6 +8,7 @@ from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import Pool, Post, Illust, IllustUrl, PoolPost, PoolIllust, PoolNotation
 from ..database.pool_db import CreatePoolFromParameters, UpdatePoolFromParameters
 from ..logical.searchable import NumericMatching
@@ -159,8 +160,6 @@ def new_html():
 
 @bp.route('/pools', methods=['POST'])
 def create_html():
-    if GetMethodRedirect(request):
-        return index_html()
     results = create()
     if results['error']:
         flash(results['message'], 'error')
@@ -170,8 +169,6 @@ def create_html():
 
 @bp.route('/pools.json', methods=['POST'])
 def create_json():
-    if GetMethodRedirect(request):
-        return index_json()
     return create()
 
 
@@ -186,9 +183,8 @@ def edit_html(id):
     return render_template("pools/edit.html", form=form, pool=pool)
 
 
-@bp.route('/pools/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/pools/<int:id>', methods=['PUT'])
 def update_html(id):
-    PutMethodCheck(request)
     pool = GetOrAbort(Pool, id)
     results = update(pool)
     if results['error']:
@@ -197,9 +193,8 @@ def update_html(id):
     return redirect(url_for('pool.show_html', id=pool.id))
 
 
-@bp.route('/pools/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/pools/<int:id>', methods=['PUT'])
 def update_json(id):
-    PutMethodCheck(request)
     pool = GetOrError(Pool, id)
     if type(pool) is dict:
         return pool

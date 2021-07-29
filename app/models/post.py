@@ -45,7 +45,6 @@ PostNotations = DB.Table(
 
 # Classes
 
-
 @dataclass
 class Post(JsonModel):
     id: int
@@ -91,7 +90,9 @@ class Post(JsonModel):
 
     @property
     def related_posts(self):
-        return [post for post in UniqueObjects(itertools.chain(*[illust.posts for illust in self.illusts])) if post.id != self.id]
+        illust_posts = [illust.posts for illust in self.illusts]
+        post_generator = (post for post in itertools.chain(*illust_posts) if post is not None)
+        return [post for post in UniqueObjects(post_generator) if post.id != self.id]
 
     @property
     def illusts(self):

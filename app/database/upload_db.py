@@ -7,7 +7,6 @@ from ..logical.utility import GetCurrentTime
 
 # ## FUNCTIONS
 
-
 def CreateUploadFromParameters(createparams):
     data = {
         'illust_url_id': createparams['illust_url_id'],

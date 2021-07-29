@@ -5,7 +5,7 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
-
+from sqlalchemy import func
 
 # ##LOCAL IMPORTS
 from .. import DB
@@ -18,7 +18,6 @@ from .description import Description
 from .post import Post
 from .illust_url import IllustUrl
 from .notation import Notation
-
 
 # ##GLOBAL VARIABLES
 
@@ -82,16 +81,23 @@ class Artist(JsonModel):
     @property
     def recent_posts(self):
         if not hasattr(self, '_recent_posts'):
-            q = Post.query
-            q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == self.id)
+            q = self._post_query
             q = q.order_by(Post.id.desc())
             q = q.limit(10)
             self._recent_posts = q.all()
         return self._recent_posts
 
     @property
+    def booru_count(self):
+        return self._booru_query.get_count()
+
+    @property
     def illust_count(self):
-        return Illust.query.filter_by(artist_id=self.id).count()
+        return self._illust_query.get_count()
+
+    @property
+    def post_count(self):
+        return self._post_query.get_count()
 
     @property
     def site_domain(self):
@@ -115,6 +121,19 @@ class Artist(JsonModel):
         self.site_accounts.clear()
         DB.session.delete(self)
         DB.session.commit()
+
+    @property
+    def _booru_query(self):
+        from .booru import Booru
+        return Booru.query.join(Artist, Booru.artists).filter(Artist.id == self.id)
+
+    @property
+    def _illust_query(self):
+        return Illust.query.filter_by(artist_id=self.id)
+
+    @property
+    def _post_query(self):
+        return Post.query.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == self.id)
 
     @property
     def _source(self):

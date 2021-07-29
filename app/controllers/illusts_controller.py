@@ -7,6 +7,7 @@ from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, Stri
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import Illust, Artist, SiteData
 from ..sources.base import GetSourceById, GetIllustRequiredParams
 from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters
@@ -212,8 +213,6 @@ def new_html():
 
 @bp.route('/illusts', methods=['POST'])
 def create_html():
-    if GetMethodRedirect(request):
-        return index_html()
     results = create()
     if results['error']:
         flash(results['message'], 'error')
@@ -223,8 +222,6 @@ def create_html():
 
 @bp.route('/illusts.json', methods=['POST'])
 def create_json():
-    if GetMethodRedirect(request):
-        return index_json()
     return create()
 
 
@@ -243,9 +240,8 @@ def edit_html(id):
     return render_template("illusts/edit.html", form=form, illust=illust)
 
 
-@bp.route('/illusts/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/illusts/<int:id>', methods=['PUT'])
 def update_html(id):
-    PutMethodCheck(request)
     illust = GetOrAbort(Illust, id)
     results = update(illust)
     if results['error']:
@@ -254,9 +250,8 @@ def update_html(id):
     return redirect(url_for('illust.show_html', id=illust.id))
 
 
-@bp.route('/illusts/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/illusts/<int:id>', methods=['PUT'])
 def update_json(id):
-    PutMethodCheck(request)
     illust = GetOrError(Illust, id)
     if type(illust) is dict:
         return illust

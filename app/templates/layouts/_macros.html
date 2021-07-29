@@ -1,0 +1,32 @@
+{% macro render_form(form, method, url) -%}
+    <form method="{{ method }}" action="{{ url }}">
+        {{ form.csrf_token }}
+        {{ caller() }}
+        <input type="submit" value="Submit">
+    </form>
+{%- endmacro %}
+
+{% macro items_list(items, key) -%}
+    {% for item in items %}
+        {% if loop.first %}
+            <ul>
+        {% endif %}
+            <li>{{ item[key] }}</li>
+        {% if loop.last %}
+            </ul>
+        {% endif %}
+    {% else %}
+        <em>none</em>
+    {% endfor %}
+{%- endmacro %}
+
+{% macro items_block(items, item_plural) -%}
+    {% for item in items %}
+        {{ caller(item) }}
+        {% if not loop.last %}
+            <hr>
+        {% endif %}
+    {% else %}
+        <span class="explanation">There are no {{ item_plural }}.</span>
+    {% endfor %}
+{%- endmacro %}

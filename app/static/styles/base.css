@@ -101,6 +101,10 @@ code {
     font-family: monospace;
     background-color: lightgrey;
 }
+div.form-heading {
+    font-size: 28px;
+    margin-top: 1em;
+}
 form label {
     display: block;
     font-weight: bold;
@@ -132,6 +136,9 @@ span.muted-timestamp {
 span.explanation {
     color: grey;
     font-style: italic;
+}
+a.warning-link {
+    color: red;
 }
 article.post {
     display: inline-block;

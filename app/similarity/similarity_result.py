@@ -53,6 +53,12 @@ class SimilarityResult(DB.Model):
     del chunk_columns, i, key
     
     @classmethod
+    def ratio_clause(self, ratio):
+        ratio_low = round(ratio * 99, 4) / 100
+        ratio_high = round(ratio * 101, 4) / 100
+        return SimilarityResult.ratio.between(ratio_low, ratio_high)
+    
+    @classmethod
     def similarity_clause(self, image_hash):
         clause = self.chunk00 == image_hash[0:2]
         for i in range(1, NUM_CHUNKS):

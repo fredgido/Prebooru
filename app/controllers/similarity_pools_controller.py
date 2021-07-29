@@ -8,6 +8,7 @@ from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..similarity import SimilarityPool
 from ..models import Pool, Post, Illust, Notation, IllustUrl, PoolPost, PoolIllust, PoolNotation
 from ..database import local as DBLOCAL

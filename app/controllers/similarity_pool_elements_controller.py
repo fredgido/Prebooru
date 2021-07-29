@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..similarity import SimilarityPool, SimilarityPoolElement
 from ..database import local as DBLOCAL
 from ..logical.utility import GetCurrentTime
@@ -59,9 +60,8 @@ def batch_delete():
 
 # #### Route functions
 
-@bp.route('/similarity_pool_elements/<int:id>', methods=['POST', 'DELETE'])
+@bp.route('/similarity_pool_elements/<int:id>', methods=['DELETE'])
 def delete_html(id):
-    DeleteMethodCheck(request)
     pool_element_1 = GetOrAbort(SimilarityPoolElement, id)
     post_id_2 = pool_element_1.pool.post_id
     # All posts should have a similarity pool, so no need to check for none
@@ -76,8 +76,7 @@ def delete_html(id):
     return redirect(request.referrer)
 
 
-@bp.route('/similarity_pool_elements', methods=['POST', 'DELETE'])
+@bp.route('/similarity_pool_elements', methods=['DELETE'])
 def batch_delete_html():
-    DeleteMethodCheck(request)
     batch_delete()
     return redirect(request.referrer)

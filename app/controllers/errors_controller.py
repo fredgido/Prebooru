@@ -4,6 +4,7 @@
 from flask import Blueprint, request, render_template, abort
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import Error
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate,\
     GetOrAbort, GetMethodRedirect
@@ -55,19 +56,3 @@ def index_html():
     q = index()
     errors = Paginate(q, request)
     return render_template("errors/index.html", errors=errors, error=Error())
-
-
-# ###### CREATE
-
-@bp.route('/errors', methods=['POST'])
-def create_html():
-    if GetMethodRedirect(request):
-        return index_html()
-    abort(405)
-
-
-@bp.route('/errors.json', methods=['POST'])
-def create_json():
-    if GetMethodRedirect(request):
-        return index_json()
-    abort(405)

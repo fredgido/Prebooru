@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup
 from flask import Blueprint, request, render_template, abort, Markup, jsonify, redirect
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..logical.file import PutGetRaw
 from ..models import Post
 from ..config import DANBOORU_USERNAME, DANBOORU_APIKEY

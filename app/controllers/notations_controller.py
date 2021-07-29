@@ -6,6 +6,7 @@ from wtforms import TextAreaField, IntegerField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import Notation
 from ..database.notation_db import CreateNotationFromParameters, UpdateNotationFromParameters, AppendToItem, DeleteNotation
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, CustomNameForm,\
@@ -156,8 +157,6 @@ def new_html():
 
 @bp.route('/notations', methods=['POST'])
 def create_html():
-    if GetMethodRedirect(request):
-        return index_html()
     results = create()
     if results['error']:
         flash(results['message'], 'error')
@@ -198,14 +197,3 @@ def delete_html(id):
     DeleteNotation(notation)
     flash("Notation deleted.")
     return redirect(url_for('notation.index_html'))
-
-
-# ####REDIRECT
-
-@bp.route('/notations/<int:id>', methods=['POST'])
-def method_redirect_html(id):
-    if PutMethodRedirect(request):
-        return update_html(id)
-    if DeleteMethodRedirect(request):
-        return delete_html(id)
-    abort(405)

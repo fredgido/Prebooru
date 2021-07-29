@@ -1,9 +1,9 @@
-<div style="display: block; height: 320px; margin-left: 1em;">
+<div class="pool-display-block">
     {% if helpers.pool.ItemIsOfType(item, 'post') %}
-        {{ helpers.post.Preview(item) | safe }}
+        {{ post_preview(item) }}
     {% elif helpers.pool.ItemIsOfType(item, 'illust') %}
         {{ helpers.illust.PostPreviews(item) }}
     {% elif helpers.pool.ItemIsOfType(item, 'notation') %}
-        <div style="word-break: break-word; width: 315px; max-height: 425px; overflow-y: auto;">{{ helpers.notation.ConvertToHTML(item) }}</div>
+        <div class="pool-display-notation">{{ helpers.notation.ConvertToHTML(item) }}</div>
     {% endif %}
 </div>

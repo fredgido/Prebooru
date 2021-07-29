@@ -7,6 +7,7 @@ from wtforms import TextAreaField, IntegerField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import Booru
 from ..database.booru_db import CreateBooruFromParameters, CreateBooruFromID, UpdateBooruFromParameters, QueryUpdateBooru, CheckArtistsBooru
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetOrAbort, GetOrError,\
@@ -168,8 +169,6 @@ def new_html():
 
 @bp.route('/boorus', methods=['POST'])
 def create_html():
-    if GetMethodRedirect(request):
-        return index_html()
     results = create()
     if results['error']:
         flash(results['message'], 'error')
@@ -179,8 +178,6 @@ def create_html():
 
 @bp.route('/boorus.json', methods=['POST'])
 def create_json():
-    if GetMethodRedirect(request):
-        return index_json()
     return create()
 
 
@@ -197,9 +194,8 @@ def edit_html(id):
     return render_template("boorus/edit.html", form=form, booru=booru)
 
 
-@bp.route('/boorus/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/boorus/<int:id>', methods=['PUT'])
 def update_html(id):
-    PutMethodCheck(request)
     booru = GetOrAbort(Booru, id)
     results = update(booru)
     if results['error']:
@@ -208,9 +204,8 @@ def update_html(id):
     return redirect(url_for('booru.show_html', id=booru.id))
 
 
-@bp.route('/boorus/<int:id>', methods=['POST', 'PUT'])
+@bp.route('/boorus/<int:id>', methods=['PUT'])
 def update_json(id):
-    PutMethodCheck(request)
     booru = GetOrError(Booru, id)
     if type(booru) is dict:
         return booru

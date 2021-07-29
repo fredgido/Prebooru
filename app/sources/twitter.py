@@ -58,6 +58,7 @@ DB = DB
 #  Module variables
 
 IMAGE_HEADERS = {}
+BAD_ID_TAGS = ['bad_id', 'bad_twitter_id']
 
 #   Network
 

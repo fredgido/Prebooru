@@ -27,6 +27,7 @@ from .pool import Pool
 from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation
 from .subscription import Subscription
 
+# Set relationships that cannot be set at loading time
 IllustUrl.uploads = DB.relationship(Upload, backref=DB.backref('illust_url', lazy=True), lazy=True)
 
 NONCE = None

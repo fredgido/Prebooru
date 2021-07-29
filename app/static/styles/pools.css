@@ -1,8 +1,4 @@
 /****NEW/EDIT Page****/
-div.form-heading {
-    font-size: 28px;
-    margin-top: 1em;
-}
 /****SHOW Page****/
 div#pool-heading {
     font-size: 32px;
@@ -41,6 +37,11 @@ div.pool-display-illust > article {
 div.pool-display-illust img {
     max-width: 150px;
     max-height: 150px;
+}
+div.pool-display-block {
+    display: block;
+    height: 320px;
+    margin-left: 1em;
 }
 div.pool-display-notation {
     word-break: break-word;

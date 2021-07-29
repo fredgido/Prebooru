@@ -1,3 +1,5 @@
+{% from 'layouts/_macros.html' import items_list %}
+
 <div id="upload-site-content">
     <section id="upload-info">
         <h4>Info</h4>
@@ -15,20 +17,7 @@
             <li><strong>Media filepath:</strong> {{ helpers.base.StrOrNone(upload.media_filepath) }}</li>
             <li><strong>Sample filepath:</strong> {{ helpers.base.StrOrNone(upload.sample_filepath) }}</li>
             <li><strong>Request:</strong> {{ helpers.base.StrOrNone(upload.request_url) }}</li>
-            <li><strong>Referrer:</strong> {{ helpers.base.StrOrNone(upload.referrer_url) }}</li>
-            <li><strong>Image urls:</strong>
-                {% for image_url in upload.image_urls %}
-                    {% if loop.first %}
-                        <ul>
-                    {% endif %}
-                        <li>{{ image_url.url }}</li>
-                    {% if loop.last %}
-                        </ul>
-                    {% endif %}
-                {% else %}
-                    <em>none</em>
-                {% endfor %}
-            </li>
+            <li><strong>Image urls:</strong> {{ items_list(upload.image_urls, 'url') }}</li>
         </ul>
     </section>
 </div>

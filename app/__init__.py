@@ -62,5 +62,42 @@ event.listen(DB.get_engine(bind='similarity'), 'connect', _fk_pragma_on_connect)
 
 
 # Extend Python imports
-from .logical import uniquejoin  # noqa: E402
-uniquejoin.Initialize()
+from .logical import query_extensions  # noqa: E402
+query_extensions.Initialize()
+
+from types import SimpleNamespace
+PREBOORU = SimpleNamespace(request=None)
+
+from werkzeug.wrappers import Request
+
+from io import BytesIO
+from werkzeug.wsgi import get_input_stream
+
+class MethodRewriteMiddleware(object):
+    allowed_methods = frozenset([
+        'GET',
+        'HEAD',
+        'POST',
+        'DELETE',
+        'PUT',
+        'PATCH',
+        'OPTIONS'
+    ])
+    bodyless_methods = frozenset(['GET', 'HEAD', 'OPTIONS', 'DELETE'])
+
+    def __init__(self, app, input_name='_method'):
+        self.app = app
+        self.input_name = input_name
+
+    def __call__(self, environ, start_response):
+        if environ['REQUEST_METHOD'] == 'POST':
+            environ['wsgi.input'] = stream = BytesIO(get_input_stream(environ).read())
+            form_method = environ['werkzeug.request'].values.get(self.input_name, default='').upper()
+            if form_method in self.allowed_methods:
+                environ['REQUEST_METHOD'] = form_method
+            if form_method in self.bodyless_methods:
+                environ['CONTENT_LENGTH'] = '0'
+            stream.seek(0)
+        return self.app(environ, start_response)
+
+PREBOORU_APP.wsgi_app = MethodRewriteMiddleware(PREBOORU_APP.wsgi_app)

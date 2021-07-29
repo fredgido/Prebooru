@@ -13,7 +13,6 @@ from .base import JsonModel, IntOrNone, StrOrNone
 from .upload_url import UploadUrl
 from .post import Post
 from .error import Error
-from .illust_url import IllustUrl
 
 # ##GLOBAL VARIABLES
 
@@ -94,7 +93,6 @@ class Upload(JsonModel):
     @property
     def illust(self):
         if self._illust is None:
-            #print("illust")
             if len(self.posts) == 0:
                 return None
             illusts = UniqueObjects(sum([post.illusts for post in self.posts], []))

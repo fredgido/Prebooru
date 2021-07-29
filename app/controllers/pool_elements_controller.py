@@ -7,6 +7,7 @@ from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
+from .. import PREBOORU
 from ..models import Pool, PoolElement
 from ..database.pool_element_db import CreatePoolElementFromParameters, DeletePoolElement
 from .base_controller import GetDataParams, CustomNameForm, ReferrerCheck, DeleteMethodCheck, GetOrAbort, GetOrError,\
@@ -103,18 +104,16 @@ def create_json():
 
 # ########## CREATE
 
-@bp.route('/pool_elements/<int:id>', methods=['POST', 'DELETE'])
+@bp.route('/pool_elements/<int:id>', methods=['DELETE'])
 def delete_html(id):
-    DeleteMethodCheck(request)
     pool_element = GetOrAbort(PoolElement, id)
     delete(pool_element)
     flash("Removed from pool.")
     return redirect(request.referrer)
 
 
-@bp.route('/pool_elements/<int:id>.json', methods=['POST', 'DELETE'])
+@bp.route('/pool_elements/<int:id>.json', methods=['DELETE'])
 def delete_json(id):
-    DeleteMethodCheck(request)
     pool_element = GetOrError(PoolElement, id)
     if type(pool_element) is dict:
         return pool_element
