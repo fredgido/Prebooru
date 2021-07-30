@@ -1,4 +1,10 @@
+# APP/SOURCES/LOCAL_SOURCE.PY
+
+# ##PYTHON IMPORTS
 import requests
+
+
+# ##FUNCTIONS
 
 def WorkerCheckUploads():
     try:

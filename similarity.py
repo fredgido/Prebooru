@@ -24,7 +24,6 @@ import app.models
 from app.models import Post
 from app.cache import MediaFile
 from app.similarity.similarity_result import SimilarityResult, HASH_SIZE
-from app.similarity.similarity_result3 import SimilarityResult3
 from app.similarity.similarity_pool import SimilarityPool
 from app.similarity.similarity_pool_element import SimilarityPoolElement
 from app.logical.file import PutGetRaw, CreateDirectory

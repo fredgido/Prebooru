@@ -7,127 +7,36 @@ import time
 import json
 import urllib
 import requests
+import datetime
 
 # ##LOCAL IMPORTS
-from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet, DecodeJSON
-from ..logical.downloader import DownloadMultipleImages, DownloadSingleImage
+from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet, DecodeJSON, FixupCRLF
 from ..logical.file import LoadDefault, PutGetJSON
-from ..logical.logger import LogError
-from ..database import twitter as DB, local as DBLOCAL
+from ..database.local import CreateError, IsError
 from ..database.cache_db import GetApiArtist, GetApiIllust, SaveApiData
-from ..database.twitter import GetArtistParametersFromTwuser, GetIllustParametersFromTweet
+from ..database.illust_db import GetSiteIllust
 from ..config import workingdirectory, datafilepath
 from ..sites import Site, GetSiteDomain, GetSiteId
 
 
-# ##NOTES
+# ##GLOBAL VARIABLES
 
-"""
-https://twitter.com/i/api/2/timeline/conversation/1381019619528347649.json
-include_profile_interstitial_type: 1
-include_blocking: 1
-include_blocked_by: 1
-include_followed_by: 1
-include_want_retweets: 1
-include_mute_edge: 1
-include_can_dm: 1
-include_can_media_tag: 1
-skip_status: 1
-cards_platform: Web-12
-include_cards: 1
-include_ext_alt_text: true
-include_quote_count: true
-include_reply_count: 1
-tweet_mode: extended
-include_entities: true
-include_user_entities: true
-include_ext_media_color: true
-include_ext_media_availability: true
-send_error_codes: true
-simple_quoted_tweet: true
-count: 20
-include_ext_has_birdwatch_notes: false
-ext: mediaStats,highlightedLabel
-"""
-
-
-# ###GLOBAL VARIABLES
-
-DB = DB
-
-#  Module variables
+# #### Module variables
 
 IMAGE_HEADERS = {}
+
 BAD_ID_TAGS = ['bad_id', 'bad_twitter_id']
 
-#   Network
+ILLUST_SHORTLINK = 'twitter #%d'
+ARTIST_SHORTLINK = 'twuser #%d'
+
+ILLUST_HREFURL = 'https://twitter.com/i/web/status/%d'
+ARTIST_HREFURL = 'https://twitter.com/i/user/%d'
+
+SITE_ID = Site.TWITTER.value
 
 
-DATE_REGEX = re.compile(r""" ^
-([\d]{4}-[\d]{2}-[\d]{2})?          # Date1
-(?:\.\.)?                           # Non-capturing group for ..
-(?(1)(?<=\.\.))                     # If Date1 exists, ensure .. exists
-([\d]{4}-[\d]{2}-[\d]{2})?$         # Date2
-""", re.X)
-
-FILE_ID_REGEX = re.compile(r""" ^
-(\d+)--                             # ID
-(img(\d)--)?                        # Order
-([\w-]+)                            # Filename
-\.(jpg|png|gif|mp4)                 # Extension
-""", re.X)
-
-TWITPIC_REGEX = re.compile(r"""(
-https?://                           # Schema
-twitpic\.com                        # Domain
-/(\w+)                              # Path
-)""", re.X)
-
-REQUEST_METHODS = {
-    'GET': requests.get,
-    'POST': requests.post
-}
-
-TWITTER_GUEST_AUTH = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
-
-TWITTER_SIZES = [':orig', ':large', ':medium', ':small']
-
-TWITTER_BASE_PARAMS = {
-    "include_profile_interstitial_type": "1",
-    "include_blocking": "1",
-    "include_blocked_by": "1",
-    "include_followed_by": "1",
-    "include_want_retweets": "1",
-    "include_mute_edge": "1",
-    "include_can_dm": "1",
-    "include_can_media_tag": "1",
-    "skip_status": "1",
-    "cards_platform": "Web-12",
-    "include_cards": "1",
-    "include_ext_alt_text": "true",
-    "include_reply_count": "1",
-    "tweet_mode": "extended",
-    "include_entities": "true",
-    "include_user_entities": "true",
-    "include_ext_media_color": "true",
-    "include_ext_media_availability": "true",
-    "send_error_codes": "true",
-    "simple_quoted_tweet": "true",
-    "count": "20",
-    "ext": "mediaStats,highlightedLabel,cameraMoment",
-    "include_quote_count": "true"
-}
-
-TWITTER_SEARCH_PARAMS = {
-    "tweet_search_mode": "live",
-    "query_source": "typed_query",
-    "pc": "1",
-    "spelling_corrections": "1",
-}
-
-TOKEN_FILE = workingdirectory + datafilepath + 'twittertoken.txt'
-
-#   Regexes
+# #### Regex variables
 
 TWEET_RG = re.compile(r"""
 ^https?://twitter\.com                  # Hostname
@@ -224,45 +133,338 @@ https?://video\.twimg\.com              # Hostname
 \.(mp4)                                 # Extension
 """, re.X | re.IGNORECASE)
 
+SHORT_URL_REPLACE_RG = re.compile(r"""
+https?://t\.co                         # Hostname
+/ [\w-]+                               # Account
+""", re.X | re.IGNORECASE)
 
-TWITTER_BASE_PARAMS = {
-    "include_profile_interstitial_type": "false",
-    "include_blocking": "false",
-    "include_blocked_by": "false",
-    "include_followed_by": "false",
-    "include_want_retweets": "false",
-    "include_mute_edge": "false",
-    "include_can_dm": "false",
-    "include_can_media_tag": "false",
-    "skip_status": "true",
-    #"cards_platform": "Web-12",
-    "include_cards": "false",
-    "include_ext_alt_text": "false",
-    "include_quote_count": "true",
-    "include_reply_count": "true",
-    "tweet_mode": "extended",
-    "include_entities": "true",
-    "include_user_entities": "true",
-    "include_ext_media_color": "false",
-    "include_ext_media_availability": "false",
-    "send_error_codes": "true",
-    "simple_quoted_tweet": "true",
-    "include_ext_has_birdwatch_notes": "false",
-    "ext": "mediaStats",
-    "count": "1",
+
+# #### Network variables
+
+REQUEST_METHODS = {
+    'GET': requests.get,
+    'POST': requests.post
 }
 
-ILLUST_SHORTLINK = 'twitter #%d'
-ARTIST_SHORTLINK = 'twuser #%d'
+TWITTER_GUEST_AUTH = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 
-ILLUST_HREFURL = 'https://twitter.com/i/web/status/%d'
-#ARTIST_HREFURL = 'https://twitter.com/intent/user?user_id=%d'
-ARTIST_HREFURL = 'https://twitter.com/i/user/%d'
+TWITTER_SEARCH_PARAMS = {
+    "tweet_search_mode": "live",
+    "query_source": "typed_query",
+    "pc": "1",
+    "spelling_corrections": "1",
+}
+
+TWITTER_ILLUST_TIMELINE_GRAPHQL = {
+    "includePromotedContent": True,
+    "withHighlightedLabel": True,
+    "withCommunity": False,
+    "withTweetQuoteCount": True,
+    "withBirdwatchNotes": False,
+    "withBirdwatchPivots": False,
+    "withTweetResult": True,
+    "withReactions": False,
+    "withSuperFollowsTweetFields": False,
+    "withSuperFollowsUserFields": False,
+    "withUserResults": False,
+    "withVoice": True
+}
+
+# #### Other variables
+
+IMAGE_SERVER = 'https://pbs.twimg.com'
+TWITTER_SIZES = [':orig', ':large', ':medium', ':small']
+
+TOKEN_FILE = workingdirectory + datafilepath + 'twittertoken.txt'
+
 
 # ##FUNCTIONS
 
-#   AUXILIARY
+# Illust
 
+def IllustHasImages(illust):
+    return any(map(ImageUrlMapper, illust.urls))
+
+
+def IllustHasVideos(illust):
+    return any(map(VideoUrlMapper, illust.urls))
+
+
+def PostHasImages(post):
+    return any(map(ImageUrlMapper, post.illust_urls))
+
+
+def PostHasVideos(post):
+    return any(map(VideoUrlMapper, post.illust_urls))
+
+
+def ImageIllustDownloadUrls(illust):
+    return list(filter(lambda x: ImageUrlMapper, illust.urls))
+
+
+def VideoIllustDownloadUrls(illust):
+    video_illust_url = next(filter(VideoUrlMapper, illust.urls))
+    thumb_illust_url = next(filter(ImageUrlMapper, illust.urls), None)
+    return video_illust_url, thumb_illust_url
+
+
+def VideoIllustVideoUrl(illust):
+    return next(filter(VideoUrlMapper, illust.urls), None)
+
+
+def VideoIllustThumbUrl(illust):
+    return next(filter(ImageUrlMapper, illust.urls), None)
+
+
+#   URL
+
+def GetMediaExtension(media_url):
+    match = IMAGE1_RG.match(media_url) or IMAGE2_RG.match(media_url)
+    if match:
+        return match.group(3)
+    match = VIDEO1_RG.match(media_url)
+    if match:
+        return match.group(2)
+    match = VIDEO2_RG.match(media_url)
+    if match:
+        return match.group(6)
+    filename = GetHTTPFilename(media_url)
+    return GetFileExtension(filename)
+
+
+def ImageUrlMapper(x):
+    return IsImageUrl(GetFullUrl(x))
+
+
+def VideoUrlMapper(x):
+    return IsVideoUrl(GetFullUrl(x))
+
+
+def IsArtistUrl(url):
+    return bool(USERS1_RG.match(url)) or IsArtistIdUrl(url)
+
+
+def IsArtistIdUrl(url):
+    return bool(USERS2_RG.match(url) or USERS3_RG.match(url))
+
+
+def IsPostUrl(url):
+    return bool(TWEET_RG.match(url))
+
+
+def PartialMediaUrl(url):
+    parse = urllib.parse.urlparse(url)
+    site_id = GetSiteId(parse.netloc)
+    match = IMAGE2_RG.match(url)
+    query_addon = '?format=%s' % match.group(3) if match else ""
+    return parse.path + query_addon if site_id != 0 else parse.geturl()
+
+
+def IsMediaUrl(url):
+    return IsImageUrl(url) or IsVideoUrl(url)
+
+
+def IsImageUrl(url):
+    return bool(IMAGE1_RG.match(url) or IMAGE2_RG.match(url) or IMAGE3_RG.match(url))
+
+
+def IsVideoUrl(url):
+    return bool(VIDEO1_RG.match(url) or VIDEO2_RG.match(url))
+
+
+def IsRequestUrl(request_url):
+    return IsPostUrl(request_url)
+
+
+def GetUploadType(request_url):
+    # Have already validated urls with UploadCheck
+    return 'post' if IsPostUrl(request_url) else 'image'
+
+
+def SiteId():
+    return SITE_ID
+
+
+def GetIllustId(request_url):
+    return int(TWEET_RG.match(request_url).group(1))
+
+
+def GetArtistIdUrlId(artist_url):
+    match = USERS2_RG.match(artist_url) or USERS3_RG.match(artist_url)
+    if match:
+        return match.group(1)
+
+
+def GetArtistId(artist_url):
+    match = USERS2_RG.match(artist_url) or USERS3_RG.match(artist_url)
+    if match:
+        return match.group(1)
+    match = USERS1_RG.match(artist_url)
+    if match:
+        screen_name = match.group(1)
+        return GetTwitterUserID(screen_name)
+
+
+def GetFullUrl(illust_url):
+    media_url = GetMediaUrl(illust_url)
+    if IMAGE1_RG.match(media_url):
+        return media_url + ':orig'
+    if IMAGE2_RG.match(media_url):
+        return media_url + '&name=orig'
+    return media_url
+
+
+def SmallImageUrl(image_url):
+    return NormalizedImageUrl(image_url) + ':small'
+
+
+def NormalizedImageUrl(image_url):
+    match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
+    if match:
+        type, imagekey, extension, _ = match.groups()
+        return IMAGE_SERVER + "/%s/%s.%s" % (type, imagekey, extension)
+    match = IMAGE3_RG.match(image_url)
+    type, imageid, path, imagekey, extension, _ = match.groups()
+    path = path or ""
+    return IMAGE_SERVER + "/%s/%s%s/img/%s.%s" % (type, imageid, path, imagekey, extension)
+
+
+def GetMediaUrl(illust_url):
+    return illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
+
+
+def GetPostUrl(illust):
+    tweet_id = illust.site_illust_id
+    if not HasArtistUrls(illust.artist):
+        return GetIllustUrl(tweet_id)
+    screen_name = ArtistScreenName(illust.artist)
+    return "https://twitter.com/%s/status/%d" % (screen_name, tweet_id)
+
+
+def GetIllustUrl(site_illust_id):
+    return "https://twitter.com/i/web/status/%d" % site_illust_id
+
+
+def SubscriptionCheck(request_url):
+    artist_id = None
+    artwork_match = USERS1_RG.match(request_url)
+    if artwork_match:
+        artist_id = int(artwork_match.group(1))
+    return artist_id
+
+
+def NormalizeImageURL(image_url):
+    image_match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
+    return r'/media/%s.%s' % (image_match.group(2), image_match.group(3))
+
+
+def HasArtistUrls(artist):
+    return (artist.current_site_account is not None) or (len(artist.site_accounts) == 1)
+
+
+def ArtistScreenName(artist):
+    return artist.current_site_account if artist.current_site_account is not None else artist.site_accounts[0].name
+
+
+def ArtistProfileUrls(artist):
+    profile_urls = ['https://twitter.com/intent/user?user_id=%d' % artist.site_artist_id]
+    for site_account in artist.site_accounts:
+        profile_urls += ['https://twitter.com/%s' % site_account.name]
+    return profile_urls
+
+
+def ArtistBooruSearchUrl(artist):
+    return 'https://twitter.com/intent/user?user_id=%d' % artist.site_artist_id
+
+
+def IllustCommentaries(illust):
+    if len(illust.commentaries) == 0:
+        return []
+    commentary = illust.commentaries[0].body  # Twitter commentaries are unchangable.
+    for tag in illust.tags:
+        hashtag = '#' + tag.name
+        hashtag_link = r'"%s":[https://twitter.com/hashtag/%s]' % (hashtag, tag.name)
+        commentary = re.sub(r'%s(?=$|\s)' % hashtag, hashtag_link, commentary)
+    return [commentary]
+
+
+def ArtistMainUrl(artist):
+    if not HasArtistUrls(artist):
+        return ""
+    screen_name = ArtistScreenName(artist)
+    return 'https://twitter.com/%s' % screen_name
+
+
+def ArtistMediaUrl(artist):
+    url = ArtistMainUrl(artist)
+    return url + '/media' if len(url) else ""
+
+
+def ArtistLikesUrl(artist):
+    url = ArtistMainUrl(artist)
+    return url + '/likes' if len(url) else ""
+
+
+def GetGlobalObjects(data, type_name):
+    return SafeGet(data, 'globalObjects', type_name)
+
+
+def GetGlobalObject(data, type_name, key):
+    return SafeGet(data, 'globalObjects', type_name, key)
+
+
+def ProcessTwitterTimestring(time_string):
+    try:
+        return datetime.datetime.strptime(time_string, '%a %b %d %H:%M:%S +0000 %Y')
+    except ValueError:
+        pass
+
+
+def ConvertText(twitter_data, key, *subkeys):
+    text = twitter_data[key]
+    url_entries = SafeGet(twitter_data, 'entities', *subkeys) or []
+    for url_entry in reversed(url_entries):
+        replace_url = url_entry['expanded_url']
+        start_index, end_index = url_entry['indices']
+        text = text[:start_index] + replace_url + text[end_index:]
+    return text
+
+
+#   Database
+
+def Prework(site_illust_id):
+    print("Prework")
+    illust = GetSiteIllust(site_illust_id, SITE_ID)
+    if illust is not None:
+        return
+    twitter_data = GetTwitterIllustTimeline(site_illust_id)
+    if IsError(twitter_data):
+        print("Found error!")
+        return twitter_data
+    print("Getting tweet,user!")
+    tweets = []
+    tweet_ids = set()
+    for i in range(len(twitter_data)):
+        tweet = SafeGet(twitter_data[i], 'result', 'legacy')
+        if tweet is None or tweet['id_str'] in tweet_ids:
+            continue
+        tweets.append(tweet)
+        tweet_ids.add(tweet['id_str'])
+    SaveApiData(tweets, 'id_str', SITE_ID, 'illust')
+    twusers = []
+    user_ids = set()
+    for i in range(len(twitter_data)):
+        id_str = SafeGet(twitter_data[i], 'result', 'core', 'user', 'rest_id')
+        user = SafeGet(twitter_data[i], 'result', 'core', 'user', 'legacy')
+        if user is None or id_str in user_ids:
+            continue
+        user['id_str'] = id_str
+        twusers.append(user)
+        user_ids.add(id_str)
+    SaveApiData(twusers, 'id_str', SITE_ID, 'artist')
+
+
+# #### Token functions
 
 def LoadGuestToken():
     global TOKEN_TIMESTAMP
@@ -285,257 +487,8 @@ def CheckTokenFile():
     TOKEN_TIMESTAMP = os.path.getmtime(TOKEN_FILE)
     return last_timestamp == TOKEN_TIMESTAMP
 
-# Illust
 
-IMAGE_URL_MAPPER = lambda x: IsImageUrl(GetFullUrl(x))
-VIDEO_URL_MAPPER = lambda x: IsVideoUrl(GetFullUrl(x))
-
-def IllustHasImages(illust):
-    return any(map(IMAGE_URL_MAPPER, illust.urls))
-
-def IllustHasVideos(illust):
-    return any(map(VIDEO_URL_MAPPER, illust.urls))
-
-def PostHasImages(post):
-    return any(map(IMAGE_URL_MAPPER, post.illust_urls))
-
-def PostHasVideos(post):
-    return any(map(VIDEO_URL_MAPPER, post.illust_urls))
-
-def ImageIllustDownloadUrls(illust):
-    return list(filter(lambda x: IMAGE_URL_MAPPER, illust.urls))
-
-def VideoIllustDownloadUrls(illust):
-    video_illust_url = next(filter(VIDEO_URL_MAPPER, illust.urls))
-    thumb_illust_url = next(filter(IMAGE_URL_MAPPER, illust.urls), None)
-    return video_illust_url, thumb_illust_url
-
-def VideoIllustVideoUrl(illust):
-    return next(filter(VIDEO_URL_MAPPER, illust.urls), None)
-
-def VideoIllustThumbUrl(illust):
-    return next(filter(IMAGE_URL_MAPPER, illust.urls), None)
-
-#   URL
-
-def GetMediaExtension(media_url):
-    match = IMAGE1_RG.match(media_url) or IMAGE2_RG.match(media_url)
-    if match:
-        return match.group(3)
-    match = VIDEO1_RG.match(media_url)
-    if match:
-        return match.group(2)
-    match = VIDEO2_RG.match(media_url)
-    if match:
-        return match.group(6)
-    filename = GetHTTPFilename(media_url)
-    return GetFileExtension(filename)
-
-def IsArtistUrl(url):
-    return bool(USERS1_RG.match(url)) or IsArtistIdUrl(url)
-
-def IsArtistIdUrl(url):
-    return bool(USERS2_RG.match(url) or USERS3_RG.match(url))
-
-def IsPostUrl(url):
-    return bool(TWEET_RG.match(url))
-
-def PartialMediaUrl(url):
-    parse = urllib.parse.urlparse(url)
-    site_id = GetSiteId(parse.netloc)
-    match = IMAGE2_RG.match(url)
-    query_addon = '?format=%s' % match.group(3) if match else ""
-    return parse.path + query_addon if site_id != 0 else parse.geturl()
-
-def IsMediaUrl(url):
-    return IsImageUrl(url) or IsVideoUrl(url)
-
-
-def IsImageUrl(url):
-    return bool(IMAGE1_RG.match(url) or IMAGE2_RG.match(url) or IMAGE3_RG.match(url))
-
-
-def IsVideoUrl(url):
-    return bool(VIDEO1_RG.match(url) or VIDEO2_RG.match(url))
-
-
-def UploadCheck(request_url):
-    return IsPostUrl(request_url)
-
-
-def GetUploadType(request_url):
-    # Have already validated urls with UploadCheck
-    return 'post' if IsPostUrl(request_url) else 'image'
-
-
-def SiteId():
-    return GetSiteId('twitter.com')
-
-def GetIllustId(request_url):
-    return int(TWEET_RG.match(request_url).group(1))
-
-def GetArtistIdUrlId(artist_url):
-    match = USERS2_RG.match(artist_url) or USERS3_RG.match(artist_url)
-    if match:
-        return match.group(1)
-
-def GetArtistId(artist_url):
-    match = USERS2_RG.match(artist_url) or USERS3_RG.match(artist_url)
-    if match:
-        return match.group(1)
-    match = USERS1_RG.match(artist_url)
-    if match:
-        screen_name = match.group(1)
-        return GetTwitterUserID(screen_name)
-
-def GetFullUrl(illust_url):
-    media_url = GetMediaUrl(illust_url)
-    if IMAGE1_RG.match(media_url):
-        return media_url + ':orig'
-    if IMAGE2_RG.match(media_url):
-        return media_url + '&name=orig'
-    return media_url
-
-def SmallImageUrl(image_url):
-    return NormalizedImageUrl(image_url) + ':small'
-
-def NormalizedImageUrl(image_url):
-    match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
-    if match:
-        type, imagekey, extension, _ = match.groups()
-        return "https://pbs.twimg.com/%s/%s.%s" % (type, imagekey, extension)
-    match = IMAGE3_RG.match(image_url)
-    type, imageid, path, imagekey, extension, _ = match.groups()
-    path = path or ""
-    return "https://pbs.twimg.com/%s/%s%s/img/%s.%s" % (type, imageid, path, imagekey, extension)
-
-def GetMediaUrl(illust_url):
-    return illust_url.url if illust_url.site_id == 0 else 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
-
-def GetPostUrl(illust):
-    tweet_id = illust.site_illust_id
-    if not HasArtistUrls(illust.artist):
-        return GetIllustUrl(tweet_id)
-    screen_name = ArtistScreenName(illust.artist)
-    return "https://twitter.com/%s/status/%d" % (screen_name, tweet_id)
-
-def GetIllustUrl(site_illust_id):
-    return "https://twitter.com/i/web/status/%d" % site_illust_id
-
-def SubscriptionCheck(request_url):
-    artist_id = None
-    artwork_match = USERS1_RG.match(request_url)
-    if artwork_match:
-        artist_id = int(artwork_match.group(1))
-    return artist_id
-
-
-def NormalizeImageURL(image_url):
-    image_match = IMAGE1_RG.match(image_url) or IMAGE2_RG.match(image_url)
-    return r'/media/%s.%s' % (image_match.group(2), image_match.group(3))
-
-def HasArtistUrls(artist):
-    return (artist.current_site_account is not None) or (len(artist.site_accounts) == 1)
-
-def ArtistScreenName(artist):
-    return artist.current_site_account if artist.current_site_account is not None else artist.site_accounts[0].name
-
-def ArtistProfileUrls(artist):
-    profile_urls = ['https://twitter.com/intent/user?user_id=%d' % artist.site_artist_id]
-    for site_account in artist.site_accounts:
-        profile_urls += ['https://twitter.com/%s' % site_account.name]
-    return profile_urls
-
-def ArtistBooruSearchUrl(artist):
-    return 'https://twitter.com/intent/user?user_id=%d' % artist.site_artist_id
-
-def IllustCommentaries(illust):
-    if len(illust.commentaries) == 0:
-        return []
-    commentary = illust.commentaries[0].body # Twitter commentaries are unchangable.
-    for tag in illust.tags:
-        hashtag = '#' + tag.name
-        hashtag_link = r'"%s":[https://twitter.com/hashtag/%s]' % (hashtag, tag.name)
-        commentary = re.sub(r'%s(?=$|\s)' % hashtag, hashtag_link, commentary)
-    return [commentary]
-
-def ArtistMainUrl(artist):
-    if not HasArtistUrls(artist):
-        return ""
-    screen_name = ArtistScreenName(artist)
-    return 'https://twitter.com/%s' % screen_name
-
-def ArtistMediaUrl(artist):
-    url = ArtistMainUrl(artist)
-    return url + '/media' if len(url) else ""
-
-def ArtistLikesUrl(artist):
-    url = ArtistMainUrl(artist)
-    return url + '/likes' if len(url) else ""
-
-def GetGlobalObjects(data, type_name):
-    return SafeGet(data, 'globalObjects', type_name)
-
-
-def GetGlobalObject(data, type_name, key):
-    return SafeGet(data, 'globalObjects', type_name, key)
-
-
-#   Database
-
-def Prework(site_illust_id):
-    print("Prework")
-    illust = DB.GetSiteIllust(site_illust_id)
-    if illust is not None:
-        return
-    twitter_data = GetTwitterIllustTimeline(site_illust_id)
-    if DBLOCAL.IsError(twitter_data):
-        print("Found error!")
-        return twitter_data
-    print("Getting tweet,user!")
-    tweets = []
-    tweet_ids = set()
-    for i in range(len(twitter_data)):
-        tweet = SafeGet(twitter_data[i], 'result', 'legacy')
-        if tweet is None or tweet['id_str'] in tweet_ids:
-            continue
-        tweets.append(tweet)
-        tweet_ids.add(tweet['id_str'])
-    DB.CacheTimelineData(tweets, 'illust')
-    users = []
-    user_ids = set()
-    for i in range(len(twitter_data)):
-        id_str = SafeGet(twitter_data[i], 'result', 'core', 'user', 'rest_id')
-        user = SafeGet(twitter_data[i], 'result', 'core', 'user', 'legacy')
-        if user is None or id_str in user_ids:
-            continue
-        user['id_str'] = id_str
-        users.append(user)
-        user_ids.add(id_str)
-    DB.CacheTimelineData(users, 'artist')
-
-"""
-    tweet = GetGlobalObject(twitter_data, 'tweets', str(site_illust_id))
-    twuser = GetGlobalObject(twitter_data, 'users', tweet['user_id_str'])
-    if tweet is None or twuser is None:
-        return DBLOCAL.CreateError('sources.twitter.Prework', "Unable to parse tweet/user data: %d" % site_illust_id)
-    artist = DB.GetSiteArtist(int(twuser['id_str']))
-    if artist is None:
-        artist = DB.CreateArtistFromUser(twuser)
-    elif DBLOCAL.CheckRequery(artist):
-        DB.UpdateArtistFromUser(artist, twuser)
-    DB.CreateIllustFromTweet(tweet, artist.id)
-"""
-
-
-"""
-def GetDBArtist(illust):
-    print("GetDBArtist")
-    # The full user record is always given when querying the illust, so no need to requery here
-    return DB.GetArtist(illust.artist_id), None
-"""
-
-#   Network
+# #### Network functions
 
 def CheckGuestAuth(func):
     def wrapper(*args, **kwargs):
@@ -554,7 +507,6 @@ def AuthenticateGuest(override=False):
     if guest_token is None:
         print("Authenticating as guest...")
         data = TwitterRequest('https://api.twitter.com/1.1/guest/activate.json', 'POST')
-        #print(data)
         guest_token = str(data['body']['guest_token'])
         SaveGuestToken(guest_token)
     else:
@@ -583,6 +535,7 @@ def ReauthenticationCheck(response):
         return False
     return error_code in [200, 239]
 
+
 @CheckGuestAuth
 def TwitterRequest(url, method='GET'):
     reauthenticated = False
@@ -598,10 +551,6 @@ def TwitterRequest(url, method='GET'):
             continue
         if response.status_code == 200:
             break
-        #if response.status_code == 401:
-            #print("HTTP 401:", url, response.text)
-            #LogError('sources.twitter.TwitterRequest', "HTTP 401 on URL %s: %s" % (url, response.text))
-            #raise Exception("Unhandled HTTP code!")
         if not reauthenticated and ReauthenticationCheck(response):
             AuthenticateGuest(True)
             reauthenticated = True
@@ -614,54 +563,6 @@ def TwitterRequest(url, method='GET'):
         return {'error': True, 'message': "Error decoding response into JSON."}
     return {'error': False, 'body': data}
 
-"""
-def GetTwitterIllustTimeline1(illust_id):
-    print("Getting twitter #%d" % illust_id)
-    params = TWITTER_BASE_PARAMS.copy()
-    url_params = urllib.parse.urlencode(params)
-    data = TwitterRequest(("https://twitter.com/i/api/2/timeline/conversation/%d.json?" % illust_id) + url_params)
-    if data['error']:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', data['message'])
-    return data['body']
-    tweet = GetGlobalObject(data['body'], 'tweets', str(illust_id))
-    if tweet is None:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
-    return data['body']
-"""
-
-"""
-https://twitter.com/i/api/graphql/uvk82Jn4z84yUPI1rViRsg/TweetDetail?variables=%7B%22focalTweetId%22%3A%221412013529570287620%22%2C%22includePromotedContent%22%3Atrue%2C%22withHighlightedLabel%22%3Atrue%2C%22withCommunity%22%3Afalse%2C%22withTweetQuoteCount%22%3Atrue%2C%22withBirdwatchNotes%22%3Afalse%2C%22withBirdwatchPivots%22%3Afalse%2C%22withTweetResult%22%3Atrue%2C%22withReactions%22%3Afalse%2C%22withSuperFollowsTweetFields%22%3Afalse%2C%22withSuperFollowsUserFields%22%3Afalse%2C%22withUserResults%22%3Afalse%2C%22withVoice%22%3Atrue%7D
-{
-    "focalTweetId": "1412013529570287620",
-    "includePromotedContent": true,
-    "withHighlightedLabel": true,
-    "withCommunity": false,
-    "withTweetQuoteCount": true,
-    "withBirdwatchNotes": false,
-    "withBirdwatchPivots": false,
-    "withTweetResult": true,
-    "withReactions": false,
-    "withSuperFollowsTweetFields": false,
-    "withSuperFollowsUserFields": false,
-    "withUserResults": false,
-    "withVoice": true
-}
-"""
-
-TWITTER_ILLUST_TIMELINE_GRAPHQL = {
-    "includePromotedContent": True,
-    "withHighlightedLabel": True,
-    "withCommunity": False,
-    "withTweetQuoteCount": True,
-    "withBirdwatchNotes": False,
-    "withBirdwatchPivots": False,
-    "withTweetResult": True,
-    "withReactions": False,
-    "withSuperFollowsTweetFields": False,
-    "withSuperFollowsUserFields": False,
-    "withUserResults": False,
-    "withVoice": True
-}
 
 def GetGraphQLTimelineEntries(data, found_tweets=[]):
     for key in data:
@@ -683,15 +584,15 @@ def GetTwitterIllustTimeline(illust_id):
     urladdons = urllib.parse.urlencode({'variables': json.dumps(jsondata)})
     data = TwitterRequest("https://twitter.com/i/api/graphql/uvk82Jn4z84yUPI1rViRsg/TweetDetail?%s" % urladdons)
     if data['error']:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterTimelineIllust', data['message'])
+        return CreateError('sources.twitter.GetTwitterTimelineIllust', data['message'])
     found_tweets = GetGraphQLTimelineEntries(data['body'])
     if len(found_tweets) == 0:
         print("No tweets found!")
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterTimelineIllust', "No tweets found in data.")
+        return CreateError('sources.twitter.GetTwitterTimelineIllust', "No tweets found in data.")
     tweet_ids = [SafeGet(tweet_entry, 'result', 'rest_id') for tweet_entry in found_tweets]
     if illust_id_str not in tweet_ids:
         print("Tweet ID not found:", illust_id, tweet_ids)
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterTimelineIllust', "Tweet not found: %d" % illust_id)
+        return CreateError('sources.twitter.GetTwitterTimelineIllust', "Tweet not found: %d" % illust_id)
     return found_tweets
 
 
@@ -699,11 +600,10 @@ def GetTwitterIllust(illust_id):
     print("Getting twitter #%d" % illust_id)
     data = TwitterRequest('https://api.twitter.com/1.1/statuses/lookup.json?id=%d&trim_user=true&tweet_mode=extended&include_quote_count=true&include_reply_count=true' % illust_id)
     if data['error']:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', data['message'])
+        return CreateError('sources.twitter.GetTwitterIllust', data['message'])
     if len(data['body']) == 0:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
+        return CreateError('sources.twitter.GetTwitterIllust', "Tweet not found: %d" % illust_id)
     return data['body'][0]
-
 
 
 def GetTwitterUserID(account):
@@ -713,14 +613,11 @@ def GetTwitterUserID(account):
         'withHighlightedLabel': False
     }
     urladdons = urllib.parse.urlencode({'variables': json.dumps(jsondata)})
-    data = TwitterRequest('https://twitter.com/i/api/graphql/Vf8si2dfZ1zmah8ePYPjDQ/UserByScreenNameWithoutResults?%s' % urllib.parse.urlencode({'variables': json.dumps(jsondata)}))
+    data = TwitterRequest('https://twitter.com/i/api/graphql/Vf8si2dfZ1zmah8ePYPjDQ/UserByScreenNameWithoutResults?%s' % urladdons)
     if data['error']:
-        return DBLOCAL.CreateError('sources.twitter.GetUserID', data['message'])
+        return CreateError('sources.twitter.GetUserID', data['message'])
     return SafeGet(data, 'body', 'data', 'user', 'rest_id')
 
-"""
-TwitterRequest('https://twitter.com/i/api/graphql/WN6Hck-Pwm-YP0uxVj1oMQ/UserByRestIdWithoutResults?%s' % urllib.parse.urlencode({'variables': json.dumps({'userId': '2267697692', 'withHighlightedLabel': False})}))
-"""
 
 def GetTwitterArtist(artist_id):
     print("Getting user #%d" % artist_id)
@@ -731,73 +628,181 @@ def GetTwitterArtist(artist_id):
     urladdons = urllib.parse.urlencode({'variables': json.dumps(jsondata)})
     data = TwitterRequest('https://twitter.com/i/api/graphql/WN6Hck-Pwm-YP0uxVj1oMQ/UserByRestIdWithoutResults?%s' % urladdons)
     if data['error']:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', data['message'])
+        return CreateError('sources.twitter.GetTwitterArtist', data['message'])
     twitterdata = data['body']
     if 'errors' in twitterdata and len(twitterdata['errors']):
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', 'Twitter error: ' + '; '.join([error['message'] for error in twitterdata['errors']]))
+        return CreateError('sources.twitter.GetTwitterArtist', 'Twitter error: ' + '; '.join([error['message'] for error in twitterdata['errors']]))
     userdata = SafeGet(twitterdata, 'data', 'user')
     if userdata is None or 'rest_id' not in userdata or 'legacy' not in userdata:
-        return DBLOCAL.CreateError('sources.twitter.GetTwitterArtist', "Error parsing data: %s" % json.dumps(twitterdata))
+        return CreateError('sources.twitter.GetTwitterArtist', "Error parsing data: %s" % json.dumps(twitterdata))
     retdata = userdata['legacy']
     retdata['id_str'] = userdata['rest_id']
     return retdata
 
-#   Update
 
-def UpdateArtist(artist, explicit=False):
-    twuser = DB.GetApiArtist(artist.site_artist_id)
-    if twuser is None:
-        twuser = GetTwitterArtist(artist.site_artist_id)
-        if DBLOCAL.IsError(twuser):
-            print("Error getting artist data!")
-            artist.active = False
-            artist.updated = GetCurrentTime()
-            DBLOCAL.SaveData()
-            return
-        DB.CacheLookupData([twuser], 'artist')
-    DB.UpdateArtistFromUser(artist, twuser)
+# #### Param functions
 
+# ###### ILLUST
+
+def GetIllustCommentary(twitter_data):
+    text = ConvertText(twitter_data, 'full_text', 'urls')
+    return FixupCRLF(SHORT_URL_REPLACE_RG.sub('', text).strip())
+
+
+def GetIllustTags(tweet):
+    tag_data = SafeGet(tweet, 'entities', 'hashtags') or []
+    return list(set(entry['text'].lower() for entry in tag_data))
+
+
+def GetIllustUrlInfo(entry):
+    query_addon = ""
+    if entry['type'] == 'photo':
+        parse = urllib.parse.urlparse(entry['media_url_https'])
+        dimensions = (entry['original_info']['width'], entry['original_info']['height'])
+        match = IMAGE2_RG.match(entry['media_url_https'])
+        if match:
+            query_addon = '?format=%s' % match.group(3)
+    elif entry['type'] == 'video' or entry['type'] == 'animated_gif':
+        variants = entry['video_info']['variants']
+        valid_variants = [variant for variant in variants if 'bitrate' in variant]
+        max_bitrate = max(map(lambda x: x['bitrate'], valid_variants))
+        max_video = next(filter(lambda x: x['bitrate'] == max_bitrate, valid_variants))
+        parse = urllib.parse.urlparse(max_video['url'])
+        dimensions = (entry['sizes']['large']['w'], entry['sizes']['large']['h'])
+    else:
+        return None, None, None
+    site_id = GetSiteId(parse.netloc)
+    url = parse.path + query_addon if site_id != 0 else parse.geturl()
+    return url, site_id, dimensions
+
+
+def GetIllustUrls(tweet):
+    return GetImageUrls(tweet) + GetVideoUrls(tweet)
+
+
+def GetImageUrls(tweet):
+    illust_urls = []
+    image_url_data = SafeGet(tweet, 'entities', 'media') or []
+    for i in range(len(image_url_data)):
+        url, site_id, dimensions = GetIllustUrlInfo(image_url_data[i])
+        if url is None:
+            continue
+        illust_urls.append({
+            'site_id': site_id,
+            'url': url,
+            'width': dimensions[0],
+            'height': dimensions[1],
+            'order': i + 1,
+            'active': True,
+        })
+    return illust_urls
+
+
+def GetVideoUrls(tweet):
+    url_data = SafeGet(tweet, 'extended_entities', 'media') or []
+    video_url_data = [url_entry for url_entry in url_data if url_entry['type'] in ['animated_gif', 'video']]
+    if len(video_url_data) == 0:
+        return []
+    url, site_id, dimensions = GetIllustUrlInfo(video_url_data[0])
+    if url is None:
+        return []
+    return [{
+        'site_id': site_id,
+        'url': url,
+        'width': dimensions[0],
+        'height': dimensions[1],
+        'order': 1,
+        'active': True,
+    }]
+
+
+def GetIllustParametersFromTweet(tweet):
+    return {
+        'site_id': SITE_ID,
+        'site_illust_id': int(tweet['id_str']),
+        'site_created': ProcessTwitterTimestring(tweet['created_at']),
+        'pages': len(tweet['extended_entities']['media']),
+        'score': tweet['favorite_count'],
+        'retweets': tweet['retweet_count'],
+        'replies': tweet['reply_count'] if 'reply_count' in tweet else None,
+        'quotes': tweet['quote_count'] if 'quote_count' in tweet else None,
+        'requery': GetCurrentTime() + datetime.timedelta(days=1),
+        'tags': GetIllustTags(tweet),
+        'commentaries': GetIllustCommentary(tweet) or None,
+        'illust_urls': GetIllustUrls(tweet),
+        'active': True,
+        'site_artist_id': SafeGet(tweet, 'user', 'id_str') or SafeGet(tweet, 'user_id_str'),
+    }
+
+
+# ###### ARTIST
+
+def GetArtistProfile(twitter_data):
+    return FixupCRLF(ConvertText(twitter_data, 'description', 'description', 'urls'))
+
+
+def GetTwitterUserWebpages(twuser):
+    webpages = set()
+    url_entries = SafeGet(twuser, 'entities', 'url', 'urls') or []
+    for entry in url_entries:
+        if 'expanded_url' in entry:
+            webpages.add(entry['expanded_url'])
+        elif 'url' in entry:
+            webpages.add(entry['url'])
+    url_entries = SafeGet(twuser, 'entities', 'description', 'urls') or []
+    for entry in url_entries:
+        if 'expanded_url' in entry:
+            webpages.add(entry['expanded_url'])
+        elif 'url' in entry:
+            webpages.add(entry['url'])
+    return list(webpages)
+
+
+def GetArtistParametersFromTwuser(twuser):
+    return {
+        'site_id': SITE_ID,
+        'site_artist_id': int(twuser['id_str']),
+        'site_created': ProcessTwitterTimestring(twuser['created_at']),
+        'current_site_account': twuser['screen_name'],
+        'requery': GetCurrentTime() + datetime.timedelta(days=1),
+        'active': True,
+        'names': [twuser['name']],
+        'site_accounts': [twuser['screen_name']],
+        'profiles': GetArtistProfile(twuser) or None,
+        'webpages': GetTwitterUserWebpages(twuser),
+    }
+
+
+# #### Data lookup functions
 
 def GetArtistApiData(site_artist_id):
-    twuser = GetApiArtist(site_artist_id, Site.TWITTER.value)
+    print("GetArtistApiData", site_artist_id)
+    twuser = GetApiArtist(site_artist_id, SITE_ID)
     if twuser is None:
         twuser = GetTwitterArtist(site_artist_id)
-        if DBLOCAL.IsError(twuser):
+        if IsError(twuser):
             print("Error getting artist data!")
             return
-        SaveApiData([twuser], 'id_str', Site.TWITTER.value, 'artist')
+        SaveApiData([twuser], 'id_str', SITE_ID, 'artist')
     return twuser
 
 
 def GetArtistData(site_artist_id):
+    print("GetArtistData", site_artist_id)
     twuser = GetArtistApiData(site_artist_id)
     if twuser is None:
         return {'active': False, 'requery': None}
     return GetArtistParametersFromTwuser(twuser)
 
 
-def UpdateIllust(illust, explicit=False, timeline=False):
-    tweet = DB.GetApiIllust(illust.site_illust_id)
-    if tweet is None:
-        tweet = GetTwitterIllust(illust.site_illust_id)
-        if DBLOCAL.IsError(tweet):
-            print("Error getting illust data!")
-            illust.active = False
-            illust.updated = GetCurrentTime()
-            DBLOCAL.SaveData()
-            return
-        DB.CacheLookupData([tweet], 'illust')
-    DB.UpdateIllustFromTweet(illust, tweet)
-
-
 def GetIllustApiData(site_illust_id):
-    tweet = GetApiIllust(site_illust_id, Site.TWITTER.value)
+    tweet = GetApiIllust(site_illust_id, SITE_ID)
     if tweet is None:
         tweet = GetTwitterIllust(site_illust_id)
-        if DBLOCAL.IsError(tweet):
+        if IsError(tweet):
             print("Error getting illust data!")
             return
-        SaveApiData([tweet], 'id_str', Site.TWITTER.value, 'illust')
+        SaveApiData([tweet], 'id_str', SITE_ID, 'illust')
     return tweet
 
 
@@ -811,81 +816,3 @@ def GetIllustData(site_illust_id):
 def GetArtistIdByIllustId(site_illust_id):
     tweet = GetIllustApiData(site_illust_id)
     return SafeGet(tweet, 'user', 'id_str')
-
-# Create
-
-
-def CreateArtist(site_artist_id):
-    ### INCLUDED ONLY DURING TESTING PHASE ###
-    artist = DB.GetSiteArtist(site_artist_id)
-    if artist is not None:
-        return artist
-    ### ###
-    twuser = DB.GetApiIllust(site_artist_id)
-    if twuser is None:
-        twuser = GetTwitterArtist(site_artist_id)
-        if DBLOCAL.IsError(twuser):
-            print("Error getting artist data!")
-            # Shouldn't be anything else that can be done
-            return twuser
-    return DB.CreateArtistFromUser(twuser)
-
-
-def CreateDBArtistFromParams(params):
-    return DB.CreateArtistFromParameters(params)
-
-def CreateDBIllustFromParams(params):
-    return DB.CreateIllustFromParameters(params)
-
-def CreateDBIllustUrlFromParams(params, illust):
-    return DB.CreateIllustUrlFromParameters(params, illust)
-
-def CreateIllust(site_illust_id, timeline=False):
-    ### INCLUDED ONLY DURING TESTING PHASE ###
-    illust = DB.GetSiteIllust(site_illust_id)
-    if illust is not None:
-        return illust
-    ### ###
-    tweet = DB.GetApiIllust(site_illust_id)
-    if tweet is None:
-        tweet = GetTwitterIllust(site_illust_id)
-        if DBLOCAL.IsError(tweet):
-            print("Error getting artist data!")
-            # Shouldn't be anything else that can be done
-            return tweet
-    if 'user' in tweet:
-        twuser_id = tweet['user']['id']
-    elif 'user_id_str' in tweet:
-        twuser_id = int(tweet['user_id_str'])
-    else:
-        return DBLOCAL.CreateError('sources.twitter.CreateIllust', "Unknown API data structure on tweet #%d" % site_illust_id)
-    artist = DB.GetSiteArtist(twuser_id)
-    if artist is None:
-        artist = CreateArtist(twuser_id)
-        if DBLOCAL.IsError(artist):
-            return artist
-    return DB.CreateIllustFromTweet(tweet, artist.id)
-
-#   Download
-
-"""
-def DownloadIllust(pixiv_id, upload, type, module):
-    illust = GetDBIllust(pixiv_id)
-    if illust is None:
-        print("Modify upload for bad illust!")
-        return
-    artist = GetDBArtist(illust)
-    if artist is None:
-        print("Modify upload for bad artist!")
-        return
-    return illust, artist
-
-    if type == 'post' or type == 'subscription':
-        DownloadMultipleImages(illust, upload, type, module)
-    elif type == 'image':
-        DownloadSingleImage(illust, upload, module)
-
-
-def DownloadArtist(subscription, semaphore, module):
-    pass
-"""

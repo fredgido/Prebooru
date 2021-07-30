@@ -80,7 +80,7 @@ class Upload(JsonModel):
 
     @property
     def site_id(self):
-        return self._source.SiteId()
+        return self._source.SITE_ID
 
     @property
     def site_illust_id(self):

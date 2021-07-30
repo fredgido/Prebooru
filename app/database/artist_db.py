@@ -90,6 +90,13 @@ def CreateArtistFromParameters(createparams):
     return artist
 
 
+def CreateArtistFromSource(site_artist_id, source):
+    createparams = source.GetArtistData(site_artist_id)
+    if not createparams['active']:
+        return
+    return CreateArtistFromParameters(createparams)
+
+
 # ###### Update
 
 
@@ -113,3 +120,27 @@ def UpdateArtistFromParameters(artist, updateparams):
     if 'requery' in updateparams:
         artist.requery = updateparams['requery']
         SESSION.commit()
+
+
+def UpdateArtistFromSource(artist, source):
+    updateparams = source.GetArtistData(artist.site_artist_id)
+    if updateparams['active']:
+        # These are only removable through the HTML/JSON UPDATE routes
+        updateparams['webpages'] += ['-' + webpage.url for webpage in artist.webpages if webpage.url not in updateparams['webpages']]
+        updateparams['names'] += [artist_name.name for artist_name in artist.names if artist_name.name not in updateparams['names']]
+        updateparams['site_accounts'] += [site_account.name for site_account in artist.site_accounts if site_account.name not in updateparams['site_accounts']]
+    UpdateArtistFromParameters(artist, updateparams)
+
+
+# ###### Misc
+
+def AppendBooru(artist, booru):
+    artist.boorus.append(booru)
+    artist.updated = GetCurrentTime()
+    SESSION.commit()
+
+
+# #### Query functions
+
+def GetSiteArtist(site_artist_id, site_id):
+    return models.Artist.query.filter_by(site_id=site_id, site_artist_id=site_artist_id).first()

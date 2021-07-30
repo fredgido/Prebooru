@@ -5,6 +5,7 @@ import datetime
 from .. import models, SESSION
 from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
 from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections, AppendRelationshipCollections, SetTimesvalue
+from .artist_db import CreateArtistFromSource, GetSiteArtist
 from .illust_url_db import UpdateIllustUrlFromParameters
 from .site_data_db import UpdateSiteDataFromParameters
 
@@ -70,6 +71,20 @@ def CreateIllustFromParameters(createparams):
     return illust
 
 
+def CreateIllustFromSource(site_illust_id, source):
+    createparams = source.GetIllustData(site_illust_id)
+    if not createparams['active']:
+        return
+    artist = GetSiteArtist(createparams['site_artist_id'], source.SITE_ID)
+    if artist is None:
+        print("CreateIllustFromSource", createparams['site_artist_id'], createparams)
+        artist = CreateArtistFromSource(createparams['site_artist_id'], source)
+        if artist is None:
+            return
+    createparams['artist_id'] = artist.id
+    return CreateIllustFromParameters(createparams)
+
+
 # ###### UPDATE
 
 def UpdateIllustFromParameters(illust, updateparams):
@@ -92,3 +107,17 @@ def UpdateIllustFromParameters(illust, updateparams):
     if 'requery' in updateparams:
         illust.requery = updateparams['requery']
         SESSION.commit()
+
+
+def UpdateIllustFromSource(illust, source):
+    updateparams = source.GetIllustData(illust.site_illust_id)
+    if updateparams['active']:
+        # These are only removable through the HTML/JSON UPDATE routes
+        updateparams['tags'] += [tag.name for tag in illust.tags if tag.name not in updateparams['tags']]
+    UpdateIllustFromParameters(illust, updateparams)
+
+
+# #### Query functions
+
+def GetSiteIllust(site_illust_id, site_id):
+    return models.Illust.query.filter_by(site_id=site_id, site_illust_id=site_illust_id).first()

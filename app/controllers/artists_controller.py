@@ -7,13 +7,14 @@ from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, Stri
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
-from ..models import Artist
-from ..sources.base import GetSourceById, QueryArtistBoorus, GetArtistRequiredParams
-from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters
+from ..models import Artist, Booru
+from ..sources.base import GetSourceById, GetArtistRequiredParams
+from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters, UpdateArtistFromSource, AppendBooru
+from ..database.booru_db import CreateBooruFromParameters
+from ..sources import danbooru
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
     DefaultOrder, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, ParseArrayParameter, CheckParamRequirements,\
-    IntOrBlank, NullifyBlanks, SetDefault, PutMethodCheck, GetMethodRedirect, ParseBoolParameter, HideInput
+    IntOrBlank, NullifyBlanks, SetDefault, ParseBoolParameter, HideInput
 
 # ## GLOBAL VARIABLES
 
@@ -146,6 +147,22 @@ def query_create():
     return retdata
 
 
+def query_booru(artist):
+    source = GetSourceById(artist.site_id)
+    search_url = source.ArtistBooruSearchUrl(artist)
+    artist_data = danbooru.GetArtistsByUrl(search_url)
+    if artist_data['error']:
+        return artist_data
+    existing_booru_ids = [booru.id for booru in artist.boorus]
+    for danbooru_artist in artist_data['artists']:
+        booru = Booru.query.filter_by(danbooru_id=danbooru_artist['id']).first()
+        if booru is None:
+            booru = CreateBooruFromParameters({'danbooru_id': danbooru_artist['id'], 'name': danbooru_artist['name']})
+        if booru.id not in existing_booru_ids:
+            AppendBooru(artist, booru)
+    return {'error': False, 'artist': artist, 'boorus': artist.boorus}
+
+
 # #### Route functions
 
 # ###### SHOW
@@ -253,13 +270,7 @@ def query_update_html(id):
     """Query source and update artist."""
     artist = GetOrAbort(Artist, id)
     source = GetSourceById(artist.site_id)
-    updateparams = source.GetArtistData(artist.site_artist_id)
-    if updateparams['active']:
-        # These are only removable through the HTML/JSON UPDATE routes
-        updateparams['webpages'] += ['-' + webpage.url for webpage in artist.webpages if webpage.url not in updateparams['webpages']]
-        updateparams['names'] += [artist_name.name for artist_name in artist.names if artist_name.name not in updateparams['names']]
-        updateparams['site_accounts'] += [site_account.name for site_account in artist.site_accounts if site_account.name not in updateparams['site_accounts']]
-    UpdateArtistFromParameters(artist, updateparams)
+    UpdateArtistFromSource(artist, source)
     flash("Artist updated.")
     return redirect(url_for('artist.show_html', id=id))
 
@@ -268,7 +279,7 @@ def query_update_html(id):
 def query_booru_html(id):
     """Query booru and create/update booru relationships."""
     artist = GetOrAbort(Artist, id)
-    response = QueryArtistBoorus(artist)
+    response = query_booru(artist)
     if response['error']:
         flash(response['message'])
     else:

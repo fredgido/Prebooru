@@ -1,7 +1,14 @@
+# APP/SIMILARITY/SIMILARITY_POOL.PY
+
+# ##PYTHON IMPORTS
 from dataclasses import dataclass
 
+# ##LOCAL IMPORTS
 from .. import DB
 from ..base_model import JsonModel
+
+
+# ##CLASSES
 
 @dataclass
 class SimilarityPoolElement(JsonModel):

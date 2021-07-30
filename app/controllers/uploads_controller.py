@@ -38,7 +38,7 @@ def GetUploadForm(**kwargs):
 
 # #### Helper functions
 
-def UniquenessCheck(createparams, upload):
+def UniquenessCheck(createparams):
     q = Upload.query
     if createparams['illust_url_id']:
         q = q.filter(Upload.illust_url_id == createparams['illust_url_id'])

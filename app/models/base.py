@@ -34,10 +34,12 @@ def PolymorphicAccessorFactory(collection_type, proxy):
         if not hasattr(obj, proxy.value_attr):
             return
         return getattr(obj, proxy.value_attr)
+
     def setter(obj, value):
         if not hasattr(obj, proxy.value_attr):
             return
         setattr(obj, proxy.value_attr, value)
+
     return getter, setter
 
 

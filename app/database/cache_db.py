@@ -28,8 +28,8 @@ def GetApiIllust(site_illust_id, site_id):
 
 
 def SaveApiData(network_data, id_key, site_id, type):
-    twitter_ids = [int(data[id_key]) for data in network_data]
-    cache_data = GetApiData(twitter_ids, site_id, type)
+    data_ids = [int(data[id_key]) for data in network_data]
+    cache_data = GetApiData(data_ids, site_id, type)
     for data_item in network_data:
         data_id = int(data_item[id_key])
         cache_item = next(filter(lambda x: x.data_id == data_id, cache_data), None)
@@ -42,7 +42,7 @@ def SaveApiData(network_data, id_key, site_id, type):
             cache_item = ApiData(**data)
             SESSION.add(cache_item)
         else:
-            print("CacheTimelineData - updating cache item:", type, data_id, cache_item.id)
+            print("SaveApiData - updating cache item:", type, data_id, cache_item.id)
         cache_item.data = data_item
         cache_item.expires = DaysFromNow(1)
     SESSION.commit()

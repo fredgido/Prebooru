@@ -10,7 +10,7 @@ from wtforms.validators import DataRequired
 from .. import PREBOORU
 from ..models import Illust, Artist, SiteData
 from ..sources.base import GetSourceById, GetIllustRequiredParams
-from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters
+from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters, UpdateIllustFromSource
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
     Paginate, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, HideInput, IntOrBlank,\
     NullifyBlanks, SetDefault, CheckParamRequirements, ParseArrayParameter, ParseBoolParameter,\
@@ -275,10 +275,6 @@ def query_create_html():
 def query_update_html(id):
     illust = GetOrAbort(Illust, id)
     source = GetSourceById(illust.site_id)
-    updateparams = source.GetIllustData(illust.site_illust_id)
-    if updateparams['active']:
-        # These are only removable through the HTML/JSON UPDATE routes
-        updateparams['tags'] += [tag.name for tag in illust.tags if tag.name not in updateparams['tags']]
-    UpdateIllustFromParameters(illust, updateparams)
+    UpdateIllustFromSource(illust, source)
     flash("Illust updated.")
     return redirect(url_for('illust.show_html', id=id))

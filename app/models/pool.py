@@ -2,7 +2,6 @@
 
 # ##PYTHON IMPORTS
 from dataclasses import dataclass
-from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import lazyload, selectin_polymorphic
@@ -17,8 +16,7 @@ from .notation import Notation
 from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation, pool_element_create, pool_element_delete
 
 
-# ##GLOBAL VARIABLES
-
+# ##CLASSES
 
 @dataclass
 class Pool(JsonModel):
@@ -33,29 +31,29 @@ class Pool(JsonModel):
     elements = association_proxy('_elements', 'item', creator=lambda item: pool_element_create(item))
     created = DB.Column(DB.DateTime(timezone=False), nullable=True)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=True)
-    
+
     @property
     def element_count(self):
         return PoolElement.query.filter_by(pool_id=self.id).count()
-    
+
     @property
     def show_url(self):
         return url_for("pool.show_html", id=self.id)
-    
+
     def remove(self, item):
         pool_element_delete(self.id, item)
-    
+
     def insert_before(self, insert_item, mark_item):
         pool_element = self._get_mark_element(mark_item)
         element_position = pool_element.position
         self.elements.insert(element_position, insert_item)
-    
+
     def _get_mark_element(self, mark_item):
         pool_element = next(filter(lambda x: x.pool_id == self.id, mark_item._pools), None)
         if pool_element is None:
             raise Exception("Could not find mark item %s #%d in pool #%d")
         return pool_element
-    
+
     def element_paginate(self, page=None, per_page=None, post_options=lazyload('*'), illust_options=lazyload('*'), notation_options=lazyload('*')):
         q = PoolElement.query
         q = q.options(selectin_polymorphic(PoolElement, [PoolIllust, PoolPost, PoolNotation]))

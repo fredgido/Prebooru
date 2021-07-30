@@ -3,5 +3,3 @@
 # flake8: noqa
 
 from . import local
-from . import pixiv
-from . import twitter

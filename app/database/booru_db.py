@@ -22,8 +22,11 @@ APPEND_SCALAR_RELATIONSHIPS = []
 
 
 def SetAllNames(params, booru):
-    if params['current_name']:
-        params['names'] = params['names'] if 'names' in params else [booru_name.name for booru_name in booru.names]
+    if 'current_name' in params:
+        if booru is not None:
+            params['names'] = params['names'] if 'names' in params else [booru_name.name for booru_name in booru.names]
+        else:
+            params['names'] = params['names'] if 'names' in params else []
         params['names'] = list(set(params['names'] + [params['current_name']]))
 
 
@@ -34,6 +37,7 @@ def SetAllNames(params, booru):
 
 def CreateBooruFromParameters(createparams):
     current_time = GetCurrentTime()
+    SetAllNames(createparams, None)
     data = {
         'danbooru_id': createparams['danbooru_id'],
         'current_name': createparams['current_name'],
@@ -89,7 +93,6 @@ def QueryUpdateBooru(booru):
 
 # ###### Misc
 
-
 def CheckArtistsBooru(booru):
     dirty = False
     data = GetArtistByID(booru.danbooru_id, include_urls=True)
@@ -102,7 +105,7 @@ def CheckArtistsBooru(booru):
         if source is None:
             continue
         site_artist_id = int(source.GetArtistIdUrlId(artist_url['url']))
-        site_id = source.SiteId()
+        site_id = source.SITE_ID
         artist = models.Artist.query.filter_by(site_id=site_id, site_artist_id=site_artist_id).first()
         if artist is None or artist.id in existing_artist_ids:
             continue

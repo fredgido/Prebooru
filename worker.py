@@ -18,16 +18,20 @@ from app import database
 from app import DB, SESSION, PREBOORU_APP
 from app.config import workingdirectory, datafilepath
 from app.cache import ApiData, MediaFile
-from app.models import Upload, Illust, Artist, Booru, Label
+from app.models import Upload, Illust, Artist, Booru
+from app.database.local import IsError, AppendError, CheckRequery, CreateAndAppendError
+from app.database.artist_db import UpdateArtistFromSource
+from app.database.booru_db import CreateBooruFromParameters
+from app.database.illust_db import CreateIllustFromSource, UpdateIllustFromSource
 from app.sources import base as BASE_SOURCE, danbooru as DANBOORU_SOURCE
 from app.logical.utility import MinutesAgo, StaticVars, GetCurrentTime
+from app.logical.downloader import DownloadMultipleImages
+from app.logical.uploader import UploadIllustUrl
+from app.logical.unshortenlink import UnshortenAllLinks
 from app.logical.logger import LogError
-from app.logical.logger import PutGetJSON, LoadDefault
-#from app.logical.unshortenlink import UnshortenAllLinks
 from argparse import ArgumentParser
-
 from app.logical.file import LoadDefault, PutGetJSON
-from app.config import workingdirectory, datafilepath
+
 
 # ## GLOBAL VARIABLES
 
@@ -43,9 +47,8 @@ BOORU_ARTISTS_FILE = workingdirectory + datafilepath + 'booru_artists_file.json'
 
 READ_ENGINE = DB.engine.execution_options(isolation_level="READ UNCOMMITTED")
 
-# ### FUNCTIONS
 
-#print(PREBOORU_APP)
+# ### FUNCTIONS
 
 @atexit.register
 def Cleanup():
@@ -75,6 +78,7 @@ def CheckForShortLinks():
     print("CheckForShortLinks")
     UnshortenAllLinks()
 
+
 def LoadBooruArtistData():
     global BOORU_ARTISTS_DATA
     if BOORU_ARTISTS_DATA is None:
@@ -82,57 +86,60 @@ def LoadBooruArtistData():
         BOORU_ARTISTS_DATA = BOORU_ARTISTS_DATA if type(BOORU_ARTISTS_DATA) is dict else {}
         BOORU_ARTISTS_DATA['last_checked_artist_id'] = BOORU_ARTISTS_DATA['last_checked_artist_id'] if ('last_checked_artist_id' in BOORU_ARTISTS_DATA) and (type(BOORU_ARTISTS_DATA['last_checked_artist_id']) is int) else 0
 
-def CheckForNewArtistBoorus():
-    print("CheckForNewArtistBoorus")
+
+def CheckForNewArtistBoorusWrap():
     BOORU_SEM.acquire()
     print("<booru semaphore acquire>")
-    LoadBooruArtistData()
-    page = Artist.query.filter(Artist.id > BOORU_ARTISTS_DATA['last_checked_artist_id'], not_(Artist.boorus.any())).paginate(per_page=100)
     try:
-        while True:
-            if len(page.items) == 0:
-                break
-            query_urls = [artist.booru_search_url for artist in page.items]
-            results = DANBOORU_SOURCE.GetArtistsByMultipleUrls(query_urls)
-            if results['error']:
-                print("Error:", results)
-                break
-            booru_artist_ids = set(artist['id'] for artist in itertools.chain(*[results['data'][url] for url in results['data']]))
-            boorus = Booru.query.filter(Booru.danbooru_id.in_(booru_artist_ids)).all()
-            max_artist_id = 0
-            for url in results['data']:
-                danbooru_artists = results['data'][url]
-                db_artist = next(filter(lambda x: x.booru_search_url == url, page.items))
-                for danbooru_artist in danbooru_artists:
-                    booru = next(filter(lambda x: x.danbooru_id == danbooru_artist['id'], boorus), None)
-                    if booru is None:
-                        current_time = GetCurrentTime()
-                        booru = Booru(danbooru_id=danbooru_artist['id'], current_name=danbooru_artist['name'], created=current_time, updated=current_time)
-                        SESSION.add(booru)
-                        SESSION.commit()
-                    booru_names = [name.name for name in booru.names]
-                    if danbooru_artist['name'] not in booru_names:
-                        name_label = Label.query.filter_by(name=danbooru_artist['name']).first()
-                        if name_label is None:
-                            name_label = Label(name=danbooru_artist['name'])
-                        booru.names.append(name_label)
-                    booru.artists.append(db_artist)
-                    SESSION.commit()
-                    print("Added artist #", db_artist.id, "to booru #", booru.id)
-            max_artist_id = max(max_artist_id, *[artist.id for artist in page.items])
-            print("Max ID:", max_artist_id)
-            BOORU_ARTISTS_DATA['last_checked_artist_id'] = max_artist_id
-            PutGetJSON(BOORU_ARTISTS_FILE, 'w', BOORU_ARTISTS_DATA)
-            if not page.has_next:
-                break
-            page = page.next()
+        CheckForNewArtistBoorus()
     finally:
         BOORU_SEM.release()
         print("<booru semaphore release>")
 
+
+def CheckForNewArtistBoorus():
+    print("CheckForNewArtistBoorus")
+    LoadBooruArtistData()
+    page = Artist.query.filter(Artist.id > BOORU_ARTISTS_DATA['last_checked_artist_id'], not_(Artist.boorus.any())).paginate(per_page=100)
+    max_artist_id = 0
+    while True:
+        if len(page.items) == 0:
+            break
+        query_urls = [artist.booru_search_url for artist in page.items]
+        results = DANBOORU_SOURCE.GetArtistsByMultipleUrls(query_urls)
+        if results['error']:
+            print("Error:", results)
+            break
+        booru_artist_ids = set(artist['id'] for artist in itertools.chain(*[results['data'][url] for url in results['data']]))
+        boorus = Booru.query.filter(Booru.danbooru_id.in_(booru_artist_ids)).all()
+        for url in results['data']:
+            AddDanbooruArtists(url, results['data'][url], boorus, page.items)
+        max_artist_id = max(max_artist_id, *[artist.id for artist in page.items])
+        SaveLastCheckArtistId(max_artist_id)
+        if not page.has_next:
+            break
+        page = page.next()
+
+
+def SaveLastCheckArtistId(max_artist_id):
+    BOORU_ARTISTS_DATA['last_checked_artist_id'] = max_artist_id
+    PutGetJSON(BOORU_ARTISTS_FILE, 'w', BOORU_ARTISTS_DATA)
+
+
+def AddDanbooruArtists(url, danbooru_artists, db_boorus, db_artists):
+    db_artist = next(filter(lambda x: x.booru_search_url == url, db_artists))
+    for danbooru_artist in danbooru_artists:
+        booru = next(filter(lambda x: x.danbooru_id == danbooru_artist['id'], db_boorus), None)
+        if booru is None:
+            booru = CreateBooruFromParameters({'danbooru_id': danbooru_artist['id'], 'current_name': danbooru_artist['name']})
+        booru.artists.append(db_artist)
+        SESSION.commit()
+
+
 def GetPendingUploadIDs():
     with Session(bind=READ_ENGINE) as session:
         return [upload.id for upload in session.query(Upload).filter_by(status="pending").all()]
+
 
 @StaticVars(processing=False)
 def ProcessUploads():
@@ -148,7 +155,7 @@ def ProcessUploads():
             for upload_id in upload_ids:
                 # Must retrieve the upload with Flask session object for updating/appending to work
                 upload = Upload.find(upload_id)
-                if not ProcessUpload(upload):
+                if not ProcessUploadWrap(upload):
                     break
                 post_ids.extend(upload.post_ids)
             else:
@@ -159,33 +166,82 @@ def ProcessUploads():
         if len(post_ids):
             print("Check to see if the similarity server call will work.")
             try:
-                requests.get('http://127.0.0.1:3000/check_posts',timeout=2)
+                requests.get('http://127.0.0.1:3000/check_posts', timeout=2)
             except Exception as e:
                 print("Unable to contact similarity server:", e)
     finally:
-        SCHED.add_job(CheckForNewArtistBoorus)
+        SCHED.add_job(CheckForNewArtistBoorusWrap)
         ProcessUploads.processing = False
         SEM.release()
         print("<semaphore release>")
 
 
-def ProcessUpload(upload):
-    #print("ProcessUpload:\n",upload)
+def ProcessUploadWrap(upload):
     try:
-        BASE_SOURCE.ProcessUpload(upload)
+        ProcessUpload(upload)
         return True
     except Exception as e:
         print("\a\aProcessUpload: Exception occured in worker!\n", e)
         print("Unlocking the database...")
         SESSION.rollback()
         LogError('worker.ProcessUpload', "Unhandled exception occurred on upload #%d: %s" % (upload.id, e))
+        upload.status = 'error'
+        SESSION.commit()
         return False
+
+
+def ProcessUpload(upload):
+    upload.status = 'processing'
+    SESSION.commit()
+    if upload.type == 'post':
+        ProcessNetworkUpload(upload)
+    elif upload.type == 'file':
+        ProcessFileUpload(upload)
+
+
+def ProcessNetworkUpload(upload):
+    # Request URL should have already been validated, so no null test needed
+    source = BASE_SOURCE.GetPostSource(upload.request_url)
+    site_illust_id = source.GetIllustId(upload.request_url)
+    site_id = source.SITE_ID
+    error = source.Prework(site_illust_id)
+    if error is not None:
+        AppendError(upload, error)
+    illust = Illust.query.filter_by(site_id=site_id, site_illust_id=site_illust_id).first()
+    if illust is None:
+        illust = CreateIllustFromSource(site_illust_id, source)
+        if illust is None:
+            upload.status = 'error'
+            CreateAndAppendError('worker.ProcessNetworkUpload', "Unable to create illust: %s" % (source.ILLUST_SHORTLINK % site_illust_id), upload)
+            return
+    elif CheckRequery(illust):
+        UpdateIllustFromSource(illust, source)
+    # The artist will have already been created in the create illust step if it didn't exist
+    if CheckRequery(illust.artist):
+        UpdateArtistFromSource(illust.artist, source)
+    DownloadMultipleImages(illust, upload, source)
+
+
+def ProcessFileUpload(upload):
+    site_id = upload.illust_url and upload.illust_url.illust and upload.illust_url.illust.site_id
+    if site_id is None:
+        CreateAndAppendError('sources.base.ProcessFileUpload', "No site ID found through illust url.", upload)
+        upload.status = 'error'
+        SESSION.commit()
+        return
+    source = BASE_SOURCE.GetSourceById(site_id)
+    if UploadIllustUrl(upload, source):
+        upload.status = 'complete'
+    else:
+        upload.status = 'error'
+    SESSION.commit()
+
 
 def ProcessArtist(artist):
     SESSION.add(artist)
-    print("ProcessArtist:\n",artist.id)
+    print("ProcessArtist:\n", artist.id)
     try:
-        BASE_SOURCE.ProcessArtist(artist)
+        # BASE_SOURCE.ProcessArtist(artist)
         return True
     except Exception as e:
         print("\a\aProcessArtist: Exception occured in worker!\n", e)
@@ -194,9 +250,10 @@ def ProcessArtist(artist):
         LogError('worker.ProcessArtist', "Unhandled exception occurred on artist #%d: %s" % (artist.id, e))
         return False
 
+
 def CreateNewArtist(site_id, site_artist_id):
     try:
-        BASE_SOURCE.CreateNewArtist(site_id, site_artist_id)
+        # BASE_SOURCE.CreateNewArtist(site_id, site_artist_id)
         return True
     except Exception as e:
         print("\a\aCreateNewArtist: Exception occured in worker!\n", e)
@@ -205,8 +262,9 @@ def CreateNewArtist(site_id, site_artist_id):
         LogError('worker.CreateNewArtist', "Unhandled exception occurred creating new artist (%d - %d): %s" % (site_id, site_artist_id, e))
         return False
 
+
 def ProcessIllust(illust):
-    print("ProcessIllust:\n",illust.id)
+    print("ProcessIllust:\n", illust.id)
     try:
         BASE_SOURCE.ProcessIllust(illust)
         return True
@@ -217,8 +275,10 @@ def ProcessIllust(illust):
         LogError('worker.ProcessIllust', "Unhandled exception occurred on illust #%d: %s" % (illust.id, e))
         return False
 
+
 def CheckSubscriptions():
     time.sleep(random.random() * 5)
+
 
 def ExpungeCacheRecords():
     print("ExpungeCacheRecords")
@@ -242,8 +302,10 @@ def ExpungeCacheRecords():
     SEM.release()
     print("<semaphore release>")
 
+
 def CheckGlobals():
     print(ProcessUploads.processing, SEM._value)
+
 
 @PREBOORU_APP.route('/check_uploads')
 def check_uploads():
@@ -252,6 +314,7 @@ def check_uploads():
         return "Begin processing uploads..."
     return "Uploads already processing!"
 
+
 @PREBOORU_APP.route('/requery_artist/<int:id>')
 def requery_artist(id):
     artist = Artist.query.filter_by(id=id).first()
@@ -259,6 +322,7 @@ def requery_artist(id):
         return "Artist #%d not found!" % id
     SCHED.add_job(ProcessArtist, args=[artist])
     return "Reprocessing artist #%d" % id
+
 
 @PREBOORU_APP.route('/create_artist')
 def create_artist():
@@ -272,9 +336,11 @@ def create_artist():
     SCHED.add_job(CreateNewArtist, args=[site_id, artist_id])
     return "Creating new artist..."
 
+
 @PREBOORU_APP.route('/requery_illust')
 def requery_illust():
     pass
+
 
 # #### Main function
 
@@ -284,32 +350,25 @@ def Main(args):
         print("Server process already running: %d" % SERVER_PID)
         input()
         exit(-1)
-
     if args.logging:
         import logging
         logging.basicConfig()
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-
     if args.title:
         os.system('title Worker Server')
-
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
         ExpungeCacheRecords()
         SCHED = BackgroundScheduler(daemon=True)
-        #SCHED.add_job(CheckSubscriptions, 'interval', seconds=15)
         SCHED.add_job(CheckPendingUploads, 'interval', minutes=5)
-        SCHED.add_job(CheckForNewArtistBoorus, 'interval', minutes=5)
+        SCHED.add_job(CheckForNewArtistBoorusWrap, 'interval', minutes=5)
         SCHED.add_job(ExpireUploads, 'interval', minutes=1)
-        #SCHED.add_job(CheckGlobals, 'interval', seconds=1)
         SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1)
-        
-        #SCHED.add_job(CheckForShortLinks, 'interval', hours=2)
         SCHED.add_job(ProcessUploads)
         SCHED.start()
-
     PREBOORU_APP.run(threaded=True, port=4000)
+
 
 # ##EXECUTION START
 

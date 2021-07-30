@@ -41,8 +41,8 @@ IllustNotations = DB.Table(
     DB.Column('notation_id', DB.Integer, DB.ForeignKey('notation.id'), primary_key=True),
 )
 
-# Classes
 
+# CLASSES
 
 @dataclass
 class Illust(JsonModel):
@@ -61,6 +61,7 @@ class Illust(JsonModel):
     requery: DateTimeOrNull
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
+
     id = DB.Column(DB.Integer, primary_key=True)
     site_id = DB.Column(DB.Integer, nullable=False)
     site_illust_id = DB.Column(DB.Integer, nullable=False)
@@ -79,7 +80,7 @@ class Illust(JsonModel):
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
-    ## Association proxies
+    # Association proxies
 
     pools = association_proxy('_pools', 'pool')
     posts = association_proxy('urls', 'post')
@@ -91,7 +92,7 @@ class Illust(JsonModel):
     site_updated = association_proxy('site_data', 'site_updated', getset_factory=PolymorphicAccessorFactory)
     site_uploaded = association_proxy('site_data', 'site_uploaded', getset_factory=PolymorphicAccessorFactory)
 
-    ## Instance properties
+    # Instance properties
 
     @property
     def site_domain(self):
@@ -109,7 +110,7 @@ class Illust(JsonModel):
             elif self._source.IllustHasImages(self):
                 self.__type = 'image'
             else:
-                self.__type =  'unknown'
+                self.__type = 'unknown'
         return self.__type
 
     @property
@@ -132,7 +133,7 @@ class Illust(JsonModel):
             self.__source = SOURCEDICT[site_key]
         return self.__source
 
-    ## Instance methods
+    # Instance methods
 
     def delete(self):
         pools = [pool for pool in self.pools]
@@ -143,7 +144,7 @@ class Illust(JsonModel):
                 pool._elements.reorder()
             DB.session.commit()
 
-    ## Class methods
+    # Class methods
 
     @staticmethod
     def searchable_attributes():

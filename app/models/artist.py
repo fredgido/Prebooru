@@ -5,7 +5,6 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
-from sqlalchemy import func
 
 # ##LOCAL IMPORTS
 from .. import DB
@@ -19,8 +18,8 @@ from .post import Post
 from .illust_url import IllustUrl
 from .notation import Notation
 
-# ##GLOBAL VARIABLES
 
+# ##GLOBAL VARIABLES
 
 ArtistNames = DB.Table(
     'artist_names',
@@ -46,6 +45,8 @@ ArtistNotations = DB.Table(
     DB.Column('artist_id', DB.Integer, DB.ForeignKey('artist.id'), primary_key=True),
 )
 
+
+# ##CLASSES
 
 @dataclass
 class Artist(JsonModel):

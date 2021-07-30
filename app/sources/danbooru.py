@@ -1,14 +1,21 @@
+# APP/SOURCES/TWITTER.PY
+
+# ##PYTHON IMPORTS
 import time
 import requests
 
+# ##LOCAL IMPORTS
 from ..config import DANBOORU_HOSTNAME
 from ..logical.utility import AddDictEntry
+
+
+# ##FUNCTIONS
 
 def DanbooruRequest(url, params=None):
     for i in range(3):
         try:
             response = requests.get(DANBOORU_HOSTNAME + url, params=params, timeout=10)
-        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
+        except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError):
             print("Pausing for network timeout...")
             time.sleep(5)
             continue
@@ -20,6 +27,7 @@ def DanbooruRequest(url, params=None):
     else:
         return {'error': True, 'message': "HTTP %d: %s" % (response.status_code, response.reason)}
 
+
 def GetArtistByID(id, include_urls=False):
     params = {'only': 'name,urls'} if include_urls else None
     request_url = '/artists/%d.json' % id
@@ -27,6 +35,7 @@ def GetArtistByID(id, include_urls=False):
     if data['error']:
         return data
     return {'error': False, 'artist': data['json']}
+
 
 def GetArtistsByUrl(url):
     request_url = '/artist_urls.json'
@@ -40,6 +49,7 @@ def GetArtistsByUrl(url):
         return data
     artists = [artist_url['artist'] for artist_url in data['json']]
     return {'error': False, 'artists': artists}
+
 
 def GetArtistsByMultipleUrls(url_list):
     request_url = '/artist_urls.json'
@@ -55,6 +65,7 @@ def GetArtistsByMultipleUrls(url_list):
     for artist_url in data['json']:
         AddDictEntry(retdata, artist_url['url'], artist_url['artist'])
     return {'error': False, 'data': retdata}
+
 
 def GetArtistUrlsByArtistID(danbooru_id):
     request_url = '/artist_urls.json'

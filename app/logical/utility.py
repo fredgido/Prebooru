@@ -157,15 +157,5 @@ def SetError(retdata, message):
     retdata['message'] = message
     return retdata
 
-'''
-DOESN'T WORK
-def pmemoize(func):
-    """Simple memoize for non-mutating property methods"""
-    def memoized_func(*args,**kwargs):
-        if memoized_func.cache is not None:
-            return memoized_func.cache
-        memoized_func.cache = func(*args,**kwargs)
-        return memoized_func.cache
-    setattr(memoized_func, 'cache', None)
-    return memoized_func
-'''
+def FixupCRLF(text):
+    return re.sub(r'(?<!\r)\n', '\r\n', text)
