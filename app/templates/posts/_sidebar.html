@@ -63,7 +63,7 @@
             {% endfor %}
         </ul>
     </section>
-    {% if helpers.base.HasItems(post.pools) %}
+    {% if post.pools | length == 0 %}
         <section id="pool-list">
             <h4>Pools</h4>
             <ul>
@@ -80,17 +80,17 @@
             </ul>
         </section>
     {% endif %}
-    {% if helpers.base.HasItems(post.notations) %}
+    {% if post.notations | length == 0 %}
         <section id="notations-list">
             <h4>Notations</h4>
             <ul>
                 {% for notation in post.notations %}
-                    <li>{{ helpers.base.RenderTemplate("notations/_notation_block.html", notation=notation) }}</li>
+                    <li>{% include "notations/_notation_block.html" %}</li>
                 {% endfor %}
             </ul>
         </section>
     {% endif %}
-    {% if helpers.base.HasItems(post.errors) %}
+    {% if post.errors | length == 0 %}
         <section id="error-list">
             <h4>Errors</h4>
             <ul>

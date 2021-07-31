@@ -43,7 +43,7 @@
         {% endif %}
         <section id ="illust-commentaries">
             <h4>Commentaries</h4>
-            {% if helpers.base.HasItems(illust.commentaries) %}
+            {% if illust.commentaries | length == 0 %}
                 <div id="illust-commentaries-container">
                     {% for commentary in illust.commentaries %}
                         <div class="illust-commentaries-block">

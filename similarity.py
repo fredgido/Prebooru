@@ -23,7 +23,7 @@ from app import PREBOORU_APP, SESSION
 import app.models
 from app.models import Post
 from app.cache import MediaFile
-from app.similarity.similarity_result import SimilarityResult, HASH_SIZE
+from app.similarity.similarity_data import SimilarityData, HASH_SIZE
 from app.similarity.similarity_pool import SimilarityPool
 from app.similarity.similarity_pool_element import SimilarityPoolElement
 from app.logical.file import PutGetRaw, CreateDirectory
@@ -104,9 +104,9 @@ def check_similarity():
         image = image.copy().convert("RGB")
         image_hash = str(imagehash.whash(image, hash_size=HASH_SIZE))
         print("Image hash:", image_hash)
-        #smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause2(image_hash)).all()
+        #smatches = SimilarityData.query.filter(SimilarityData.cross_similarity_clause2(image_hash)).all()
         ratio = round(image.width / image.height, 4)
-        smatches = SimilarityResult.query.filter(SimilarityResult.ratio_clause(ratio), SimilarityResult.cross_similarity_clause2(image_hash)).all()
+        smatches = SimilarityData.query.filter(SimilarityData.ratio_clause(ratio), SimilarityData.cross_similarity_clause2(image_hash)).all()
         #smatches = GetSimilarMatches(image_hash, ratio)
         print("Similar matches:", len(smatches))
         start_time = time.time()
@@ -138,7 +138,7 @@ def generate_similarity():
     SEM.acquire()
     print("<semaphore acquire>")
     posts = Post.query.filter(Post.id.in_(post_ids)).all()
-    results = SimilarityResult.query.filter(SimilarityResult.post_id.in_(post_ids)).all()
+    results = SimilarityData.query.filter(SimilarityData.post_id.in_(post_ids)).all()
     for post in posts:
         result = next(filter(lambda x: x.post_id == post.id, results), None)
         if result is None:
@@ -158,9 +158,9 @@ def GetSimilarMatches(image_hash, ratio):
     # %1 swing in ratio
     ratio_low = round(ratio * 99, 4) / 100
     ratio_high = round(ratio * 101, 4) / 100
-    q = SimilarityResult.query
-    q = q.filter(SimilarityResult.ratio.between(ratio_low, ratio_high))
-    q = q.filter(SimilarityResult.cross_similarity_clause2(image_hash))
+    q = SimilarityData.query
+    q = q.filter(SimilarityData.ratio.between(ratio_low, ratio_high))
+    q = q.filter(SimilarityData.cross_similarity_clause2(image_hash))
     return q.all()
 
 def GeneratePostSimilarity(post):
@@ -168,7 +168,7 @@ def GeneratePostSimilarity(post):
     image = Image.open(post.preview_path)
     image_hash = imagehash.whash(image, hash_size=HASH_SIZE)
     ratio = round(post.width / post.height, 4)
-    simresult = SimilarityResult(post_id=post.id, image_hash=str(image_hash), ratio=ratio)
+    simresult = SimilarityData(post_id=post.id, image_hash=str(image_hash), ratio=ratio)
     SESSION.add(simresult)
     SESSION.commit()
     PopulateSimilarityPools2(simresult)
@@ -179,7 +179,7 @@ def PopulateSimilarityPools2(sdata):
     current_time = GetCurrentTime()
     start_time = time.time()
     print("Simdata:", sdata)
-    smatches = SimilarityResult.query.filter(SimilarityResult.ratio_clause(sdata.ratio), SimilarityResult.cross_similarity_clause2(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
+    smatches = SimilarityData.query.filter(SimilarityData.ratio_clause(sdata.ratio), SimilarityData.cross_similarity_clause2(sdata.image_hash), SimilarityData.post_id != sdata.post_id).all()
     score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 90.0)
     end_time = time.time()
     main_pool = SimilarityPool.query.filter_by(post_id=sdata.post_id).first()
@@ -235,7 +235,7 @@ def PopulateSimilarityPools2(sdata):
 def PopulateSimilarityPools(sdata):
     print("PopulateSimilarityPools")
     current_time = GetCurrentTime()
-    smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause1(sdata.image_hash), SimilarityResult.post_id != sdata.post_id).all()
+    smatches = SimilarityData.query.filter(SimilarityData.cross_similarity_clause1(sdata.image_hash), SimilarityData.post_id != sdata.post_id).all()
     start_time = time.time()
     score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 90.0)
     print("Score results:", score_results)
@@ -297,9 +297,9 @@ def CheckSimilarMatchScores(similarity_results, image_hash, min_score):
 
 def GenerateSimilarityResults(args):
     if args.expunge:
-        SimilarityResult.query.delete()
+        SimilarityData.query.delete()
         SESSION.commit()
-    max_post_id = SESSION.query(func.max(SimilarityResult.post_id)).scalar()
+    max_post_id = SESSION.query(func.max(SimilarityData.post_id)).scalar()
     page = Post.query.filter(Post.id > max_post_id).paginate(per_page=100)
     print("Generate similarity results:")
     while True:
@@ -315,9 +315,9 @@ def GenerateSimilarityResults(args):
     print("Done!")
 
 def GenerateSimilarityPools(args):
-    query = SimilarityResult.query
+    query = SimilarityData.query
     if args.lastid is not None:
-        query = query.filter(SimilarityResult.post_id >= args.lastid)
+        query = query.filter(SimilarityData.post_id >= args.lastid)
     page = query.paginate(per_page=100)
     print("Generate similarity results:")
     while True:
@@ -369,7 +369,7 @@ def FixupSimilarityPools(args):
                 #input("####BREAK####")
 
 def CompareSimilarityResults(args):
-    page = SimilarityResult.query.paginate(per_page=100)
+    page = SimilarityData.query.paginate(per_page=100)
     print("Generate similarity results:")
     while True:
         print("\n%d/%d" % (page.page, page.pages))
@@ -380,7 +380,7 @@ def CompareSimilarityResults(args):
             if pool is None:
                 print("Did not find pool for post #", sdata.post_id)
                 continue
-            smatches = SimilarityResult.query.filter(SimilarityResult.cross_similarity_clause2(sdata.image_hash)).all()
+            smatches = SimilarityData.query.filter(SimilarityData.cross_similarity_clause2(sdata.image_hash)).all()
             start_time = time.time()
             score_results = CheckSimilarMatchScores(smatches, sdata.image_hash, 80.0)
             end_time = time.time()
@@ -412,11 +412,11 @@ def CompareSimilarityResults(args):
             input("####")
         if not page.has_next:
             break
-        page = SimilarityResult.query.paginate(page=page.next_num, per_page=100)
+        page = SimilarityData.query.paginate(page=page.next_num, per_page=100)
     print("Done!")
 
 def TransferSimilarityResults(args):
-    page = SimilarityResult.query.paginate(per_page=1000)
+    page = SimilarityData.query.paginate(per_page=1000)
     print("Transferring similarity results:")
     while True:
         print("\n%d/%d" % (page.page, page.pages))
@@ -426,7 +426,7 @@ def TransferSimilarityResults(args):
         SESSION.commit()
         if not page.has_next:
             break
-        page = SimilarityResult.query.paginate(page=page.next_num, per_page=100)
+        page = SimilarityData.query.paginate(page=page.next_num, per_page=100)
     print("Done!")
 
 def ProcessSimilarity():
@@ -445,7 +445,7 @@ def ProcessSimilarity():
         print("\n<semaphore release>")
 
 def ProcessSimilaritySet():
-    max_post_id = SESSION.query(func.max(SimilarityResult.post_id)).scalar()
+    max_post_id = SESSION.query(func.max(SimilarityData.post_id)).scalar()
     page = Post.query.filter(Post.id > max_post_id).paginate(per_page=100)
     if len(page.items) == 0:
         return False
@@ -462,7 +462,7 @@ def ProcessSimilaritySet():
 
 def ProcessSimilarityPool():
     max_post_id = SESSION.query(func.max(SimilarityPool.post_id)).scalar()
-    page = SimilarityResult.query.filter(SimilarityResult.post_id > max_post_id).paginate(per_page=100)
+    page = SimilarityData.query.filter(SimilarityData.post_id > max_post_id).paginate(per_page=100)
     if len(page.items) == 0:
         return False
     print("Process similarity pool:", max_post_id)
@@ -484,7 +484,7 @@ def ChooseSimilarityResult():
             print("Must enter a valid ID number.")
             continue
         post_id = int(keyinput)
-        sresult = SimilarityResult.query.filter_by(post_id=post_id).first()
+        sresult = SimilarityData.query.filter_by(post_id=post_id).first()
         if sresult is None:
             print("Post not found:", post_id)
             continue

@@ -106,6 +106,9 @@ def create():
         if source is None:
             return SetError(retdata, "Upload source currently not handled for request url: %s" % createparams['request_url'])
         createparams['image_urls'] = [url for url in createparams['image_urls'] if source.IsImageUrl(url)]
+        createparams['type'] = 'post'
+    elif createparams['illust_url_id']:
+        createparams['type'] = 'file'
     upload = CreateUploadFromParameters(createparams)
     retdata['item'] = upload.to_json()
     WorkerCheckUploads()

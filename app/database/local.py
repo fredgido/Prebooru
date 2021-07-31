@@ -3,61 +3,10 @@
 # ##LOCAL IMPORTS
 from ..logical.utility import GetCurrentTime
 from .. import SESSION
-from ..models import Error, Post, UploadUrl, Upload, Artist
+from ..models import Error, Post
 
 
 # ##FUNCTIONS
-
-
-def CreateUploadFromRequest(type, request_url, image_urls, commit=True):
-    data = {
-        'request_url': request_url,
-        'type': type,
-        'status': 'pending',
-        'successes': 0,
-        'failures': 0,
-        'subscription_id': None,
-        'created': GetCurrentTime(),
-    }
-    upload = Upload(**data)
-    if commit:
-        SESSION.add(upload)
-        SESSION.commit()
-        AppendUploadUrls(upload, image_urls)
-    return upload
-
-
-
-def CreateFileUploadFromRequest(media_filepath, sample_filepath, illust_url_id, commit=True):
-    data = {
-        'media_filepath': media_filepath,
-        'sample_filepath': sample_filepath,
-        'type': 'file',
-        'status': 'pending',
-        'successes': 0,
-        'failures': 0,
-        'illust_url_id': illust_url_id,
-        'subscription_id': None,
-        'created': GetCurrentTime(),
-    }
-    upload = Upload(**data)
-    if commit:
-        SESSION.add(upload)
-        SESSION.commit()
-    return upload
-
-
-def AppendUploadUrls(upload, image_urls):
-    append_urls = []
-    for url in image_urls:
-        append_urls.append(UploadUrl(url=url))
-    if len(append_urls):
-        SESSION.add_all(append_urls)
-        SESSION.commit()
-        upload.image_urls.extend(append_urls)
-        SESSION.add(upload)
-        SESSION.commit()
-
 
 def CreatePost(width, height, file_ext, md5, size, commit=True):
     data = {
@@ -129,9 +78,6 @@ def GetDBPostByField(field, value):
 def IsError(instance):
     return isinstance(instance, Error)
 
-
-def GetArtist(artist_id):
-    return Artist.query.filter_by(id=artist_id).first()
 
 def CheckRequery(instance):
     return instance.requery is None or instance.requery < GetCurrentTime()

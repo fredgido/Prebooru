@@ -1,13 +1,16 @@
 # APP/DATABASE/ARTIST_DB.PY
 
+# ##PYTHON IMPORTS
 import datetime
 
+# ##LOCAL IMPORTS
 from .. import models, SESSION
-from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
+from ..logical.utility import GetCurrentTime
 from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections, AppendRelationshipCollections, SetTimesvalue
 from .artist_db import CreateArtistFromSource, GetSiteArtist
 from .illust_url_db import UpdateIllustUrlFromParameters
 from .site_data_db import UpdateSiteDataFromParameters
+
 
 # ##GLOBAL VARIABLES
 
@@ -50,7 +53,7 @@ def UpdateIllustUrls(illust, params):
     return any(update_results)
 
 
-# #### Route DB functions
+# #### DB functions
 
 # ###### CREATE
 

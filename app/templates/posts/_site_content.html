@@ -7,9 +7,9 @@
             <li><strong>Dimensions:</strong> ({{ post.width }} x {{ post.height }})</li>
             <li><strong>MD5:</strong> {{ post.md5 }}</li>
             <li><strong>Sources:</strong>
-                {% if helpers.base.Length(post.illust_urls) == 1 %}
+                {% if post.illust_urls | length == 1 %}
                     {{ helpers.illust.OriginalUrl(post.illust_urls[0]) }}
-                {% elif not helpers.base.HasItems(post.illust_urls) %}
+                {% elif not post.illust_urls | length == 0 %}
                     <em>none</em>
                 {% else %}
                     <ul>
@@ -26,7 +26,7 @@
         {% for illust in post.illusts %}
             {% set outer_loop = loop %}
             <div><strong>Illust #{{ illust.id }}:</strong><br>
-                {% if helpers.base.HasItems(illust.commentaries) %}
+                {% if illust.commentaries | length > 0 %}
                     <div class="post-commentaries-container">
                         {% for commentary in illust.commentaries %}
                             <div class="post-commentaries-block">

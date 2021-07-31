@@ -25,7 +25,7 @@ from app.database.booru_db import CreateBooruFromParameters
 from app.database.illust_db import CreateIllustFromSource, UpdateIllustFromSource
 from app.sources import base as BASE_SOURCE, danbooru as DANBOORU_SOURCE
 from app.logical.utility import MinutesAgo, StaticVars, GetCurrentTime
-from app.logical.downloader import DownloadMultipleImages
+from app.logical.downloader import DownloadIllust
 from app.logical.uploader import UploadIllustUrl
 from app.logical.unshortenlink import UnshortenAllLinks
 from app.logical.logger import LogError
@@ -137,8 +137,18 @@ def AddDanbooruArtists(url, danbooru_artists, db_boorus, db_artists):
 
 
 def GetPendingUploadIDs():
+    # Doing this because there were issues with subsequent iterations of the
+    # while loop in ProcessUploads not registering newly created uploads.
     with Session(bind=READ_ENGINE) as session:
         return [upload.id for upload in session.query(Upload).filter_by(status="pending").all()]
+
+
+def GetUploadWait(upload_id):
+    for i in range(3):
+        upload = Upload.find(upload_id)
+        if upload is not None:
+            return upload
+        time.sleep(0.5)
 
 
 @StaticVars(processing=False)
@@ -154,9 +164,11 @@ def ProcessUploads():
             upload_ids = GetPendingUploadIDs()
             for upload_id in upload_ids:
                 # Must retrieve the upload with Flask session object for updating/appending to work
-                upload = Upload.find(upload_id)
+                upload = GetUploadWait(upload_id)
+                if upload is None:
+                    raise Exception("\aUnable to find upload with upload id: %d" % upload_id)
                 if not ProcessUploadWrap(upload):
-                    break
+                    return
                 post_ids.extend(upload.post_ids)
             else:
                 print("No pending uploads.")
@@ -219,7 +231,7 @@ def ProcessNetworkUpload(upload):
     # The artist will have already been created in the create illust step if it didn't exist
     if CheckRequery(illust.artist):
         UpdateArtistFromSource(illust.artist, source)
-    DownloadMultipleImages(illust, upload, source)
+    DownloadIllust(illust, upload, source)
 
 
 def ProcessFileUpload(upload):

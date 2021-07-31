@@ -5,14 +5,14 @@
 {% block content %}
     <div class="heading" style="font-size: 32px">Illust #{{ illust.id }}</div>
     <div id="artist-content" style="margin-top: 2em; display: flex">
-        {{ helpers.base.RenderTemplate("illusts/_sidebar.html", illust=illust) }}
-        {{ helpers.base.RenderTemplate("illusts/_site_content.html", illust=illust) }}
+        {% include "illusts/_sidebar.html" %}
+        {% include "illusts/_site_content.html" %}
     </div>
     <div id="illust-posts" style="margin-top: 2em;">
         {% if illust.type == 'video' %}
-            {{ helpers.base.RenderTemplate("illusts/_video_posts.html", illust=illust) }}
+            {% include "illusts/_video_posts.html" %}
         {% elif illust.type == 'image' %}
-            {{ helpers.base.RenderTemplate("illusts/_image_posts.html", illust=illust) }}
+            {% include "illusts/_image_posts.html" %}
         {% endif %}
     </div>
 {% endblock %}

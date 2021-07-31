@@ -3,38 +3,58 @@
 # ## LOCAL IMPORTS
 from .. import models, SESSION
 from ..logical.utility import GetCurrentTime
+from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections
+
+
+# ##GLOBAL VARIABLES
+
+COLUMN_ATTRIBUTES = ['illust_url_id', 'media_filepath', 'sample_filepath', 'request_url', 'type', 'active']
+UPDATE_SCALAR_RELATIONSHIPS = [('image_urls', 'url', models.UploadUrl)]
+
+CREATE_ALLOWED_ATTRIBUTES = ['illust_url_id', 'media_filepath', 'sample_filepath', 'request_url', 'type', 'active', 'image_urls']
 
 
 # ## FUNCTIONS
 
+# #### DB Functions
+
+# ###### CREATE
+
 def CreateUploadFromParameters(createparams):
     data = {
-        'illust_url_id': createparams['illust_url_id'],
-        'media_filepath': createparams['media_filepath'],
-        'sample_filepath': createparams['sample_filepath'],
-        'request_url': createparams['request_url'],
         'successes': 0,
         'failures': 0,
         'status': 'pending',
         'subscription_id': None,
         'created': GetCurrentTime(),
     }
-    if createparams['illust_url_id']:
-        data['type'] = 'file'
-    elif createparams['request_url']:
-        data['type'] = 'post'
     upload = models.Upload(**data)
-    SESSION.add(upload)
-    SESSION.commit()
-    if upload.type == 'post' and len(createparams['image_urls']):
-        AppendImageUrls(upload, createparams['image_urls'])
+    settable_keylist = set(createparams.keys()).intersection(CREATE_ALLOWED_ATTRIBUTES)
+    update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
+    UpdateColumnAttributes(upload, update_columns, createparams)
+    create_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
+    UpdateRelationshipCollections(upload, create_relationships, createparams)
     return upload
 
 
-def AppendImageUrls(upload, image_urls):
-    append_urls = [models.UploadUrl(url=url) for url in image_urls]
-    SESSION.add_all(append_urls)
+# #### Misc functions
+
+
+def SetUploadStatus(upload, status):
+    upload.status = status
     SESSION.commit()
-    upload.image_urls.extend(append_urls)
-    SESSION.add(upload)
+
+
+def AddUploadSuccess(upload):
+    upload.successes += 1
+    SESSION.commit()
+
+
+def AddUploadFailure(upload):
+    upload.failures += 1
+    SESSION.commit()
+
+
+def UploadAppendPost(upload, post):
+    upload.posts.append(post)
     SESSION.commit()

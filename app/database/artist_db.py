@@ -6,6 +6,7 @@ from .. import models, SESSION
 from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
 from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections, AppendRelationshipCollections
 
+
 # ##GLOBAL VARIABLES
 
 COLUMN_ATTRIBUTES = ['site_id', 'site_artist_id', 'current_site_account', 'site_created', 'active']
@@ -33,42 +34,7 @@ def SetAllSiteAccounts(params):
         params['site_accounts'] = list(set(params['site_accounts'] + [params['current_site_account']]))
 
 
-# #### Auxiliary functions
-
-def UpdateArtistWebpages(artist, params):
-    existing_webpages = [webpage.url for webpage in artist.webpages]
-    current_webpages = []
-    is_dirty = False
-    for url in params:
-        is_active = url[0] != '-'
-        if not is_active:
-            url = url[1:]
-        artist_url = next(filter(lambda x: x.url == url, artist.webpages), None)
-        if artist_url is None:
-            data = {
-                'artist_id': artist.id,
-                'url': url,
-                'active': is_active,
-            }
-            artist_url = models.ArtistUrl(**data)
-            SESSION.add(artist_url)
-            is_dirty = True
-        elif artist_url.active != is_active:
-            artist_url.active = is_active
-            is_dirty = True
-        current_webpages.append(url)
-    removed_webpages = set(existing_webpages).difference(current_webpages)
-    for url in removed_webpages:
-        # These will only be removable from the edit artist interface
-        artist_url = next(filter(lambda x: x.url == url, artist.webpages))
-        SESSION.delete(artist_url)
-        is_dirty = True
-    if is_dirty:
-        SESSION.commit()
-    return is_dirty
-
-
-# #### Route DB functions
+# #### DB functions
 
 # ###### Create
 
@@ -130,6 +96,41 @@ def UpdateArtistFromSource(artist, source):
         updateparams['names'] += [artist_name.name for artist_name in artist.names if artist_name.name not in updateparams['names']]
         updateparams['site_accounts'] += [site_account.name for site_account in artist.site_accounts if site_account.name not in updateparams['site_accounts']]
     UpdateArtistFromParameters(artist, updateparams)
+
+
+# #### Auxiliary functions
+
+def UpdateArtistWebpages(artist, params):
+    existing_webpages = [webpage.url for webpage in artist.webpages]
+    current_webpages = []
+    is_dirty = False
+    for url in params:
+        is_active = url[0] != '-'
+        if not is_active:
+            url = url[1:]
+        artist_url = next(filter(lambda x: x.url == url, artist.webpages), None)
+        if artist_url is None:
+            data = {
+                'artist_id': artist.id,
+                'url': url,
+                'active': is_active,
+            }
+            artist_url = models.ArtistUrl(**data)
+            SESSION.add(artist_url)
+            is_dirty = True
+        elif artist_url.active != is_active:
+            artist_url.active = is_active
+            is_dirty = True
+        current_webpages.append(url)
+    removed_webpages = set(existing_webpages).difference(current_webpages)
+    for url in removed_webpages:
+        # These will only be removable from the edit artist interface
+        artist_url = next(filter(lambda x: x.url == url, artist.webpages))
+        SESSION.delete(artist_url)
+        is_dirty = True
+    if is_dirty:
+        SESSION.commit()
+    return is_dirty
 
 
 # ###### Misc

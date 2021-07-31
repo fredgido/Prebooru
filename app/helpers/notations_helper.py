@@ -10,8 +10,8 @@ from .base_helper import ConvertStrToHTML
 from . import artists_helper as ARTIST
 from . import illusts_helper as ILLUST
 
-# ##GLOBAL VARIABLES
 
+# ##GLOBAL VARIABLES
 
 HTTP_RG = re.compile(r'(\b(?:http|https)(?::\/{2}[\w]+)(?:[\/|\.]?)(?:[^\s<>\uff08\uff09\u3011\u3000"\[\]]*))', re.ASCII)
 
@@ -23,17 +23,16 @@ APPEND_KEY_DICT = {
     'post': 'post',
 }
 
+
 # ## FUNCTIONS
 
 # #### Helper functions
-
 
 def IsGeneralForm(form):
     return (form.pool_id.data is None) and (form.artist_id.data is None) and (form.illust_id.data is None) and (form.post_id.data is None)
 
 
 # #### General functions
-
 
 def ConvertToHTML(notation):
     links = HTTP_RG.findall(notation.body)
@@ -53,7 +52,6 @@ def ConvertToHTML(notation):
 
 # ###### INDEX
 
-
 def Excerpt(notation):
     lines = re.split(r'\r?\n', notation.body)
     return ConvertStrToHTML(lines[0][:50] + ('...' if len(lines[0]) > 50 else ''))
@@ -70,6 +68,7 @@ def ItemLinkTitle(item):
         return ILLUST.ShortLink(item)
     return item.shortlink.title()
 
+
 def HasAppendItem(notation):
     return any((getattr(notation, attr) is not None) for attr in ['_pool', 'artist', 'illust', 'post'])
 
@@ -79,7 +78,6 @@ def AppendKey(notation):
 
 
 # ###### NEW/EDIT
-
 
 def FormTitle(form):
     if form.pool_id.data:

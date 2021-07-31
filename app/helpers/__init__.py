@@ -1,3 +1,7 @@
+# APP/HELPERS/__INIT__.PY
+
+# flake8: noqa
+
 from . import base_helper as base
 from . import posts_helper as post
 from . import uploads_helper as upload

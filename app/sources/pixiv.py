@@ -53,7 +53,7 @@ IMAGE_RG = re.compile(r"""
 ^https?://[^.]+\.pximg\.net             # Hostname
 (?:/c/\w+)?                             # Size 1
 /img-(?:original|master)/img/           # Path
-\d{4}/\d{2}/\d{2}/\d{2}/\d{2}/\d{2}/    # Date
+(\d{4}/\d{2}/\d{2}/\d{2}/\d{2}/\d{2}/)  # Date
 (\d+)_                                  # ID
 p(\d+)                                  # Order
 (?:_(?:master|square)1200)?             # Size 2
@@ -159,11 +159,8 @@ def IsArtistUrl(artist_url):
 
 
 def SmallImageUrl(image_url):
-    image_url = urllib.parse.urlparse(image_url).path.replace('img-original', 'img-master')
-    image_url = re.sub(r'_(?:master|square)1200', '_master1200', image_url)
-    image_url = re.sub(r'(?:/c/\w+)', '', image_url)
-    image_url = '/c/540x540_70' + image_url
-    return IMAGE_SERVER + image_url
+    date, id, order, type = IMAGE_RG.match(image_url).groups()
+    return IMAGE_SERVER + '/c/540x540_70/img-master/img/' + date + '/' + id + '_p' + order + '_master1200.' + type
 
 
 def NormalizedImageUrl(image_url):
@@ -185,7 +182,7 @@ def GetIllustId(request_url):
         return int(artwork_match.group(1))
     image_match = IMAGE_RG.match(request_url)
     if image_match:
-        return int(image_match.group(1))
+        return int(image_match.group(2))
 
 
 def GetUploadInfo(request_url):
@@ -195,7 +192,7 @@ def GetUploadInfo(request_url):
         type = 'post'
     image_match = IMAGE_RG.match(request_url) if artwork_match is None else None
     if image_match:
-        illust_id = int(image_match.group(1))
+        illust_id = int(image_match.group(2))
         type = 'image'
     return type, illust_id
 

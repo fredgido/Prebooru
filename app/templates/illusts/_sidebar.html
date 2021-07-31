@@ -7,7 +7,7 @@
             <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(illust.artist) | safe }}</li>
         </ul>
     </section>
-    {% if helpers.base.HasItems(illust.pools) %}
+    {% if illust.pools | length == 0 %}
         <section id="illust-pools">
             <h4>Pools</h4>
             <ul>
@@ -32,13 +32,13 @@
             <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(illust.updated) }}</li>
         </ul>
     </section>
-    {% if helpers.base.HasItems(illust.notations) %}
+    {% if illust.notations | length == 0 %}
         <section id="illust-notations">
             <h4>Notations</h4>
             <div id="illust-notations-container">
                 <ul>
                     {% for notation in illust.notations %}
-                        <li>{{ helpers.base.RenderTemplate("notations/_notation_block.html", notation=notation) }}</li>
+                        <li>{% include "notations/_notation_block.html" %}</li>
                     {% endfor %}
                 </ul>
             </div>

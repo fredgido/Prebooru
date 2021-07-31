@@ -4,4 +4,4 @@
 
 {% block linkscript %}<script src="{{ url_for('static', filename='javascript/illusts.js') }}"></script>{% endblock %}
 
-{% block secondary_links %}{{ helpers.base.RenderTemplate("illusts/_secondary_links.html", illust=illust) }}{% endblock %}
+{% block secondary_links %}{% include "illusts/_secondary_links.html" %}{% endblock %}

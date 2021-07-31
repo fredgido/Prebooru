@@ -137,6 +137,11 @@ span.explanation {
     color: grey;
     font-style: italic;
 }
+span.description {
+    font-size: 80%;
+    color: #888;
+    font-style: italic;
+}
 a.warning-link {
     color: red;
 }

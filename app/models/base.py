@@ -76,6 +76,9 @@ class JsonModel(DB.Model):
     def delete_url(self):
         return url_for(self.__table__.name + ".delete_html", id=self.id)
 
+    def column_dict(self):
+        return {k: getattr(self, k) for k in self.__table__.c.keys() if hasattr(self, k)}
+
     def to_json(self):
         fields = self.__dataclass_fields__
         data = {}

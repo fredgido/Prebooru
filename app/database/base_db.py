@@ -8,6 +8,17 @@ from ..logical.utility import ProcessUTCTimestring
 
 # ##GLOBAL VARIABLES
 
+def SaveData(instance=None):
+    if instance is not None:
+        SESSION.add(instance)
+    SESSION.commit()
+
+
+def RemoveData(instance):
+    SESSION.delete(instance)
+    SESSION.commit()
+
+
 def SetTimesvalue(params, key):
     if key in params:
         if type(params[key]) is str:
@@ -17,7 +28,7 @@ def SetTimesvalue(params, key):
 
 
 def UpdateColumnAttributes(item, attrs, dataparams):
-    print("UpdateColumnAttributes", item, attrs, dataparams)
+    print("UpdateColumnAttributes", item.column_dict(), attrs, dataparams)
     is_dirty = False
     for attr in attrs:
         if getattr(item, attr) != dataparams[attr]:

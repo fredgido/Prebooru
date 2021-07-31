@@ -67,6 +67,7 @@ def DanbooruPostBookmarkletLinks(post):
         image_links.append('<a href="https://danbooru.donmai.us/uploads/new?prebooru_post_id=%d" target="_blank">file</a>' % post.id)
     return ' | '.join(image_links)
 
+
 def RelatedPostsSearch(post):
     illust_ids_str = ','.join([str(illust.id) for illust in post.illusts])
     return SearchUrlFor('post.index_html', illust_urls={'illust_id': illust_ids_str})
