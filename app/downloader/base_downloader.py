@@ -1,18 +1,16 @@
-# APP/LOGICAL/DOWNLOADER.PY
+# APP/DOWNLOADER/BASE_DOWNLOADER.PY
 
 # ##PYTHON IMPORTS
 import ffmpeg
-import requests
 import filetype
 from PIL import Image
 from io import BytesIO
 
 # ##LOCAL IMPORTS
-from .utility import GetBufferChecksum
-from .file import CreateDirectory, PutGetRaw
-from .network import GetHTTPFile
-from ..database.upload_db import SetUploadStatus, AddUploadSuccess, AddUploadFailure, UploadAppendPost
-from ..database.post_db import PostAppendIllustUrl, CreatePostAndAddIllustUrl, GetPostByMD5
+from ..logical.utility import GetBufferChecksum
+from ..logical.file import CreateDirectory, PutGetRaw
+from ..database.upload_db import AddUploadSuccess, AddUploadFailure, UploadAppendPost
+from ..database.post_db import PostAppendIllustUrl, GetPostByMD5
 from ..database.error_db import CreateError, CreateAndAppendError, ExtendErrors, IsError
 from .. import storage
 
@@ -30,54 +28,34 @@ FORMAT_EXT = {
 
 # #### Main execution functions
 
-def DownloadIllust(illust, upload, source):
-    no_media = False
-    if source.IllustHasVideos(illust):
-        DownloadVideo(illust, upload, source)
-    elif source.IllustHasImages(illust):
-        DownloadImages(illust, upload, source)
-    else:
-        no_media = True
-    if no_media or (len(upload.posts) == 0 and len(upload.errors) == 0):
-        CreateAndAppendError('logical.downloader.DownloadIllust', "Did not find any media to download for illust #%d" % illust.id, upload)
-    SetUploadStatus(upload, 'complete')
-
-
-def DownloadVideo(illust, upload, source):
+def ConvertVideoUpload(illust, upload, source, create_video_func):
     video_illust_url, thumb_illust_url = source.VideoIllustDownloadUrls(illust)
     if thumb_illust_url is None:
-        CreateAndAppendError('logical.downloader.DownloadVideo', "Did not find thumbnail for video on illust #%d" % illust.id, upload)
+        CreateAndAppendError('logical.downloader.ConvertVideoUpload', "Did not find thumbnail for video on illust #%d" % illust.id, upload)
+        return False
     else:
-        post = CreateVideoPost(video_illust_url, thumb_illust_url, source)
-        RecordOutcome(post, upload)
-
-
-def DownloadImages(illust, upload, source):
-    all_upload_urls = [source.NormalizeImageURL(upload_url.url) for upload_url in upload.image_urls]
-    image_illust_urls = source.ImageIllustDownloadUrls(illust)
-    for illust_url in image_illust_urls:
-        if len(all_upload_urls) == 0 or illust_url.url in all_upload_urls:
-            post = CreateImagePost(illust_url, source)
+        post = create_video_func(video_illust_url, thumb_illust_url, source)
+        if type(post) is list:
+            ExtendErrors(upload, post)
+            return False
+        else:
             RecordOutcome(post, upload)
+            return True
+
+
+def ConvertImageUpload(illust_urls, upload, source, create_image_func):
+    result = False
+    for illust_url in illust_urls:
+        post = create_image_func(illust_url, upload, source)
+        if type(post) is list:
+            ExtendErrors(upload, post)
+        else:
+            RecordOutcome(post, upload)
+            result = True
+    return result
 
 
 # #### Helper functions
-
-def CreatePostError(module, message, post_errors):
-    error = CreateError(module, message)
-    post_errors.append(error)
-
-
-def LoadImage(buffer):
-    try:
-        file_imgdata = BytesIO(buffer)
-        image = Image.open(file_imgdata)
-    except Exception as e:
-        return CreateError('utility.downloader.LoadImage', "Error processing image data: %s" % repr(e))
-    return image
-
-
-# #### Auxiliary functions
 
 def RecordOutcome(post, upload):
     if isinstance(post, list):
@@ -90,6 +68,20 @@ def RecordOutcome(post, upload):
     else:
         UploadAppendPost(upload, post)
         AddUploadSuccess(upload)
+
+
+def LoadImage(buffer):
+    try:
+        file_imgdata = BytesIO(buffer)
+        image = Image.open(file_imgdata)
+    except Exception as e:
+        return CreateError('utility.downloader.LoadImage', "Error processing image data: %s" % repr(e))
+    return image
+
+
+def CreatePostError(module, message, post_errors):
+    error = CreateError(module, message)
+    post_errors.append(error)
 
 
 # #### Validation functions
@@ -213,11 +205,7 @@ def SaveVideo(buffer, md5, file_ext):
         return CreateError('utility.downloader.SaveVideo', "Error saving video to disk: %s" % repr(e))
 
 
-def SaveThumb(thumb_illust_url, md5, source, post_errors):
-    buffer, file_ext = DownloadMedia(thumb_illust_url, source)
-    if IsError(buffer):
-        post_errors.append(buffer)
-        return
+def SaveThumb(buffer, md5, source, post_errors):
     image = LoadImage(buffer)
     if IsError(image):
         post_errors.append(image)
@@ -230,62 +218,3 @@ def SaveThumb(thumb_illust_url, md5, source, post_errors):
     error = CreateSample(image, md5, downsample)
     if error is not None:
         post_errors.append(error)
-
-
-# #### Network functions
-
-def DownloadMedia(illust_url, source):
-    download_url = source.GetFullUrl(illust_url)
-    file_ext = source.GetMediaExtension(download_url)
-    if file_ext not in ['jpg', 'png', 'mp4']:
-        return CreateError('utility.downloader.DownloadMedia', "Unsupported file format: %s" % file_ext), None
-    print("Downloading", download_url)
-    buffer = GetHTTPFile(download_url, headers=source.IMAGE_HEADERS)
-    if isinstance(buffer, Exception):
-        return CreateError('utility.downloader.DownloadMedia', str(buffer)), None
-    if isinstance(buffer, requests.Response):
-        return CreateError('utility.downloader.DownloadMedia', "HTTP %d - %s" % (buffer.status_code, buffer.reason)), None
-    return buffer, file_ext
-
-
-# #### Post creation functions
-
-def CreateImagePost(image_illust_url, source):
-    buffer, file_ext = DownloadMedia(image_illust_url, source)
-    if IsError(buffer):
-        return [buffer]
-    md5 = CheckExisting(buffer, image_illust_url)
-    if IsError(md5):
-        return [md5]
-    post_errors = []
-    image_file_ext = CheckFiletype(buffer, file_ext, post_errors)
-    image = LoadImage(buffer)
-    if IsError(image):
-        return post_errors + [image]
-    image_width, image_height = CheckImageDimensions(image, image_illust_url, post_errors)
-    if not SaveImage(buffer, image, md5, image_file_ext, image_illust_url, post_errors):
-        return post_errors
-    post = CreatePostAndAddIllustUrl(image_illust_url, image_width, image_height, image_file_ext, md5, len(buffer))
-    if len(post_errors):
-        ExtendErrors(post, post_errors)
-    return post
-
-
-def CreateVideoPost(video_illust_url, thumb_illust_url, source):
-    buffer, file_ext = DownloadMedia(video_illust_url, source)
-    if IsError(buffer):
-        return [buffer]
-    md5 = CheckExisting(buffer, video_illust_url)
-    if IsError(md5):
-        return [md5]
-    post_errors = []
-    video_file_ext = CheckFiletype(buffer, file_ext, post_errors)
-    filepath = SaveVideo(buffer, md5, video_file_ext)
-    if IsError(filepath):
-        return post_errors + [filepath]
-    video_width, video_height = CheckVideoDimensions(filepath, video_illust_url, post_errors)
-    SaveThumb(thumb_illust_url, md5, source, post_errors)
-    post = CreatePostAndAddIllustUrl(video_illust_url, video_width, video_height, video_file_ext, md5, len(buffer))
-    if len(post_errors):
-        ExtendErrors(post, post_errors)
-    return post

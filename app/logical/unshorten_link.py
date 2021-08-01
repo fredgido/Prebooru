@@ -1,29 +1,35 @@
+# APP/LOGICAL/UNSHORTEN_LINK.PY
+
+# ##PYTHON IMPORTS
 import re
 import requests
 import urllib.parse
 from functools import reduce
+
+# ##LOCAL IMPORTS
+from .. import SESSION
 from ..cache import Domain
 from ..models import Description, ArtistUrl
-from .. import SESSION
+
+
+# ##GLOBAL VARIABLES
 
 SHORTLINK_DOMAINS = ['t.co', 'bit.ly']
 NONSHORTLINK_DOMAINS = ['pixiv.me']
 
-"""
-http://u0u1.net/Y8lp
-"""
-
+"""http://u0u1.net/Y8lp"""
 SHORTURL_RG = re.compile(r'http://\w{3,5}\.\w{2,4}/\w{3,6}')
 
-"""
-http://urx.morimo.info/Y8lp?h=u0u1.net
-"""
+"""http://urx.morimo.info/Y8lp?h=u0u1.net"""
+MORIMO_RG = re.compile(r'^http://urx\.morimo\.info/\w{3,6}\?h=\w{3,5}\.\w{2,4}$')
 
-MORIMO_RG = re.compile('^http://urx\.morimo\.info/\w{3,6}\?h=\w{3,5}\.\w{2,4}$')
-
+"""https://t.co/Rg6LqLPc4a"""
 TCO_RG = re.compile(r'https?://t\.co/\w+')
 
 SHORTLINK_DOMAIN_RG = None
+
+
+# ##FUNCTIONS
 
 def InitializeShortlinks():
     global SHORTLINK_DOMAINS, NONSHORTLINK_DOMAINS, SHORTLINK_DOMAIN_RG
@@ -32,8 +38,10 @@ def InitializeShortlinks():
     NONSHORTLINK_DOMAINS += [domain.name for domain in all_domains if not domain.redirector]
     SHORTLINK_DOMAIN_RG = re.compile(r'https?://(?:%s)/' % ('|'.join([re.escape(domain) for domain in SHORTLINK_DOMAINS])))
 
+
 def GetKnownDomains():
     return set(SHORTLINK_DOMAINS + NONSHORTLINK_DOMAINS)
+
 
 def CheckInitialization(func):
     def decorate(*args, **kwargs):
@@ -58,6 +66,7 @@ def UnshortenArtistUrls():
     if len(artist_urls):
         SESSION.commit()
 
+
 @CheckInitialization
 def UnshortenDescriptions():
     print("UnshortenArtistUrls")
@@ -75,6 +84,7 @@ def UnshortenText(text):
         text = text.replace(key, transforms[key])
     return text
 
+
 @CheckInitialization
 def GetTransforms(text):
     short_links = SHORTLINK_DOMAIN_RG.findall(text)
@@ -88,7 +98,6 @@ def GetTransforms(text):
 
 
 def GetRedirect(link, level=0):
-    #print("GetRedirect:", link, level)
     if level > 3:
         return link
     try:
@@ -98,11 +107,11 @@ def GetRedirect(link, level=0):
         return
     if resp.status_code in [301, 302] and 'location' in resp.headers:
         redirect_link = resp.headers['location']
-        #print(link, redirect_link, level, IsMorimoLink(redirect_link) , IsShortLink(redirect_link) , IsSchemaChangeOnly(link, redirect_link))
         if IsMorimoLink(redirect_link) or IsShortLink(redirect_link) or IsSchemaChangeOnly(link, redirect_link):
             redirect_link = GetRedirect(redirect_link, level + 1)
         return redirect_link
     return link
+
 
 @CheckInitialization
 def FindShortDomains():
@@ -121,28 +130,22 @@ def FindShortDomains():
         print("FindShortDomains: checking - ", parse.netloc)
         redirect_link = GetRedirect(link)
         if link == redirect_link or IsSchemaChangeOnly(link, redirect_link):
-            added_domains.append(Domain(name = parse.netloc, redirector = False))
+            added_domains.append(Domain(name=parse.netloc, redirector=False))
             NONSHORTLINK_DOMAINS.append(parse.netloc)
         else:
-            added_domains.append(Domain(name = parse.netloc, redirector = True))
+            added_domains.append(Domain(name=parse.netloc, redirector=True))
             SHORTLINK_DOMAINS.append(parse.netloc)
         known_domains.add(parse.netloc)
     if len(added_domains):
         SESSION.add_all(added_domains)
         SESSION.commit()
 
-#---------
-
-
-#--------
-
 
 def UnshortenAllLinks():
     UnshortenTcoLinks()
 
+
 # General
-
-
 
 def GetShortTransformations(text):
     shortlinks = SHORTURL_RG.findall(text)
@@ -155,20 +158,21 @@ def GetShortTransformations(text):
     return transforms
 
 
-
-
 # Morimo
 
 def IsMorimoLink(link):
     return MORIMO_RG.match(link) is not None
 
+
 def IsShortLink(link):
     return SHORTURL_RG.match(link) is not None
+
 
 def IsSchemaChangeOnly(original_link, redirect_link):
     original_parse = urllib.parse.urlparse(original_link)
     redirect_parse = urllib.parse.urlparse(redirect_link)
     return (original_parse.scheme != redirect_parse.scheme) and (original_parse.netloc == redirect_parse.netloc) and (original_parse.path == redirect_parse.path)
+
 
 # T.CO -- Twitter
 
@@ -210,7 +214,7 @@ def GetTcoTransforms(text):
         transforms[link] = None
         try:
             resp = requests.get(link, allow_redirects=None, timeout=5)
-        except:
+        except Exception:
             print("Error getting URL redirect:", link)
             continue
         if resp.status_code == 301 and 'location' in resp.headers:

@@ -10,15 +10,16 @@ import datetime
 
 # ##FUNCTIONS
 
-def SafePrint(*args,**kwargs):
+def SafePrint(*args, **kwargs):
     temp = ''
     for arg in args:
-        if type(arg) == type(''):
+        if type(arg) is str:
             temp += arg + ' '
         else:
             temp += repr(arg) + ' '
     temp.strip()
-    print(temp.encode('ascii','backslashreplace').decode(),**kwargs)
+    print(temp.encode('ascii', 'backslashreplace').decode(), **kwargs)
+
 
 def ProcessTimestamp(timestring):
     """Get seconds from the Epoch for timestamps"""
@@ -27,11 +28,13 @@ def ProcessTimestamp(timestring):
     except Exception:
         pass
 
+
 def ProcessUTCTimestring(timestring):
     try:
         return iso8601.parse_date(timestring).replace(tzinfo=None)
     except Exception:
         pass
+
 
 def GetBufferChecksum(buffer):
     hasher = hashlib.md5()
@@ -76,14 +79,18 @@ def GetCurrentTime():
     t = datetime.datetime.utcnow()
     return t - datetime.timedelta(microseconds=t.microsecond)
 
+
 def DaysAgo(days):
     return GetCurrentTime() - datetime.timedelta(days=days)
+
 
 def DaysFromNow(days):
     return GetCurrentTime() + datetime.timedelta(days=days)
 
+
 def MinutesAgo(minutes):
     return GetCurrentTime() - datetime.timedelta(minutes=minutes)
+
 
 def SafeGet(input_dict, *keys):
     for key in keys:
@@ -128,9 +135,11 @@ def UniqueObjects(objs):
             output.append(obj)
     return output
 
-def SetPrecision(number,precision):
+
+def SetPrecision(number, precision):
     placenum = 10**precision
-    return (int(number*placenum))/placenum
+    return (int(number * placenum)) / placenum
+
 
 def TimeAgo(timeval, precision=2):
     delta = GetCurrentTime() - timeval
@@ -138,7 +147,7 @@ def TimeAgo(timeval, precision=2):
         if delta.seconds < 60:
             return "%d seconds ago" % delta.seconds
         if delta.seconds < 3600:
-            return "%t minutes ago" % SetPrecision(delta.seconds / 60, 2)
+            return "%f minutes ago" % SetPrecision(delta.seconds / 60, 2)
         return "%f hours ago" % SetPrecision(delta.seconds / 3600, 2)
     days = delta.days + (delta.seconds / 86400)
     if days < 7:
@@ -149,13 +158,16 @@ def TimeAgo(timeval, precision=2):
         return "%f months ago" % SetPrecision(days / 30, 2)
     return "%f years ago" % SetPrecision(days / 365, 2)
 
-def AddDictEntry(indict,key,entry):
+
+def AddDictEntry(indict, key, entry):
     indict[key] = indict[key] + [entry] if key in indict else [entry]
+
 
 def SetError(retdata, message):
     retdata['error'] = True
     retdata['message'] = message
     return retdata
+
 
 def FixupCRLF(text):
     return re.sub(r'(?<!\r)\n', '\r\n', text)

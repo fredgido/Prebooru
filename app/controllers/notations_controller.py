@@ -164,6 +164,11 @@ def create_html():
     return redirect(url_for('notation.show_html', id=results['item']['id']))
 
 
+@bp.route('/notations.json', methods=['POST'])
+def create_json():
+    return create()
+
+
 # ###### UPDATE
 
 @bp.route('/notations/<int:id>/edit', methods=['GET'])

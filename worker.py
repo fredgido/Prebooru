@@ -25,9 +25,11 @@ from app.database.booru_db import CreateBooruFromParameters
 from app.database.illust_db import CreateIllustFromSource, UpdateIllustFromSource
 from app.sources import base as BASE_SOURCE, danbooru as DANBOORU_SOURCE
 from app.logical.utility import MinutesAgo, StaticVars, GetCurrentTime
-from app.logical.downloader import DownloadIllust
-from app.logical.uploader import UploadIllustUrl
-from app.logical.unshortenlink import UnshortenAllLinks
+#from app.logical.downloader import DownloadIllust
+#from app.logical.uploader import UploadIllustUrl
+from app.downloader.network_downloader import ConvertNetworkUpload
+from app.downloader.file_downloader import ConvertFileUpload
+from app.logical.unshorten_link import UnshortenAllLinks
 from app.logical.logger import LogError
 from argparse import ArgumentParser
 from app.logical.file import LoadDefault, PutGetJSON
@@ -231,18 +233,21 @@ def ProcessNetworkUpload(upload):
     # The artist will have already been created in the create illust step if it didn't exist
     if CheckRequery(illust.artist):
         UpdateArtistFromSource(illust.artist, source)
-    DownloadIllust(illust, upload, source)
+    if ConvertNetworkUpload(illust, upload, source):
+        upload.status = 'complete'
+    else:
+        upload.status = 'error'
+    SESSION.commit()
 
 
 def ProcessFileUpload(upload):
-    site_id = upload.illust_url and upload.illust_url.illust and upload.illust_url.illust.site_id
-    if site_id is None:
-        CreateAndAppendError('sources.base.ProcessFileUpload', "No site ID found through illust url.", upload)
-        upload.status = 'error'
-        SESSION.commit()
-        return
-    source = BASE_SOURCE.GetSourceById(site_id)
-    if UploadIllustUrl(upload, source):
+    illust = upload.illust_url.illust
+    source = BASE_SOURCE.GetSourceById(illust.site_id)
+    if CheckRequery(illust):
+        UpdateIllustFromSource(illust, source)
+    if CheckRequery(illust.artist):
+        UpdateArtistFromSource(illust.artist, source)
+    if ConvertFileUpload(upload, source):
         upload.status = 'complete'
     else:
         upload.status = 'error'
