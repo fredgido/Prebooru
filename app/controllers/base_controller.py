@@ -5,6 +5,7 @@ import re
 import urllib
 from functools import reduce
 from flask import jsonify, abort, url_for
+from sqlalchemy import not_
 from sqlalchemy.sql.expression import case
 from wtforms import Form
 from wtforms.meta import DefaultMeta
@@ -12,7 +13,7 @@ from wtforms.widgets import HiddenInput
 
 # ## LOCAL IMPORTS
 from ..logical.utility import EvalBoolString
-from ..logical.searchable import AllAttributeFilters
+from ..logical.searchable import SearchAttributes
 
 
 # ## GLOBAL VARIABLES
@@ -74,10 +75,16 @@ def IndexJson(query, request):
 
 # #### Query helpers
 
-
-def SearchFilter(query, search):
+def SearchFilter(query, search, negative_search={}):
     entity = _QueryModel(query)
-    return AllAttributeFilters(query, entity, search)
+    query = SearchAttributes(query, entity, search)
+    if len(negative_search):
+        negative_query = entity.query
+        negative_query = SearchAttributes(negative_query, entity, negative_search)
+        negative_query = negative_query.with_entities(entity.id)
+        query = query.filter(not_(entity.id.in_(negative_query)))
+    print("Final query:\n", query)
+    return query
 
 
 def DefaultOrder(query, search):
@@ -186,11 +193,13 @@ def ParseBoolParameter(dataparams, bool_key):
 def ParseStringList(params, key, separator):
     return [item.strip() for item in re.split(separator, params[key]) if item.strip() != ""]
 
+
 def ParseItem(value, parser):
     try:
         return parser(value)
     except Exception:
         return None
+
 
 def ParseType(params, key, parser):
     try:
@@ -198,10 +207,12 @@ def ParseType(params, key, parser):
     except Exception:
         return None
 
+
 def ParseListType(params, key, parser):
     if key not in params or type(params[key]) is not list:
         return None
     return [subitem for subitem in [ParseItem(item, parser) for item in params[key]] if subitem is not None]
+
 
 def CheckParamRequirements(params, requirements):
     return reduce(lambda acc, x: acc + (["%s not present or invalid." % x] if params[x] is None else []), requirements, [])

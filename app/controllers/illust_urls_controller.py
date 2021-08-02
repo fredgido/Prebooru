@@ -6,13 +6,12 @@ from wtforms import IntegerField, BooleanField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..models import Illust, IllustUrl
 from ..sources.base import GetImageSiteId, GetImageSource
 from ..database.illust_url_db import CreateIllustUrlFromParameters, UpdateIllustUrlFromParameters
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate,\
-    GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, PutMethodCheck, NullifyBlanks, CheckParamRequirements,\
-    HideInput, SetDefault, ParseBoolParameter
+    GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, NullifyBlanks, CheckParamRequirements, HideInput, SetDefault,\
+    ParseBoolParameter
 
 
 # ## GLOBAL VARIABLES
@@ -77,7 +76,6 @@ def SetURLSite(dataparams, source):
 
 
 # #### Route helpers
-
 
 def index():
     params = ProcessRequestValues(request.values)

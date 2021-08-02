@@ -1,20 +1,18 @@
 # APP\CONTROLLERS\NOTATIONS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort, redirect, url_for, flash
+from flask import Blueprint, request, render_template, redirect, url_for, flash
 from wtforms import TextAreaField, IntegerField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..models import Notation
 from ..database.notation_db import CreateNotationFromParameters, UpdateNotationFromParameters, AppendToItem, DeleteNotation
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, CustomNameForm,\
-    PutMethodRedirect, DeleteMethodRedirect, GetOrAbort, HideInput, NullifyBlanks, GetMethodRedirect, CheckParamRequirements, SetError
+    GetOrAbort, HideInput, NullifyBlanks, CheckParamRequirements, SetError
 
 
 # ## GLOBAL VARIABLES
-
 
 bp = Blueprint("notation", __name__)
 
@@ -27,7 +25,6 @@ APPEND_KEYS = ['pool_id', 'artist_id', 'illust_id', 'post_id']
 
 
 # Forms
-
 
 def GetNotationForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes

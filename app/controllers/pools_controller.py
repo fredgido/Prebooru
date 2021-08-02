@@ -8,13 +8,12 @@ from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..models import Pool, Post, Illust, IllustUrl, PoolPost, PoolIllust, PoolNotation
 from ..database.pool_db import CreatePoolFromParameters, UpdatePoolFromParameters
 from ..logical.searchable import NumericMatching
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
-    DefaultOrder, GetDataParams, CustomNameForm, GetPage, GetLimit, GetOrAbort, GetOrError, PutMethodCheck,\
-    GetMethodRedirect, CheckParamRequirements, NullifyBlanks, SetError, ParseBoolParameter, SetDefault
+    DefaultOrder, GetDataParams, CustomNameForm, GetPage, GetLimit, GetOrAbort, GetOrError, CheckParamRequirements,\
+    NullifyBlanks, SetError, ParseBoolParameter, SetDefault
 
 
 # ## GLOBAL VARIABLES

@@ -1,21 +1,12 @@
-# APP\CONTROLLERS\POOLS_CONTROLLER.PY
+# APP\CONTROLLERS\SIMILARITY_POOLS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort, url_for, flash, redirect
-from sqlalchemy.orm import lazyload, selectinload
-from wtforms import StringField, IntegerField
-from wtforms.validators import DataRequired
-
+from flask import Blueprint, request, render_template
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..similarity import SimilarityPool
-from ..models import Pool, Post, Illust, Notation, IllustUrl, PoolPost, PoolIllust, PoolNotation
-from ..database import local as DBLOCAL
-from ..logical.utility import GetCurrentTime
-from ..logical.searchable import NumericMatching
-from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
-    DefaultOrder, GetDataParams, CustomNameForm, GetPage, GetLimit, ParseType, GetOrAbort
+from ..models import Post
+from .base_controller import ShowJson, GetPage, GetLimit, GetOrAbort
 
 
 # ## GLOBAL VARIABLES
@@ -25,9 +16,12 @@ bp = Blueprint("similarity_pool", __name__)
 
 # ## FUNCTIONS
 
-# #### Helper functions
-
 # #### Route functions
+
+@bp.route('/similarity_pools/<int:id>.json', methods=['GET'])
+def show_json(id):
+    return ShowJson(SimilarityPool, id)
+
 
 @bp.route('/similarity_pools/<int:id>', methods=['GET'])
 def show_html(id):

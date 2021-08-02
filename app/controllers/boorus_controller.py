@@ -7,15 +7,13 @@ from wtforms import TextAreaField, IntegerField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..models import Booru
 from ..database.booru_db import CreateBooruFromParameters, CreateBooruFromID, UpdateBooruFromParameters, QueryUpdateBooru, CheckArtistsBooru
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetOrAbort, GetOrError,\
-    PutMethodCheck, GetMethodRedirect, GetDataParams, SetError, CheckParamRequirements, NullifyBlanks, CustomNameForm, ParseArrayParameter
+    GetDataParams, SetError, CheckParamRequirements, NullifyBlanks, CustomNameForm, ParseArrayParameter
 
 
 # ## GLOBAL VARIABLES
-
 
 bp = Blueprint("booru", __name__)
 
@@ -27,8 +25,8 @@ VALUES_MAP = {
     **{k: k for k in Booru.__table__.columns.keys()},
 }
 
-# Forms
 
+# Forms
 
 def GetBooruForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -41,9 +39,7 @@ def GetBooruForm(**kwargs):
 
 # ## FUNCTIONS
 
-
 # #### Helper functions
-
 
 def UniquenessCheck(dataparams, artist):
     danbooru_id = dataparams['danbooru_id'] if 'danbooru_id' in dataparams else artist.danbooru_id
@@ -71,7 +67,6 @@ def ConvertUpdateParams(dataparams):
 
 
 # #### Route auxiliary functions
-
 
 def index():
     params = ProcessRequestValues(request.values)
@@ -129,7 +124,6 @@ def query_create():
 
 # ###### SHOW
 
-
 @bp.route('/boorus/<int:id>.json', methods=['GET'])
 def show_json(id):
     return ShowJson(Booru, id)
@@ -142,7 +136,6 @@ def show_html(id):
 
 
 # ###### INDEX
-
 
 @bp.route('/boorus.json', methods=['GET'])
 def index_json():
@@ -158,7 +151,6 @@ def index_html():
 
 
 # ###### CREATE
-
 
 @bp.route('/boorus/new', methods=['GET'])
 def new_html():
@@ -182,7 +174,6 @@ def create_json():
 
 
 # ###### UPDATE
-
 
 @bp.route('/boorus/<int:id>/edit', methods=['GET'])
 def edit_html(id):
@@ -213,7 +204,6 @@ def update_json(id):
 
 
 # ###### MISC
-
 
 @bp.route('/boorus/query_create', methods=['POST'])
 def query_create_html():

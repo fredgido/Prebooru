@@ -4,7 +4,6 @@
 from flask import Blueprint, request, render_template
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..models import ArtistUrl
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate, GetOrAbort
 
@@ -18,7 +17,6 @@ bp = Blueprint("artist_url", __name__)
 
 # #### Route helpers
 
-
 def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
@@ -30,9 +28,7 @@ def index():
 
 # #### Route functions
 
-
-# ###### SHOW/INDEX
-
+# ###### SHOW
 
 @bp.route('/artist_urls/<int:id>.json', methods=['GET'])
 def show_json(id):
@@ -44,6 +40,8 @@ def show_html(id):
     artist_url = GetOrAbort(ArtistUrl, id)
     return render_template("artist_urls/show.html", artist_url=artist_url)
 
+
+# ###### INDEX
 
 @bp.route('/artist_urls.json', methods=['GET'])
 def index_json():

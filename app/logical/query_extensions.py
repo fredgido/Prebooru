@@ -15,6 +15,7 @@ INIT = False
 # #### Initialization functions
 
 def Initialize():
+    """This can only be set after the models have been initialized"""
     global INIT
     if not INIT:
         sqlalchemy.orm.Query._has_entity = _has_entity

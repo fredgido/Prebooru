@@ -1,21 +1,18 @@
 # APP\CONTROLLERS\ILLUSTS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, jsonify, redirect, url_for, flash
+from flask import Blueprint, request, render_template, redirect, url_for, flash
 from sqlalchemy.orm import selectinload, lazyload
 from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..models import Illust, Artist, SiteData
 from ..sources.base import GetSourceById, GetIllustRequiredParams
 from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters, UpdateIllustFromSource
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
     Paginate, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, HideInput, IntOrBlank,\
-    NullifyBlanks, SetDefault, CheckParamRequirements, ParseArrayParameter, ParseBoolParameter,\
-    PutMethodCheck, GetMethodRedirect
-
+    NullifyBlanks, SetDefault, CheckParamRequirements, ParseArrayParameter, ParseBoolParameter
 
 # ## GLOBAL VARIABLES
 
@@ -31,8 +28,8 @@ VALUES_MAP = {
     **{k: k for k in Artist.__table__.columns.keys()},
 }
 
-# Forms
 
+# Forms
 
 def GetIllustForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -93,13 +90,13 @@ def ConvertUpdateParams(dataparams):
 
 # #### Route helpers
 
-
 def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
+    negative_search = GetParamsValue(params, 'not', True)
     q = Illust.query
     q = q.options(selectinload(Illust.site_data), lazyload('*'))
-    q = SearchFilter(q, search)
+    q = SearchFilter(q, search, negative_search)
     q = DefaultOrder(q, search)
     return q
 
@@ -194,7 +191,6 @@ def index_html():
 
 
 # ###### CREATE
-
 
 @bp.route('/illusts/new', methods=['GET'])
 def new_html():

@@ -3,6 +3,7 @@
 # ##LOCAL IMPORTS
 from .. import DB
 
+
 # ##GLOBAL VARIABLES
 
 class ApiData(DB.Model):

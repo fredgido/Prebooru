@@ -7,11 +7,10 @@ from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..models import Pool, PoolElement
 from ..database.pool_element_db import CreatePoolElementFromParameters, DeletePoolElement
-from .base_controller import GetDataParams, CustomNameForm, ReferrerCheck, DeleteMethodCheck, GetOrAbort, GetOrError,\
-    CheckParamRequirements, SetError, HideInput
+from .base_controller import GetDataParams, CustomNameForm, ReferrerCheck, GetOrAbort, GetOrError, CheckParamRequirements,\
+    SetError, HideInput
 
 
 # ## GLOBAL VARIABLES
@@ -21,6 +20,7 @@ bp = Blueprint("pool_element", __name__)
 CREATE_REQUIRED_PARAMS = ['pool_id']
 
 APPEND_KEYS = ['illust_id', 'post_id', 'notation_id']
+
 
 # Forms
 
@@ -47,7 +47,7 @@ def ConvertDataParams(dataparams):
     return GetPoolElementForm(**dataparams).data
 
 
-# #### Route Helpers
+# #### Route auxiliary functions
 
 def create():
     dataparams = GetDataParams(request, 'pool_element')
@@ -72,7 +72,7 @@ def delete(pool_element):
 
 # #### Route functions
 
-# ########## CREATE
+# ###### CREATE
 
 @bp.route('/pool_elements/new', methods=['GET'])
 def new_html():
@@ -102,7 +102,7 @@ def create_json():
     return create()
 
 
-# ########## CREATE
+# ###### DELETE
 
 @bp.route('/pool_elements/<int:id>', methods=['DELETE'])
 def delete_html(id):

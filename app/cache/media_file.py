@@ -4,6 +4,7 @@
 from .. import DB
 from ..storage import CACHE_DATA_DIRECTORY, CACHE_NETWORK_URLPATH
 
+
 # ##GLOBAL VARIABLES
 
 class MediaFile(DB.Model):
@@ -21,4 +22,3 @@ class MediaFile(DB.Model):
     @property
     def file_path(self):
         return CACHE_DATA_DIRECTORY + self.md5 + '.' + self.file_ext
-

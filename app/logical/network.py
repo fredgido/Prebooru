@@ -4,8 +4,8 @@
 import time
 import requests
 
-# ##FUNCTIONS
 
+# ##FUNCTIONS
 
 def NetworkQuery(request_url, headers, timeout):
     try:
@@ -39,7 +39,4 @@ def GetHTTPFile(serverfilepath, headers={}, timeout=10):
             return response
         if CheckHTTPResponse(response):
             return response.content
-    return response
-
-    print("Unable to download file:", serverfilepath)
     return response

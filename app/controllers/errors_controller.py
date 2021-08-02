@@ -1,13 +1,12 @@
 # APP\CONTROLLERS\ERRORS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, abort
+from flask import Blueprint, request, render_template
 
 # ## LOCAL IMPORTS
-from .. import PREBOORU
 from ..models import Error
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate,\
-    GetOrAbort, GetMethodRedirect
+    GetOrAbort
 
 
 # ## GLOBAL VARIABLES

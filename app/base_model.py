@@ -1,17 +1,17 @@
 # APP/BASE_MODEL.PY
 
-# ##PYTHON IMPORTS
+# ## PYTHON IMPORTS
 import datetime
 from typing import List, _GenericAlias
 from flask import url_for
 
-# ##LOCAL IMPORTS
+# ## LOCAL IMPORTS
 from . import DB
 
 
-# ##FUNCTIONS
+# ## FUNCTIONS
 
-# Auxiliary functions
+# #### Helper functions
 
 def DateTimeOrNull(value):
     return value if value is None else datetime.datetime.isoformat(value)
@@ -29,19 +29,24 @@ def RemoveKeys(data, keylist):
     return {k: data[k] for k in data if k not in keylist}
 
 
+# #### Factory functions
+
 def PolymorphicAccessorFactory(collection_type, proxy):
+
     def getter(obj):
         if not hasattr(obj, proxy.value_attr):
             return
         return getattr(obj, proxy.value_attr)
+
     def setter(obj, value):
         if not hasattr(obj, proxy.value_attr):
             return
         setattr(obj, proxy.value_attr, value)
+
     return getter, setter
 
 
-# Classes
+# ## CLASSES
 
 class JsonModel(DB.Model):
     __abstract__ = True

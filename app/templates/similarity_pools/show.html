@@ -3,6 +3,8 @@
 
 {% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/similar_posts.css') }}">{% endblock %}
 
+{% block linkscript %}<script src="{{ url_for('static', filename='javascript/similarity_posts.js') }}"></script>{% endblock %}
+
 {% block title %}Similarity Pool for {{ similarity_pool.post_id }}{% endblock %}
 
 {% block content %}
@@ -23,9 +25,6 @@
             </div>
         </div>
         <form id="form" method="POST" action="{{ url_for('similarity_pool_element.batch_delete_html') }}">
-            <div class="input">
-                <input type="hidden" name="_method" value="delete">
-            </div>
             <div id="similar-posts-container">
                 {% for post_data in elements.items %}
                     <div class="similar-post-block">
@@ -34,7 +33,7 @@
                                 <input type="checkbox" class="similar-post-input" id="similar-post-{{ post_data.post.id }}" name="similarity_pool_element[id][]" value="{{ post_data.element.id }}">
                             </label>
                         </div>
-                        <div><strong><a href="{{ url_for('similarity_pool.show_html', id=post_data.element.sibling.pool_id)}}">{{ post_data.post.shortlink }}</strong></a>&emsp;(&thinsp;<a style="color: red;" href="{{ post_data.element.delete_url }}" onclick="return Posts.deleteSimilarPost(this)">remove</a>&thinsp;)</div>
+                        <div><strong><a href="{{ url_for('similarity_pool.show_html', id=post_data.element.sibling.pool_id)}}">{{ post_data.post.shortlink }}</strong></a>&emsp;(&thinsp;<a style="color: red;" href="{{ post_data.element.delete_url }}" onclick="return SimilarityPosts.deleteElement(this)">remove</a>&thinsp;)</div>
                         <article class="post similar-post">
                             <a href="{{ post_data.post.show_url }}">
                                 <img src="{{ post_data.post.preview_url }}">

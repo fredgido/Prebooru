@@ -46,5 +46,13 @@ def CreatePostAndAddIllustUrl(illust_url, width, height, file_ext, md5, size):
 
 # #### Query functions
 
+def GetPostsByID(ids):
+    posts = []
+    for i in range(0, len(ids), 100):
+        sublist = ids[i: i + 100]
+        posts += models.Post.query.filter(models.Post.id.in_(sublist)).all()
+    return posts
+
+
 def GetPostByMD5(md5):
     return models.Post.query.filter_by(md5=md5).first()
