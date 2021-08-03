@@ -15,6 +15,24 @@ from ..database.local import IsError
 IMAGE_HEADERS = {}
 
 
+# #### Classes
+
+class NoSource():
+    IMAGE_HEADERS = {}
+
+    @staticmethod
+    def SmallImageUrl(url):
+        return url
+
+    @staticmethod
+    def NormalizedImageUrl(url):
+        return url
+
+    @staticmethod
+    def GetMediaExtension(url):
+        return GetFileExtension(GetHTTPFilename(url))
+
+
 # ##FUNCTIONS
 
 # #### Utility functions

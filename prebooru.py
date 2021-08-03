@@ -18,6 +18,7 @@ from app.config import workingdirectory, datafilepath
 SERVER_PID_FILE = workingdirectory + datafilepath + 'prebooru-server-pid.json'
 SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
+
 # ## FUNCTIONS
 
 @atexit.register

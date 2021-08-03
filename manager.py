@@ -1,18 +1,16 @@
-# APP/STORAGE.PY
+# MANAGER.PY
 
-# ##PYTHON IMPORTS
+# ## PYTHON IMPORTS
 import os
-from flask.cli import with_appcontext
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand, stamp
 from argparse import ArgumentParser, RawTextHelpFormatter
 
-# ##LOCAL IMPORTS
+# ## LOCAL IMPORTS
 from app.config import DB_PATH, CACHE_PATH, SIMILARITY_PATH
 
 
-# ##FUNCTIONS
-
+# ## FUNCTIONS
 
 def init_db(make_new):
     check = input("This will destroy any existing information. Proceed (y/n)? ")
@@ -30,9 +28,9 @@ def init_db(make_new):
             os.remove(SIMILARITY_PATH)
 
     from app import PREBOORU_APP, DB
-    from app.models import NONCE  # noqa: F401
-    from app.cache import NONCE  # noqa: F401
-    from app.similarity import NONCE  # noqa: F401
+    from app.models import NONCE  # noqa: F401, F811
+    from app.cache import NONCE  # noqa: F401, F811
+    from app.similarity import NONCE  # noqa: F401, F811
 
     print("Creating tables")
     DB.drop_all()
@@ -47,9 +45,9 @@ def init_db(make_new):
 
 def migrate_db():
     from app import PREBOORU_APP, DB
-    from app.models import NONCE  # noqa: F401
-    from app.cache import NONCE  # noqa: F401
-    from app.similarity import NONCE #noqa: F401
+    from app.models import NONCE  # noqa: F401, F811
+    from app.cache import NONCE  # noqa: F401, F811
+    from app.similarity import NONCE  # noqa: F401, F811
 
     migrate = Migrate(PREBOORU_APP, DB, render_as_batch=True)  # noqa: F841
     manager = Manager(PREBOORU_APP)
@@ -57,16 +55,7 @@ def migrate_db():
     manager.run()
 
 
-# For testing the programmatic use of alembic commands
-def command_db():
-    from flask_migrate import Migrate, current, stamp
-    from app import PREBOORU_APP, DB
-
-    migrate = Migrate(PREBOORU_APP, DB, render_as_batch=True)  # noqa: F841
-    migrate.init_app(PREBOORU_APP)
-    with PREBOORU_APP.app_context():
-        current()
-
+# ## EXECUTION START
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Stuff", formatter_class=RawTextHelpFormatter)
@@ -77,5 +66,3 @@ if __name__ == '__main__':
         init_db(args.new)
     elif args.operation == 'db':
         migrate_db()
-    elif args.operation == 'command':
-        command_db()

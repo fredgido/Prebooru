@@ -1,3 +1,5 @@
+{% from 'layouts/_macros.html' import items_block %}
+
 <div id="illust-site-content">
     <div id="illust-site-content-1">
         <section id="illust-site-info">
@@ -27,7 +29,7 @@
             <h4>Tags</h4>
             <ul>
                 {% for tag in illust.tags %}
-                    <li>{{ tag.name }}</li>
+                    <li>{{ tag.name }}&emsp;<a href="{{ helpers.illust.PostTagSearch(tag) }}">&raquo;</a></li>
                 {% else %}
                     <li><em>none</em></li>
                 {% endfor %}
@@ -43,20 +45,12 @@
         {% endif %}
         <section id ="illust-commentaries">
             <h4>Commentaries</h4>
-            {% if illust.commentaries | length == 0 %}
-                <div id="illust-commentaries-container">
-                    {% for commentary in illust.commentaries %}
-                        <div class="illust-commentaries-block">
-                            {{ helpers.base.ConvertStrToHTML(commentary.body) }}
-                        </div>
-                        {% if not loop.last %}
-                            <hr>
-                        {% endif %}
-                    {% endfor %}
-                </div>
-            {% else %}
-                <span class="explanation">There are no commentaries.</span>
-            {% endif %}
+            <div id="illust-commentaries-container">
+                {% call(commentary) items_block(illust.commentaries, 'commentaries') %}
+                    <div class="illust-commentaries-block">
+                        {{ helpers.base.ConvertStrToHTML(commentary.body) }}
+                {% endcall %}
+            </div>
         </section>
     </div>
 </div>

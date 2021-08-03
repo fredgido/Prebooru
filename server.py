@@ -9,10 +9,11 @@ from argparse import ArgumentParser
 from app.logical.file import LoadDefault, PutGetJSON
 from app.config import workingdirectory, datafilepath
 
+
 # ## GLOBAL VARIABLES
 
 PID_FILENAME_FORMAT = workingdirectory + datafilepath + '%s-server-pid.json'
-SERVER_NAMES = ['prebooru', 'worker', 'similarity'] # NGINX, ...
+SERVER_NAMES = ['prebooru', 'worker', 'similarity']  # NGINX, ...
 
 SERVER_ARGS = {
     'prebooru': "",
@@ -24,7 +25,6 @@ SERVER_ARGS = {
 # ## FUNCTIONS
 
 # #### Auxiliary functions
-
 
 def StartServer(name, keepopen):
     print("Starting %s" % name)
@@ -53,7 +53,6 @@ def StopServer(name, *args):
 
 # #### Main execution functions
 
-
 def StartAll(*args):
     for name in SERVER_NAMES:
         StartServer(name, False)
@@ -65,7 +64,6 @@ def StopAll(*args):
 
 
 # #### Main function
-
 
 def Main(args):
     if (args.operation in ['start', 'stop']) and (args.type not in SERVER_NAMES):
@@ -79,7 +77,8 @@ def Main(args):
     }
     switcher[args.operation](args.type, args.keepopen)
 
-# ##EXECUTION START
+
+# ## EXECUTION START
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Server to process network requests.")

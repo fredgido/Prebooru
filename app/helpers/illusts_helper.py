@@ -101,8 +101,12 @@ def PostIllustUrl(illust):
     return '<a rel="external noreferrer nofollow" href="%s">&raquo;</a>' % post_url if post_url != source.GetIllustUrl(illust.site_illust_id) else ""
 
 
-def PostSearch(illust):
+def PostIllustSearch(illust):
     return SearchUrlFor('post.index_html', illust_urls={'illust_id': illust.id})
+
+
+def PostTagSearch(tag):
+    return SearchUrlFor('post.index_html', illust_urls={'illust': {'tags': {'name': tag.name}}})
 
 
 def DanbooruBatchUrl(illust):

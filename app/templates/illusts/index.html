@@ -18,7 +18,7 @@
             {% for illust in illusts.items %}
                 {% set outer_loop = loop %}
                 <tr id="illust-{{ illust.id }}">
-                    <td><a href="{{ illust.show_url }}">illust #{{ illust.id }}</a> <a href="{{ helpers.illust.PostSearch(illust) }}">&raquo;</a></td>
+                    <td><a href="{{ illust.show_url }}">illust #{{ illust.id }}</a> <a href="{{ helpers.illust.PostIllustSearch(illust) }}">&raquo;</a></td>
                     <td>
                         <span><strong>Domain:</strong> {{ illust.site_domain }}</span><br>
                         <span><strong>Illust ID:</strong> {{ illust.site_illust_id }}</span><br>

@@ -52,7 +52,7 @@
                         <li><strong>Tags:</strong>
                             <ul>
                             {% for tag in illust.tags %}
-                                <li>{{ tag.name }}</li>
+                                <li>{{ tag.name }}&emsp;<a href="{{ helpers.illust.PostTagSearch(tag) }}">&raquo;</a></li>
                             {% else %}
                                 <li><em>none</em></li>
                             {% endfor %}
