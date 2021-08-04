@@ -1,14 +1,9 @@
+{% from "layouts/_macros.html" import timestamps_section %}
+{% from "illusts/_macros.html" import illusts_display %}
+
 <div id="booru-sidebar">
-    <section id="booru-illusts">
-        <h4>Illusts ( <a href="{{ helpers.booru.IllustSearch(booru) }}">{{ booru.illust_count }}</a> )</h4>
-    </section>
-    <section id="booru-timestamps">
-        <h4>Timestamps</h4>
-        <ul>
-            <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(booru.created) }}</li>
-            <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(booru.updated) }}</li>
-        </ul>
-    </section>
+    {{ illusts_display(helpers.booru.IllustSearch(booru), booru.illust_count, 'booru-illusts') }}
+    {{ timestamps_section(booru, 'booru-timestamps') }}
     <section id="booru-options">
         <h4>Options</h4>
         <ul>

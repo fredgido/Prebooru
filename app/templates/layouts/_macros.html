@@ -30,3 +30,16 @@
         <span class="explanation">There are no {{ item_plural }}.</span>
     {% endfor %}
 {%- endmacro %}
+
+{% macro timestamps_section(item, section_id) -%}
+    <section id="{{ section_id }}">
+        <h4>Timestamps</h4>
+        <ul>
+            {% for attr in ['requery', 'created', 'updated'] %}
+                {% if item[attr] is defined %}
+                    <li><strong>{{ attr | title }}:</strong> {{ helpers.base.FormatTimestamp(item[attr]) }}</li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </section>
+{%- endmacro %}

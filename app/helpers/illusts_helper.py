@@ -98,7 +98,7 @@ def PostIllustUrl(illust):
     site_key = GetSiteKey(illust.site_id)
     source = SOURCEDICT[site_key]
     post_url = source.GetPostUrl(illust)
-    return '<a rel="external noreferrer nofollow" href="%s">&raquo;</a>' % post_url if post_url != source.GetIllustUrl(illust.site_illust_id) else ""
+    return Markup('<a rel="external noreferrer nofollow" href="%s">&raquo;</a>' % post_url) if post_url != source.GetIllustUrl(illust.site_illust_id) else ""
 
 
 def PostIllustSearch(illust):

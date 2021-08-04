@@ -84,6 +84,7 @@ class Illust(JsonModel):
 
     pools = association_proxy('_pools', 'pool')
     posts = association_proxy('urls', 'post')
+    boorus = association_proxy('artist', 'boorus')
     title = association_proxy('site_data', 'title', getset_factory=PolymorphicAccessorFactory)
     retweets = association_proxy('site_data', 'retweets', getset_factory=PolymorphicAccessorFactory)
     replies = association_proxy('site_data', 'replies', getset_factory=PolymorphicAccessorFactory)

@@ -20,6 +20,9 @@ aside#notation-sidebar {
     background: #F8F8F8;
     padding: 0.5em;
 }
+aside#notation-sidebar > section {
+    margin-bottom: 1em;
+}
 div#notation-site-content {
     margin-left: 1em;
     width: 70%;

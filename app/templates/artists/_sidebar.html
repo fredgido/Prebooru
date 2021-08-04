@@ -1,42 +1,13 @@
+{% from "layouts/_macros.html" import timestamps_section %}
+{% from "boorus/_macros.html" import boorus_section %}
+{% from "illusts/_macros.html" import illusts_display %}
+{% from "notations/_macros.html" import notations_section %}
+
 <div id="artist-sidebar">
-    <section id="artist-boorus">
-        <h4>Boorus</h4>
-        <ul>
-            {% for booru in artist.boorus %}
-                <li><span class="item-heading"><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></span>
-                    <ul>
-                        <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
-                        <li><strong>Current name: <a href="{{ helpers.booru.DanbooruPageLink(booru) }}">{{ booru.current_name }}</a> <a href="{{ helpers.booru.DanbooruPostSearch(booru) }}">&raquo;</a></strong></li>
-                    </ul>
-                </li>
-            {% else %}
-                <li><em>none</em></li>
-            {% endfor %}
-        </ul>
-    </section>
-    <section id="artist-illusts">
-        <h4>Illusts ( <a href="{{ artist.illust_search }}">{{ artist.illust_count }}</a> )</h4>
-    </section>
-    <section id="artist-timestamps">
-        <h4>Timestamps</h4>
-        <ul>
-            <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(artist.requery) }}</li>
-            <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(artist.created) }}</li>
-            <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(artist.updated) }}</li>
-        </ul>
-    </section>
-    {% if artist.notations | length > 0 %}
-        <section id="artist-notations">
-            <h4>Notations</h4>
-            <div id="artist-notations-container">
-                <ul>
-                    {% for notation in artist.notations %}
-                        <li>{% include "notations/_notation_block.html" %}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </section>
-    {% endif %}
+    {{ boorus_section(artist.boorus, 'artist-boorus') }}
+    {{ illusts_display(artist.illust_search, artist.illust_count, 'artist-illusts') }}
+    {{ timestamps_section(artist, 'artist-timestamps') }}
+    {{ notations_section(artist.notations, 'artist-notations') }}
     <section id="artist-options">
         <h4>Options</h4>
         <ul>

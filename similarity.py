@@ -116,12 +116,12 @@ def GetSimilarMatches(image_hash, ratio):
 def CreateNewMedia(download_url, source):
     buffer = GetHTTPFile(download_url, headers=source.IMAGE_HEADERS)
     if isinstance(buffer, Exception):
-        return "Exception processing download: %s" % repr(buffer)
+        return None, "Exception processing download: %s" % repr(buffer)
     if isinstance(buffer, requests.Response):
-        return "HTTP %d - %s" % (buffer.status_code, buffer.reason)
+        return None, "HTTP %d - %s" % (buffer.status_code, buffer.reason)
     image = LoadImage(buffer)
     if type(image) is str:
-        return image
+        return None, image
     md5 = GetBufferChecksum(buffer)
     extension = source.GetMediaExtension(download_url)
     media = MediaFile(md5=md5, file_ext=extension, media_url=download_url, expires=DaysFromNow(1))
@@ -129,7 +129,7 @@ def CreateNewMedia(download_url, source):
     PutGetRaw(media.file_path, 'wb', buffer)
     SESSION.add(media)
     SESSION.commit()
-    return image
+    return media, image
 
 
 def ProcessSimilarity():
@@ -194,7 +194,8 @@ def PopulateSimilarityPools(sdata):
     sibling_post_ids = [result['post_id'] for result in score_results]
     sibling_pools = SimilarityPool.query.options(selectinload(SimilarityPool.elements)).filter(SimilarityPool.post_id.in_(sibling_post_ids)).all()
     main_pool, index = CreateSimilarityPools(sdata, score_results, total_results, calculation_time, sibling_pools)
-    CreateSimilarityPairings(sdata, score_results, main_pool, sibling_pools, index)
+    if index is not None:
+        CreateSimilarityPairings(sdata, score_results, main_pool, sibling_pools, index)
 
 
 def CreateSimilarityPools(sdata, score_results, total_results, calculation_time, sibling_pools):
@@ -209,7 +210,7 @@ def CreateSimilarityPools(sdata, score_results, total_results, calculation_time,
     SESSION.commit()
     if len(score_results) == 0:
         print("No results found for post #%d." % sdata.post_id)
-        return
+        return main_pool, None
     sibling_post_ids = [spool.post_id for spool in sibling_pools]
     INDEX_POOL_BY_POST_ID = {pool.post_id: pool for pool in sibling_pools}
     print("Indexing pool...")
@@ -356,7 +357,7 @@ def check_similarity():
         download_url = source.SmallImageUrl(image_url) if source is not None else image_url
         media = MediaFile.query.filter_by(media_url=download_url).first()
         if media is None:
-            image = CreateNewMedia(download_url, source)
+            media, image = CreateNewMedia(download_url, source)
             if type(image) is str:
                 return SetError(image, retdata)
         else:

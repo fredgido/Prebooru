@@ -1,6 +1,9 @@
 # APP/MODELS/ARTISTS_HELPER.PY
 
-# ##LOCAL IMPORTS
+# ## PYTHON IMPORTS
+from flask import Markup
+
+# ## LOCAL IMPORTS
 from ..sites import GetSiteKey
 from ..sources import SOURCEDICT
 from .base_helper import SearchUrlFor
@@ -48,13 +51,13 @@ def ArtistLinks(artist):
     source = SOURCEDICT[site_key]
     if not source.HasArtistUrls(artist):
         return '<em>N/A</em>'
-    return ' | '.join(
+    return Markup(' | '.join(
         [
             '<a href="%s">Main</a>' % MainUrl(artist),
             '<a href="%s">Media</a>' % MediaUrl(artist),
             '<a href="%s">Likes</a>' % LikesUrl(artist),
         ]
-    )
+    ))
 
 
 def WebpageLink(url):

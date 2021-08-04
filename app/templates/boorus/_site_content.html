@@ -1,3 +1,5 @@
+{% from "artists/_macros.html" import artists_section %}
+
 <div id="booru-site-content">
     <div id="booru-site-content-1">
         <section id="booru-site-info">
@@ -15,21 +17,6 @@
                 {% endfor %}
             </ul>
         </section>
-        <section id="booru-artists">
-            <h4>Artists</h4>
-            <ul>
-                {% for artist in booru.artists %}
-                    <li><span class="heading"><a href="{{ artist.show_url }}">{{ artist.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></span>
-                        <ul>
-                            <li><strong>Site ID:</strong> {{ artist.site_artist_id }}</li>
-                            <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) | safe }}</li>
-                            <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
-                        </ul>
-                    </li>
-                {% else %}
-                    <li><em>none</em></li>
-                {% endfor %}
-            </ul>
-        </section>
+        {{ artists_section(booru.artists, 'booru-artists') }}
     </div>
 </div>

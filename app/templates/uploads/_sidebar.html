@@ -1,52 +1,11 @@
+{% from "layouts/_macros.html" import timestamps_section %}
+{% from "artists/_macros.html" import artists_section %}
+{% from "illusts/_macros.html" import illusts_section %}
+{% from "errors/_macros.html" import errors_section %}
+
 <aside id="upload-sidebar">
-    {% if upload.artist is not none %}
-        <section id="upload-artist">
-            <h4><a href="{{ upload.artist.show_url }}">{{ upload.artist.shortlink }}</a></h4>
-            <ul>
-                <li><strong>Site ID:</strong> {{ upload.artist.site_artist_id }}</li>
-                <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(upload.artist.current_site_account) }}</li>
-                <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(upload.artist) | safe }}</li>
-            </ul>
-        </section>
-    {% endif %}
-    {% if upload.illust is not none %}
-        <section id="upload-illust">
-            <h4><a href="{{ upload.illust.show_url }}">#{{ upload.illust.shortlink }}</a></h4>
-            <ul>
-                <li><strong><a href="{{ helpers.illust.SiteIllustUrl(upload.illust) }}">{{ helpers.illust.ShortLink(upload.illust) }}</a> {{ helpers.illust.PostIllustUrl(upload.illust) | safe }}</strong></li>
-                <li><strong>Site ID:</strong> {{ upload.illust.site_illust_id }}</li>
-                <li><strong>Domain:</strong> {{ upload.illust.site_domain }}</li>
-                <li><strong>Tags:</strong>
-                    <ul>
-                    {% for tag in upload.illust.tags %}
-                        <li>{{ tag.name }}</li>
-                    {% else %}
-                        <li><em>none</em></li>
-                    {% endfor %}
-                    </ul>
-                </li>
-            </ul>
-        </section>
-    {% endif %}
-    <section id="upload-errors">
-        <h4>Errors</h4>
-        {% for error in upload.errors %}
-            <ul>
-                <li><strong>Module:</strong>{{ error.module }}</li>
-                <li><strong>Message:</strong>{{ error.message }}</li>
-                <li><strong>Created:</strong>{{ helpers.base.FormatTimestamp(error.created) }}</li>
-            </ul>
-            {% if not loop.last %}
-                <hr>
-            {% endif %}
-        {% else %}
-            <ul><li><em>none</em></li></ul>
-        {% endfor %}
-    </section>
-    <section id="upload-timestamps">
-        <h4>Timestamps</h4>
-        <ul>
-            <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(upload.created) }}</li>
-        </ul>
-    </section>
+    {{ artists_section(upload.artist, 'upload-artist') }}
+    {{ illusts_section(upload.illust, 'upload-illust') }}
+    {{ errors_section(upload.errors, 'upload-errors') }}
+    {{ timestamps_section(upload, 'upload-timestamps') }}
 </aside>

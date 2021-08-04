@@ -1,49 +1,15 @@
+{% from "layouts/_macros.html" import timestamps_section %}
+{% from "boorus/_macros.html" import boorus_section %}
+{% from "artists/_macros.html" import artists_section %}
+{% from "pools/_macros.html" import pools_section %}
+{% from "notations/_macros.html" import notations_section %}
+
 <div id="illust-sidebar">
-    <section id="illust-artists">
-        <h4><a href="{{ url_for('artist.show_html', id=illust.artist_id) }}">{{ illust.artist.shortlink }}</a></h4>
-        <ul>
-            <li><strong>Site ID:</strong> {{ illust.artist.site_artist_id }}</li>
-            <li><strong>Current account:</strong> {{ helpers.base.StrOrNone(illust.artist.current_site_account) }}</li>
-            <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(illust.artist) | safe }}</li>
-        </ul>
-    </section>
-    {% if illust.pools | length > 0 %}
-        <section id="illust-pools">
-            <h4>Pools</h4>
-            <ul>
-                {% for pool_element in illust._pools %}
-                    <li>
-                        <a href="{{ url_for('pool.show_html', id=pool_element.pool_id) }}">{{ pool_element.pool.name }}</a>
-                        <span class="delete-control">
-                            (
-                            <a href="{{ url_for('pool_element.delete_html', id=pool_element.id) }}" onclick="return Prebooru.deletePool(this)">remove</a>
-                            )
-                        </span>
-                    </li>
-                {% endfor %}
-            </ul>
-        </section>
-    {% endif %}
-    <section id="illust-timestamps">
-        <h4>Timestamps</h4>
-        <ul>
-            <li><strong>Requery:</strong> {{ helpers.base.FormatTimestamp(illust.requery) }}</li>
-            <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.created) }}</li>
-            <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(illust.updated) }}</li>
-        </ul>
-    </section>
-    {% if illust.notations | length > 0 %}
-        <section id="illust-notations">
-            <h4>Notations</h4>
-            <div id="illust-notations-container">
-                <ul>
-                    {% for notation in illust.notations %}
-                        <li>{% include "notations/_notation_block.html" %}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-        </section>
-    {% endif %}
+    {{ boorus_section(illust.boorus, 'illust-boorus') }}
+    {{ artists_section(illust.artist, 'illust-artists') }}
+    {{ pools_section(illust, 'illust-pools') }}
+    {{ timestamps_section(illust, 'illust-timestamps') }}
+    {{ notations_section(illust.notations, 'illust-notations') }}
     <section id="illust-options">
         <h4>Options</h4>
         <ul>

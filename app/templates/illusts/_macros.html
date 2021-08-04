@@ -1,0 +1,43 @@
+{% macro illusts_display(illust_search, illust_count, section_id) -%}
+    <section id="{{ section_id }}">
+        <h4>Illusts ( <a href="{{ illust_search }}">{{ illust_count }}</a> )</h4>
+    </section>
+{%- endmacro %}
+
+{% macro illusts_section(illusts, section_id) -%}
+    {% if illusts is not none %}
+        {% if illusts is not iterable %}
+            {% set illusts = [illusts] %}
+            {% set singular = True %}
+        {% else %}
+            {% set singular = False %}
+        {% endif %}
+        <section id="{{ section_id }}">
+            <h4>{{"Illust" if singular else "Illusts"}}</h4>
+            <ul>
+                {% for illust in illusts %}
+                    <li><span class="item-heading"><a href="{{ illust.show_url }}">{{ illust.shortlink }}</a></span>
+                        <ul>
+                            <li><strong><a href="{{ helpers.illust.SiteIllustUrl(illust) }}">{{ helpers.illust.ShortLink(illust) }}</a> {{ helpers.illust.PostIllustUrl(illust) }}</strong></li>
+                            <li><strong>Site ID:</strong> {{ illust.site_illust_id }}</li>
+                            <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
+                            <li><strong>Tags:</strong>
+                                {% for tag in illust.tags %}
+                                    {% if loop.first %}
+                                        <ul>
+                                    {% endif %}
+                                    <li>{{ tag.name }}&emsp;<a href="{{ helpers.illust.PostTagSearch(tag) }}">&raquo;</a></li>
+                                    {% if loop.last %}
+                                        </ul>
+                                    {% endif %}
+                                {% else %}
+                                    <em>none</em>
+                                {% endfor %}
+                            </li>
+                        </ul>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+{%- endmacro %}

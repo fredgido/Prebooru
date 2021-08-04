@@ -1,3 +1,5 @@
+{% from "layouts/_macros.html" import timestamps_section %}
+
 <aside id="notation-sidebar">
     {% if helpers.notation.HasAppendItem(notation) %}
         {% with append_key, append_item=helpers.notation.AppendKey(notation) %}
@@ -9,11 +11,5 @@
             </section>
         {% endwith %}
     {% endif %}
-    <section style="margin-top: 2em;">
-        <h4>Timestamps</h4>
-        <ul>
-            <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(notation.created) }}</li>
-            <li><strong>Updated:</strong> {{ helpers.base.FormatTimestamp(notation.updated) }}</li>
-        </ul>
-    </section>
+    {{ timestamps_section(notation, 'notation-timestamps') }}
 </aside>
