@@ -35,6 +35,7 @@ def SetTimesvalues(params):
 # #### Auxiliary functions
 
 def UpdateIllustUrls(illust, params):
+    print("UpdateIllustUrls")
     update_results = []
     existing_urls = [illust_url.url for illust_url in illust.urls]
     current_urls = []

@@ -34,24 +34,15 @@ def ConvertVideoUpload(illust, upload, source, create_video_func):
         CreateAndAppendError('logical.downloader.ConvertVideoUpload', "Did not find thumbnail for video on illust #%d" % illust.id, upload)
         return False
     else:
-        post = create_video_func(video_illust_url, thumb_illust_url, source)
-        if type(post) is list:
-            ExtendErrors(upload, post)
-            return False
-        else:
-            RecordOutcome(post, upload)
-            return True
+        post = create_video_func(video_illust_url, thumb_illust_url, upload, source)
+        return RecordOutcome(post, upload) or result
 
 
 def ConvertImageUpload(illust_urls, upload, source, create_image_func):
     result = False
     for illust_url in illust_urls:
         post = create_image_func(illust_url, upload, source)
-        if type(post) is list:
-            ExtendErrors(upload, post)
-        else:
-            RecordOutcome(post, upload)
-            result = True
+        result = RecordOutcome(post, upload) or result
     return result
 
 
@@ -65,9 +56,11 @@ def RecordOutcome(post, upload):
             print("\aInvalid data returned in outcome:", [item for item in post_errors if not IsError(item)])
         ExtendErrors(upload, valid_errors)
         AddUploadFailure(upload)
+        return False
     else:
         UploadAppendPost(upload, post)
         AddUploadSuccess(upload)
+        return True
 
 
 def LoadImage(buffer):

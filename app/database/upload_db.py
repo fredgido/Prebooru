@@ -1,5 +1,8 @@
 # APP/DATABASE/UPLOAD_DB.PY
 
+# ## PYTHON IMPORTS
+import re
+
 # ## LOCAL IMPORTS
 from .. import models, SESSION
 from ..logical.utility import GetCurrentTime
@@ -38,6 +41,10 @@ def CreateUploadFromParameters(createparams):
 
 
 # #### Misc functions
+
+
+def IsDuplicate(upload):
+    return any(re.match(r'Image already uploaded on post #\d+', error.message) for error in upload.errors)
 
 
 def SetUploadStatus(upload, status):

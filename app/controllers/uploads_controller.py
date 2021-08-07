@@ -2,17 +2,18 @@
 
 # ## PYTHON IMPORTS
 from sqlalchemy.orm import selectinload
-from flask import Blueprint, request, render_template, redirect, url_for, flash
+from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify
 from wtforms import StringField, IntegerField, TextAreaField
 
 # ## LOCAL IMPORTS
 from ..logical.utility import EvalBoolString
 from ..models import Upload, Post, IllustUrl
-from ..sources.base import GetPostSource
+from ..sources.base import GetPostSource, GetPreviewUrl
 from ..sources.local_source import WorkerCheckUploads
 from ..database.upload_db import CreateUploadFromParameters
+from ..database.cache_db import GetMediaData
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams,\
-    HideInput, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort
+    HideInput, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort, CheckParamRequirements, ReferrerCheck
 
 
 # ## GLOBAL VARIABLES
@@ -29,7 +30,7 @@ def GetUploadForm(**kwargs):
         illust_url_id = IntegerField('Illust URL ID', id='upload-illust-url-id', custom_name='upload[illust_url_id]')
         media_filepath = StringField('Media filepath', id='upload-media-filepath', custom_name='upload[media_filepath]')
         sample_filepath = StringField('Sample filepath', id='upload-sample-filepath', custom_name='upload[sample_filepath]')
-        request_url = StringField('Request URL', id='upload-request-url', custom_name='upload[sample_filepath]')
+        request_url = StringField('Request URL', id='upload-request-url', custom_name='upload[request_url]')
         image_url_string = TextAreaField('Image URLs', id='upload-image-url-string', custom_name='upload[image_url_string]', description="Separated by carriage returns.")
     return UploadForm(**kwargs)
 
@@ -68,7 +69,9 @@ def ConvertCreateParams(dataparams):
     return createparams
 
 
-def CheckCreateParams(dataparams):
+def CheckCreateParams(dataparams, request_url_only):
+    if request_url_only and dataparams['request_url'] is None:
+        return ["Must include the request URL."]
     if dataparams['illust_url_id'] is None and dataparams['request_url'] is None:
         return ["Must include the illust URL ID or the request URL."]
     if dataparams['illust_url_id'] and not dataparams['media_filepath']:
@@ -88,14 +91,22 @@ def index():
     return q
 
 
-def create():
+def create(get_request=False):
     force_download = request.values.get('force', type=EvalBoolString)
+    image_urls_only = request.values.get('image_urls_only', type=EvalBoolString)
+    request_url_only = request.values.get('request_url_only', type=EvalBoolString) or get_request
     dataparams = GetDataParams(request, 'upload')
     createparams = ConvertCreateParams(dataparams)
     retdata = {'error': False, 'data': createparams, 'params': dataparams}
-    errors = CheckCreateParams(createparams)
+    print("Create params:", request.values, dataparams, createparams)
+    errors = CheckCreateParams(createparams, request_url_only)
+    print("Errors:", errors)
     if len(errors) > 0:
         return SetError(retdata, '\n'.join(errors))
+    # print("Image URLS:", image_urls_only, ['image_urls'])
+    if image_urls_only and len(createparams['image_urls']) == 0:
+        return SetError(retdata, "No image URLs set!")
+    # return SetError(retdata, "BREAKPOINT")
     if not force_download:
         check_upload = UniquenessCheck(createparams)
         if check_upload is not None:
@@ -112,6 +123,32 @@ def create():
     upload = CreateUploadFromParameters(createparams)
     retdata['item'] = upload.to_json()
     WorkerCheckUploads()
+    return retdata
+
+
+def upload_select():
+    dataparams = GetDataParams(request, 'upload')
+    selectparams = ConvertDataParams(dataparams)
+    retdata = {'error': False, 'data': selectparams, 'params': dataparams}
+    errors = CheckParamRequirements(selectparams, ['request_url'])
+    if len(errors):
+        return SetError(retdata, '\n'.join(errors))
+    source = GetPostSource(selectparams['request_url'])
+    if source is None:
+        return SetError(retdata, "Upload source currently not handled for request url: %s" % selectparams['request_url'])
+    site_illust_id = source.GetIllustId(selectparams['request_url'])
+    illust_data = source.GetIllustData(site_illust_id)
+    for url_data in illust_data['illust_urls']:
+        full_url = GetPreviewUrl(url_data['url'], url_data['site_id'])
+        url_data['full_url'] = full_url
+        url_data['preview_url'] = source.SmallImageUrl(full_url)
+        media = GetMediaData(url_data['preview_url'], source)
+        if type(media) is str:
+            flash(media, 'error')
+            url_data['media_url'] = None
+        else:
+            url_data['media_url'] = media.file_url
+    retdata['item'] = illust_data['illust_urls']
     return retdata
 
 
@@ -173,6 +210,11 @@ def create_html():
     results = create()
     if results['error']:
         flash(results['message'], 'error')
+        data = {'noprocess': True, 'upload[request_url]': results['data']['request_url']}
+        if ReferrerCheck('upload.upload_all_html', request):
+            return redirect(url_for('upload.upload_all_html', **data))
+        if ReferrerCheck('upload.upload_select_html', request):
+            return redirect(url_for('upload.upload_select_html', **data))
         return redirect(url_for('upload.new_html', **results['data']))
     return redirect(url_for('upload.show_html', id=results['item']['id']))
 
@@ -180,3 +222,32 @@ def create_html():
 @bp.route('/uploads.json', methods=['POST'])
 def create_json():
     return create()
+
+
+# ###### MISC
+
+@bp.route('/uploads/all', methods=['GET'])
+def upload_all_html():
+    no_process = request.values.get('noprocess', type=EvalBoolString)
+    if not no_process:
+        results = create(True)
+        if results['error']:
+            flash(results['message'], 'error')
+            form = GetUploadForm(**results['data'])
+            return render_template("uploads/all.html", form=form, upload=Upload())
+    else:
+        print("No process!")
+        form = GetUploadForm(request_url=request.values.get('upload[request_url]'))
+        return render_template("uploads/all.html", form=form, upload=Upload())
+    return redirect(url_for('upload.show_html', id=results['item']['id']))
+
+
+@bp.route('/uploads/select', methods=['GET'])
+def upload_select_html():
+    results = upload_select()
+    form = GetUploadForm(request_url=results['data']['request_url'])
+    print("Results:", results)
+    if results['error']:
+        flash(results['message'], 'error')
+        return render_template("uploads/select.html", illust_urls=None, form=form, upload=Upload())
+    return render_template("uploads/select.html", form=form, illust_urls=results['item'], upload=Upload())

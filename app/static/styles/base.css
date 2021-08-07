@@ -126,7 +126,7 @@ ul {
     margin-left: 1.25em;
 }
 span.item-heading {
-    font-size: 125%;
+    font-size: 1.18em;
     font-weight: bold;
 }
 span.muted-timestamp {
@@ -152,6 +152,10 @@ article.post {
     margin: 0 10px 10px 0;
     vertical-align: top;
     text-align: center;
+}
+article.post > img {
+    max-height: 300px;
+    max-width: 300px;
 }
 span#recent-posts-heading {
     font-size: 24px;

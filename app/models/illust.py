@@ -83,7 +83,7 @@ class Illust(JsonModel):
     # Association proxies
 
     pools = association_proxy('_pools', 'pool')
-    posts = association_proxy('urls', 'post')
+    _posts = association_proxy('urls', 'post')
     boorus = association_proxy('artist', 'boorus')
     title = association_proxy('site_data', 'title', getset_factory=PolymorphicAccessorFactory)
     retweets = association_proxy('site_data', 'retweets', getset_factory=PolymorphicAccessorFactory)
@@ -94,6 +94,10 @@ class Illust(JsonModel):
     site_uploaded = association_proxy('site_data', 'site_uploaded', getset_factory=PolymorphicAccessorFactory)
 
     # Instance properties
+
+    @property
+    def posts(self):
+        return [post for post in self._posts if post is not None]
 
     @property
     def site_domain(self):

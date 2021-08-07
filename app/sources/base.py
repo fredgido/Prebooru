@@ -4,7 +4,7 @@
 import urllib
 
 # ##LOCAL IMPORTS
-from ..sites import GetSiteKey, GetSiteId
+from ..sites import GetSiteKey, GetSiteId, GetSiteDomain
 from ..sources import SOURCES, SOURCEDICT
 from ..logical.utility import GetHTTPFilename, GetFileExtension, SetError
 from ..database.local import IsError
@@ -104,6 +104,12 @@ def GetIllustRequiredParams(url):
         return SetError(retdata, ret.message)
     retdata['site_illust_id'] = int(ret)
     return retdata
+
+
+# #### Other
+
+def GetPreviewUrl(url, site_id):
+    return url if site_id == 0 else 'https://' + GetSiteDomain(site_id) + url
 
 
 # ##### Base source functions

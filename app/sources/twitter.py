@@ -216,6 +216,16 @@ def VideoIllustThumbUrl(illust):
     return next(filter(ImageUrlMapper, illust.urls), None)
 
 
+# Artist
+
+def ArtistLinks(artist):
+    return {
+        'main': ArtistMainUrl(artist),
+        'media': ArtistMediaUrl(artist),
+        'likes': ArtistLikesUrl(artist),
+    }
+
+
 #   URL
 
 def GetMediaExtension(media_url):

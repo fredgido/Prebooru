@@ -52,9 +52,9 @@ USERS_RG = re.compile(r"""
 IMAGE_RG = re.compile(r"""
 ^https?://[^.]+\.pximg\.net             # Hostname
 (?:/c/\w+)?                             # Size 1
-/img-(?:original|master)/img/           # Path
-(\d{4}/\d{2}/\d{2}/\d{2}/\d{2}/\d{2}/)  # Date
-(\d+)_                                  # ID
+/img-(?:original|master)/img            # Path
+/(\d{4}/\d{2}/\d{2}/\d{2}/\d{2}/\d{2})  # Date
+/(\d+)_                                 # ID
 p(\d+)                                  # Order
 (?:_(?:master|square)1200)?             # Size 2
 \.(jpg|png|gif|mp4|zip)                 # Extension
@@ -94,14 +94,24 @@ def ArtistMainUrl(artist):
     return ARTIST_HREFURL % artist.site_artist_id
 
 
-def ArtistMediaUrl(artist):
+def ArtistArtworksUrl(artist):
     url = ArtistMainUrl(artist)
     return url + '/artworks' if len(url) else ""
 
 
-def ArtistLikesUrl(artist):
+def ArtistIllustrationsUrl(artist):
     url = ArtistMainUrl(artist)
-    return url + '/bookmarks' if len(url) else ""
+    return url + '/illustrations' if len(url) else ""
+
+
+def ArtistMangaUrl(artist):
+    url = ArtistMainUrl(artist)
+    return url + '/manga' if len(url) else ""
+
+
+def ArtistBookmarksUrl(artist):
+    url = ArtistMainUrl(artist)
+    return url + '/bookmarks/artworks' if len(url) else ""
 
 
 def ArtistBooruSearchUrl(artist):
@@ -116,7 +126,7 @@ def GetDataIllustIDs(pixiv_data, type):
 
 
 def IsPostUrl(url):
-    return False
+    return bool(ARTWORKS_RG.match(url))
 
 
 def GetMediaUrl(illust_url):
@@ -129,6 +139,42 @@ def GetPostUrl(illust):
 
 def GetIllustUrl(site_illust_id):
     return ILLUST_HREFURL % site_illust_id
+
+
+def IllustHasImages(illust_url):
+    return True
+
+
+def IllustHasVideos(illust_url):
+    return False
+
+
+def ImageIllustDownloadUrls(illust):
+    return list(filter(lambda x: ImageUrlMapper, illust.urls))
+
+
+def GetFullUrl(illust_url):
+    return GetMediaUrl(illust_url)
+
+
+def ImageUrlMapper(x):
+    return IsImageUrl(GetFullUrl(x))
+
+
+def VideoUrlMapper(x):
+    return IsVideoUrl(GetFullUrl(x))
+
+
+# Artist
+
+def ArtistLinks(artist):
+    return {
+        'main': ArtistMainUrl(artist),
+        'artworks': ArtistArtworksUrl(artist),
+        # 'illustrations': ArtistIllustrationsUrl(artist),
+        # 'manga': ArtistMangaUrl(artist),
+        'bookmarks': ArtistBookmarksUrl(artist),
+    }
 
 
 #   URL
@@ -150,17 +196,27 @@ def IsImageUrl(image_url):
     return bool(IMAGE_RG.match(image_url))
 
 
-def IsArtistIdUrl(artist_url):
+def IsVideoUrl(video_url):
     return False
+
+
+def IsArtistIdUrl(artist_url):
+    return bool(USERS_RG.match(artist_url))
+
+
+def GetArtistId(artist_url):
+    match = USERS_RG.match(artist_url)
+    if match:
+        return match.group(1)
 
 
 def IsArtistUrl(artist_url):
-    return False
+    return IsArtistIdUrl(artist_url)
 
 
 def SmallImageUrl(image_url):
     date, id, order, type = IMAGE_RG.match(image_url).groups()
-    return IMAGE_SERVER + '/c/540x540_70/img-master/img/' + date + '/' + id + '_p' + order + '_master1200.' + type
+    return IMAGE_SERVER + '/c/540x540_70/img-master/img/' + date + '/' + id + '_p' + order + '_master1200.jpg'
 
 
 def NormalizedImageUrl(image_url):
@@ -278,6 +334,10 @@ def GetPixivProfileData(site_artist_id):
 
 # #### Param functions
 
+def Prework(site_illust_id):
+    pass
+
+
 # ###### ILLUST
 
 def GetIllustTags(artwork):
@@ -374,7 +434,7 @@ def GetArtistParametersFromPxuser(pxuser, artwork):
         'active': True,
         'names': [pxuser['name']],
         'site_accounts': [artwork['userAccount']] if artwork is not None else [],
-        'commentaries': FixupCRLF(pxuser['comment']) or None,
+        'profiles': FixupCRLF(pxuser['comment']) or None,
         'webpages': GetPixivUserWebpages(pxuser)
     }
 
@@ -455,3 +515,8 @@ def GetIllustData(site_illust_id):
     page_data = GetPageData(site_illust_id) if artwork['pageCount'] > 1 else None
     page_data = page_data if not IsError(page_data) else None
     return GetIllustParametersFromArtwork(artwork, page_data)
+
+
+def GetArtistIdByIllustId(site_illust_id):
+    artwork = GetIllustApiData(site_illust_id)
+    return SafeGet(artwork, 'userId')

@@ -49,6 +49,18 @@ def AddContainer(tagname, markup_text, classlist=[], **attrs):
     return Markup('<%s%s%s>' % (tagname, class_string, attr_string)) + markup_text + Markup('</%s>' % tagname)
 
 
+def ExternalLink(text, url, **addons):
+    addons['rel'] = addons['rel'] if 'rel' in addons else ""
+    addons['rel'] = ' '.join((addons['rel'].split() + ['external',  'noreferrer', 'nofollow']))
+    addons['target'] = '_blank'
+    return GeneralLink(text, url, **addons)
+
+
+def GeneralLink(text, url, **addons):
+    attrs = ['%s="%s"' % (k, v) for (k, v) in addons.items()]
+    return Markup('<a %s href="%s">%s</a>' % (' '.join(attrs), url, text))
+
+
 # #### Form functions
 
 def FormIterator(form):

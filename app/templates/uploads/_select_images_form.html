@@ -1,0 +1,31 @@
+{% from 'layouts/_macros.html' import render_form %}
+
+<div style="font-size: 20px; margin: 1em 0;">
+    <strong>Controls:</strong>
+    (
+    <a href="javascript:SelectAll()">All</a> |
+    <a href="javascript:SelectNone()">None</a> | 
+    <a href="javascript:SelectInvert()">Invert</a>
+    )
+</div>
+{% call render_form(form, 'POST', upload.create_url) %}
+    {% for url_data in illust_urls %}
+        <div style="border: 1px solid #EEE; padding: 5px; display: inline-block; margin: 5px;">
+            <div class="input">
+                <label style="padding: 0.5em; margin-top: 0;" for="select-post-{{ loop.index }}">
+                    <input type="checkbox" class="select-post-input" id="select-post-{{ loop.index }}" name="upload[image_urls][]" value="{{ url_data['full_url'] }}">
+                </label>
+            </div>
+            <article class="post select-post">
+                {% if url_data['media_url'] is not none %}
+                    <img src="{{ url_data['media_url'] }}">
+                {% else %}
+                <div style="font-size: 150%; font-style: italic; color: grey; margin-bottom: 1em;">Missing image.</div>
+                <div style="font-size: 125%; text-align: left; word-break: break-word;">{{ url_data['full_url'] }}</div>
+                {% endif %}
+            </article>
+        </div>
+    {% endfor %}
+    {{ form.request_url(type='hidden') }}
+    <input type="hidden" name="image_urls_only" value="true">
+{% endcall %}

@@ -101,7 +101,7 @@ def CheckSimilarMatchScores(similarity_results, image_hash, min_score):
             }
             found_results.append(data)
     print("Hamming time:", hamming_time)
-    return found_results
+    return sorted(found_results, key=lambda x: x['score'], reverse=True)
 
 
 def GetSimilarMatches(image_hash, ratio):
@@ -350,7 +350,7 @@ def check_similarity():
     include_posts = request.args.get('include_posts', type=bool, default=False)
     retdata = {'error': False}
     if request_urls is None:
-        return SetError("Must include url.", retdata)
+        return SetError(retdata, "Must include url.")
     similar_results = []
     for image_url in request_urls:
         source = BASE_SOURCE.GetImageSource(image_url) or NoSource()
@@ -359,7 +359,7 @@ def check_similarity():
         if media is None:
             media, image = CreateNewMedia(download_url, source)
             if type(image) is str:
-                return SetError(image, retdata)
+                return SetError(retdata, image)
         else:
             image = Image.open(media.file_path)
         image = image.copy().convert("RGB")

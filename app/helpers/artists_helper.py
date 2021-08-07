@@ -51,13 +51,8 @@ def ArtistLinks(artist):
     source = SOURCEDICT[site_key]
     if not source.HasArtistUrls(artist):
         return '<em>N/A</em>'
-    return Markup(' | '.join(
-        [
-            '<a href="%s">Main</a>' % MainUrl(artist),
-            '<a href="%s">Media</a>' % MediaUrl(artist),
-            '<a href="%s">Likes</a>' % LikesUrl(artist),
-        ]
-    ))
+    all_links = ['<a href="%s">%s</a>' % (url, name.title()) for (name, url) in source.ArtistLinks(artist).items()]
+    return Markup(' | '.join(all_links))
 
 
 def WebpageLink(url):

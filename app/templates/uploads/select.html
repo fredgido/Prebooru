@@ -1,0 +1,33 @@
+{% extends 'uploads/_base.html' %}
+{% from 'layouts/_macros.html' import render_form %}
+
+{% block title %}Upload Select{% endblock %}
+
+{% block content %}
+    <div class="form-heading heading">Upload Select</div>
+    {% if illust_urls is not none %}
+        {% include "uploads/_select_images_form.html" %}
+    {% else %}
+        {% include "uploads/_select_url_form.html" %}
+    {% endif %}
+{% endblock %}
+
+{% block pagescript %}
+<script>
+    function SelectAll() {
+        [...document.getElementsByClassName('select-post-input')].forEach((input)=>{
+            input.checked = true;
+        });
+    }
+    function SelectNone() {
+        [...document.getElementsByClassName('select-post-input')].forEach((input)=>{
+            input.checked = false;
+        });
+    }
+    function SelectInvert() {
+        [...document.getElementsByClassName('select-post-input')].forEach((input)=>{
+            input.checked = !input.checked;
+        });
+    }
+</script>
+{% endblock %}

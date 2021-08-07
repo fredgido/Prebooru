@@ -8,7 +8,7 @@ from flask import render_template, Markup
 from ..sites import GetSiteDomain, GetSiteKey
 from ..sources import SOURCEDICT
 from ..sources.base import GetSourceById
-from .base_helper import SearchUrlFor
+from .base_helper import SearchUrlFor, ExternalLink
 
 
 # ##GLOBAL VARIABLES
@@ -66,13 +66,6 @@ def IllustHasVideos(illust):
     return source.IllustHasImages(illust)
 
 
-def PostPreviews(illust):
-    posts = [post for post in illust.posts if post is not None]
-    if len(posts) == 0:
-        return Markup('<i>No posts.</i>')
-    return Markup(render_template("pools/_post_previews.html", posts=posts))
-
-
 def IllustUrlsOrdered(illust):
     return sorted(illust.urls, key=lambda x: x.order)
 
@@ -94,13 +87,6 @@ def SiteIllustUrl(illust):
     return source.GetIllustUrl(illust.site_illust_id)
 
 
-def PostIllustUrl(illust):
-    site_key = GetSiteKey(illust.site_id)
-    source = SOURCEDICT[site_key]
-    post_url = source.GetPostUrl(illust)
-    return Markup('<a rel="external noreferrer nofollow" href="%s">&raquo;</a>' % post_url) if post_url != source.GetIllustUrl(illust.site_illust_id) else ""
-
-
 def PostIllustSearch(illust):
     return SearchUrlFor('post.index_html', illust_urls={'illust_id': illust.id})
 
@@ -114,3 +100,13 @@ def DanbooruBatchUrl(illust):
     post_url = source.GetPostUrl(illust)
     query_string = urllib.parse.urlencode({'url': post_url})
     return 'https://danbooru.donmai.us/uploads/batch?' + query_string
+
+
+# #### Link functions
+
+def PostIllustUrl(illust):
+    site_key = GetSiteKey(illust.site_id)
+    source = SOURCEDICT[site_key]
+    post_url = source.GetPostUrl(illust)
+    return ExternalLink('&raquo;', post_url) if post_url != source.GetIllustUrl(illust.site_illust_id) else ""
+

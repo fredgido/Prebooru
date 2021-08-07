@@ -1,11 +1,17 @@
 # APP/HELPERS/POSTS_HELPER.PY
 
 # ##PYTHON IMPORTS
+from flask import Markup
 import urllib.parse
 
 # ##LOCAL IMPORTS
 from ..sources.base import GetSourceById
-from .base_helper import SearchUrlFor
+from .base_helper import SearchUrlFor, ExternalLink
+
+
+# ## GLOBAL VARIABLES
+
+DANBOORU_UPLOAD_LINK = 'https://danbooru.donmai.us/uploads/new?prebooru_post_id='
 
 
 # ## FUNCTIONS
@@ -27,10 +33,10 @@ def SimilarSearchLinks(post, format_url, proxy_url=None):
         encoded_url = urllib.parse.quote_plus(small_url)
         href_url = format_url + encoded_url
         html = '<a href="%s">illust #%d</a>' % (href_url, illust.id)
-        image_links.append(html)
+        image_links.append(ExternalLink(illust.shortlink, href_url))
     if len(image_links) == 0 and proxy_url is not None:
-        image_links.append('<a href="%s?post_id=%d">file</a>' % (proxy_url, post.id))
-    return ' | '.join(image_links)
+        image_links.append(ExternalLink('file', proxy_url + '?post_id=' + str(post.id)))
+    return Markup(' | ').join(image_links)
 
 
 def DanbooruSearchLinks(post):
@@ -62,10 +68,10 @@ def DanbooruPostBookmarkletLinks(post):
         query_string = urllib.parse.urlencode({'url': media_url, 'ref': post_url})
         href_url = 'https://danbooru.donmai.us/uploads/new?' + query_string
         html = '<a href="%s" target="_blank">illust #%d</a>' % (href_url, illust.id)
-        image_links.append(html)
+        image_links.append(ExternalLink(illust.shortlink, href_url))
     if len(image_links) == 0:
-        image_links.append('<a href="https://danbooru.donmai.us/uploads/new?prebooru_post_id=%d" target="_blank">file</a>' % post.id)
-    return ' | '.join(image_links)
+        image_links.append(ExternalLink('file', DANBOORU_UPLOAD_LINK + str(post.id)))
+    return Markup(' | ').join(image_links)
 
 
 def RelatedPostsSearch(post):

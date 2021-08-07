@@ -1,9 +1,14 @@
 # APP/DATABASE/CACHE_DB.PY
 
+# ##PYTHON IMPORTS
+import requests
+
 # ##LOCAL IMPORTS
 from .. import SESSION
-from ..logical.utility import GetCurrentTime, DaysFromNow
-from ..cache import ApiData
+from ..logical.utility import GetCurrentTime, DaysFromNow, GetBufferChecksum
+from ..logical.network import GetHTTPFile
+from ..logical.file import CreateDirectory, PutGetRaw
+from ..cache import ApiData, MediaFile
 
 
 # ##FUNCTIONS
@@ -48,6 +53,13 @@ def SaveApiData(network_data, id_key, site_id, type):
     SESSION.commit()
 
 
+def GetMediaData(image_url, source):
+    media = MediaFile.query.filter_by(media_url=image_url).first()
+    if media is not None:
+        return media
+    return _CreateNewMedia(image_url, source)
+
+
 # #### Private functions
 
 
@@ -60,3 +72,19 @@ def _GetApiData(data_ids, site_id, type):
         q = q.filter(ApiData.data_id.in_(data_ids))
     q = q.filter(ApiData.expires > GetCurrentTime())
     return q.all()
+
+
+def _CreateNewMedia(download_url, source):
+    buffer = GetHTTPFile(download_url, headers=source.IMAGE_HEADERS)
+    if isinstance(buffer, Exception):
+        return "Exception processing download: %s" % repr(buffer)
+    if isinstance(buffer, requests.Response):
+        return "HTTP %d - %s" % (buffer.status_code, buffer.reason)
+    md5 = GetBufferChecksum(buffer)
+    extension = source.GetMediaExtension(download_url)
+    media = MediaFile(md5=md5, file_ext=extension, media_url=download_url, expires=DaysFromNow(1))
+    CreateDirectory(media.file_path)
+    PutGetRaw(media.file_path, 'wb', buffer)
+    SESSION.add(media)
+    SESSION.commit()
+    return media

@@ -2,7 +2,7 @@
     {% if helpers.pool.ItemIsOfType(item, 'post') %}
         {{ post_preview(item) }}
     {% elif helpers.pool.ItemIsOfType(item, 'illust') %}
-        {{ helpers.illust.PostPreviews(item) }}
+        {{ illust_preview(item) }}
     {% elif helpers.pool.ItemIsOfType(item, 'notation') %}
         <div class="pool-display-notation">{{ helpers.notation.ConvertToHTML(item) }}</div>
     {% endif %}

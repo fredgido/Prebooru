@@ -23,6 +23,7 @@ from app.models import Upload, Illust, Artist, Booru
 from app.database.artist_db import UpdateArtistFromSource
 from app.database.booru_db import CreateBooruFromParameters
 from app.database.illust_db import CreateIllustFromSource, UpdateIllustFromSource
+from app.database.upload_db import IsDuplicate, SetUploadStatus
 from app.database.error_db import AppendError, CreateAndAppendError
 from app.sources import base as BASE_SOURCE, danbooru as DANBOORU_SOURCE
 from app.logical.utility import MinutesAgo, GetCurrentTime
@@ -129,10 +130,11 @@ def ProcessNetworkUpload(upload):
     if CheckRequery(illust.artist):
         UpdateArtistFromSource(illust.artist, source)
     if ConvertNetworkUpload(illust, upload, source):
-        upload.status = 'complete'
+        SetUploadStatus(upload, 'complete')
+    elif IsDuplicate(upload):
+        SetUploadStatus(upload, 'duplicate')
     else:
-        upload.status = 'error'
-    SESSION.commit()
+        SetUploadStatus(upload, 'error')
 
 
 def ProcessFileUpload(upload):
