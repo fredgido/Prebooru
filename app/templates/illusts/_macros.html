@@ -1,7 +1,7 @@
 {% macro illust_preview(illust) -%}
-    <div class="pool-display-illust">
+    <div class="illust-preview">
         {% for post in illust.posts %}
-            {% if (loop.index == 4) and ((illust.posts | length) >= 4) %}
+            {% if (loop.index == 4) and ((illust.posts | length) > 4) %}
                 <article class="illust-post" style="background-color: grey; padding: 5px;">
                     <span style="font-size: 20px; font-weight: bold; color: white">{{ illust.posts | length - 3 }} more posts available</span>
                 </article>
@@ -38,7 +38,7 @@
                 {% for illust in illusts %}
                     <li><span class="item-heading"><a href="{{ illust.show_url }}">{{ illust.shortlink }}</a></span>
                         <ul>
-                            <li><strong><a href="{{ helpers.illust.SiteIllustUrl(illust) }}">{{ helpers.illust.ShortLink(illust) }}</a> {{ helpers.illust.PostIllustUrl(illust) }}</strong></li>
+                            <li><strong>{{ helpers.illust.SiteIllustLink(illust) }} {{ helpers.illust.PostIllustLink(illust) }}</strong></li>
                             <li><strong>Site ID:</strong> {{ illust.site_illust_id }}</li>
                             <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
                             <li><strong>Tags:</strong>

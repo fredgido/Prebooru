@@ -6,7 +6,7 @@
                 <li><span class="item-heading"><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></span>
                     <ul>
                         <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
-                        <li><strong>Name: <a href="{{ helpers.booru.DanbooruPageLink(booru) }}">{{ booru.current_name }}</a> <a href="{{ helpers.booru.DanbooruPostSearch(booru) }}">&raquo;</a></strong></li>
+                        <li><strong>Name: {{ helpers.booru.SiteBooruLink(booru) }} {{ helpers.booru.SiteSearchLink(booru) }}</strong></li>
                     </ul>
                 </li>
             {% else %}

@@ -2,12 +2,14 @@
 
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, redirect, url_for, flash
+from sqlalchemy import not_, or_
 from sqlalchemy.orm import selectinload, lazyload
 from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from ..models import Illust, Artist, SiteData
+from ..models import Illust, IllustUrl, SiteData, Artist, Post, PoolIllust, PoolPost
+from ..logical.utility import EvalBoolString, IsFalsey
 from ..sources.base import GetSourceById, GetIllustRequiredParams
 from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters, UpdateIllustFromSource
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
@@ -28,6 +30,10 @@ VALUES_MAP = {
     **{k: k for k in Artist.__table__.columns.keys()},
 }
 
+ILLUST_POOLS_SUBQUERY = Illust.query.join(PoolIllust, Illust._pools).filter(Illust.id == PoolIllust.illust_id).with_entities(Illust.id)
+POST_POOLS_SUBQUERY = Illust.query.join(IllustUrl, Illust.urls).join(Post, IllustUrl.post).join(PoolPost, Post._pools).filter(Post.id == PoolPost.post_id).with_entities(Illust.id)
+
+POOL_SEARCH_KEYS = ['has_pools', 'has_post_pools', 'has_illust_pools']
 
 # Forms
 
@@ -55,6 +61,25 @@ def GetIllustForm(**kwargs):
 
 
 # ## FUNCTIONS
+
+# #### Query functions
+
+def PoolFilter(query, search):
+    pool_search_key = next((key for key in POOL_SEARCH_KEYS if key in search), None)
+    if pool_search_key is not None and EvalBoolString(search[pool_search_key]) is not None:
+        if pool_search_key == 'has_pools':
+            subclause = or_(Illust.id.in_(POST_POOLS_SUBQUERY), Illust.id.in_(ILLUST_POOLS_SUBQUERY))
+        elif pool_search_key == 'has_post_pools':
+            subclause = Illust.id.in_(POST_POOLS_SUBQUERY)
+        elif pool_search_key == 'has_illust_pools':
+            subclause = Illust.id.in_(ILLUST_POOLS_SUBQUERY)
+        if IsFalsey(search[pool_search_key]):
+            subclause = not_(subclause)
+        query = query.filter(subclause)
+    elif 'pool_id' in search and search['pool_id'].isdigit():
+        query = query.unique_join(PoolIllust, Illust._pools).filter(PoolIllust.pool_id == int(search['pool_id']))
+    return query
+
 
 # #### Helper functions
 
@@ -95,8 +120,9 @@ def index():
     search = GetParamsValue(params, 'search', True)
     negative_search = GetParamsValue(params, 'not', True)
     q = Illust.query
-    q = q.options(selectinload(Illust.site_data), lazyload('*'))
+    q = q.options(selectinload(Illust.site_data), selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'), lazyload('*'))
     q = SearchFilter(q, search, negative_search)
+    q = PoolFilter(q, search)
     q = DefaultOrder(q, search)
     return q
 

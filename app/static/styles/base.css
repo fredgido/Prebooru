@@ -157,6 +157,21 @@ article.post > img {
     max-height: 300px;
     max-width: 300px;
 }
+div.illust-preview {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    width: 315px;
+}
+div.illust-preview > article {
+    width: 150px;
+    height: 150px;
+    padding: 2px;
+}
+div.illust-preview img {
+    max-width: 150px;
+    max-height: 150px;
+}
 span#recent-posts-heading {
     font-size: 24px;
 }

@@ -23,21 +23,6 @@ div.pool-display-block {
     height: 320px;
     margin-left: 1em;
 }
-div.pool-display-illust {
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    width: 315px;
-}
-div.pool-display-illust > article {
-    width: 150px;
-    height: 150px;
-    padding: 2px;
-}
-div.pool-display-illust img {
-    max-width: 150px;
-    max-height: 150px;
-}
 div.pool-display-block {
     display: block;
     height: 320px;

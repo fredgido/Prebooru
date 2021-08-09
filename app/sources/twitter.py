@@ -461,6 +461,7 @@ def Prework(site_illust_id):
         tweets.append(tweet)
         tweet_ids.add(tweet['id_str'])
     SaveApiData(tweets, 'id_str', SITE_ID, 'illust')
+    print("Saving tweets:", tweet_ids)
     twusers = []
     user_ids = set()
     for i in range(len(twitter_data)):
@@ -472,6 +473,7 @@ def Prework(site_illust_id):
         twusers.append(user)
         user_ids.add(id_str)
     SaveApiData(twusers, 'id_str', SITE_ID, 'artist')
+    print("Saving twusers:", user_ids)
 
 
 # #### Token functions

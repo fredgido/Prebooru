@@ -5,7 +5,7 @@
         <section id="illust-site-info">
             <h4>Site</h4>
             <ul>
-                <li><strong><a href="{{ helpers.illust.SiteIllustUrl(illust) }}">{{ helpers.illust.ShortLink(illust) }}</a> {{ helpers.illust.PostIllustUrl(illust) | safe }}</strong></li>
+                <li><strong>{{ helpers.illust.SiteIllustLink(illust) }} {{ helpers.illust.PostIllustLink(illust) }}</strong></li>
                 <li><strong>Domain:</strong> {{ illust.site_domain }}</li>
                 <li><strong>Illust ID:</strong> {{ illust.site_illust_id }}</li>
                 <li><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.site_created) }}</li>

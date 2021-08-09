@@ -12,7 +12,7 @@
                 {% for artist in artists %}
                     <li><span class="item-heading"><a href="{{ artist.show_url }}">{{ artist.shortlink }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a></span>
                         <ul>
-                            <li><strong><a href="{{ helpers.artist.HrefUrl(artist) }}">{{ helpers.artist.ShortLink(artist) }}</a></strong></li>
+                            <li><strong>{{ helpers.artist.SiteArtistLink(artist) }}</a></strong></li>
                             <li><strong>Site ID:</strong> {{ artist.site_artist_id }}</li>
                             <li><strong>Account:</strong> {{ helpers.base.StrOrNone(artist.current_site_account) }}</li>
                             <li><strong>Links:</strong> {{ helpers.artist.ArtistLinks(artist) }}</li>

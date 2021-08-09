@@ -3,7 +3,7 @@
         <section id="booru-site-info">
             <h4>Info</h4>
             <ul>
-                <li><span class="heading"><a href="{{ helpers.booru.DanbooruPageLink(booru) }}">{{ booru.current_name }}</a> <a href="{{ helpers.booru.DanbooruPostSearch(booru) }}">&raquo;</a> </span></li>
+                <li><span class="heading">{{ helpers.booru.SiteBooruLink(booru) }} {{ helpers.booru.SiteSearchLink(booru) }}</span></li>
                 <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
             </ul>
         </section>

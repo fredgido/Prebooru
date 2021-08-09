@@ -6,7 +6,7 @@ from flask import Markup
 # ## LOCAL IMPORTS
 from ..sites import GetSiteKey
 from ..sources import SOURCEDICT
-from .base_helper import SearchUrlFor
+from .base_helper import SearchUrlFor, ExternalLink
 
 
 # ## FUNCTIONS
@@ -46,14 +46,20 @@ def LikesUrl(artist):
     return source.ArtistLikesUrl(artist)
 
 
+# #### Link functions
+
+def WebpageLink(url):
+    return ExternalLink(url, url)
+
+
+def SiteArtistLink(artist):
+    return ExternalLink(ShortLink(artist), HrefUrl(artist))
+
+
 def ArtistLinks(artist):
     site_key = GetSiteKey(artist.site_id)
     source = SOURCEDICT[site_key]
     if not source.HasArtistUrls(artist):
-        return '<em>N/A</em>'
-    all_links = ['<a href="%s">%s</a>' % (url, name.title()) for (name, url) in source.ArtistLinks(artist).items()]
+        return Markup('<em>N/A</em>')
+    all_links = [ExternalLink(name.title(), url) for (name, url) in source.ArtistLinks(artist).items()]
     return Markup(' | '.join(all_links))
-
-
-def WebpageLink(url):
-    return '<a href="%s">%s</a>' % (url, url)

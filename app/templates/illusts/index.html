@@ -1,4 +1,5 @@
 {% extends 'illusts/_base.html' %}
+{% from "illusts/_macros.html" import illust_preview %}
 
 {% block title %}Illusts{% endblock %}
 
@@ -6,9 +7,8 @@
     <table id="illusts-table" class="striped" width="100%">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Site</th>
-                <th>Metrics</th>
+                <th>Preview</th>
+                <th>Info</th>
                 <th>Tags</th>
                 <th>Illust urls</th>
                 <th>Timestamps</th>
@@ -18,24 +18,13 @@
             {% for illust in illusts.items %}
                 {% set outer_loop = loop %}
                 <tr id="illust-{{ illust.id }}">
-                    <td><a href="{{ illust.show_url }}">illust #{{ illust.id }}</a> <a href="{{ helpers.illust.PostIllustSearch(illust) }}">&raquo;</a></td>
                     <td>
-                        <span><strong>Domain:</strong> {{ illust.site_domain }}</span><br>
-                        <span><strong>Illust ID:</strong> {{ illust.site_illust_id }}</span><br>
-                        <span><strong>Created:</strong> {{ helpers.base.FormatTimestamp(illust.site_created) }}</span><br>
-                         {% for key,val in helpers.illust.SiteDateIterator(illust) %}
-                            <span><strong>{{ key }}:</strong> {{ val }}</span><br>
-                        {% endfor %}
-                        <span><strong>Pages:</strong> {{ illust.pages }}</span>
+                        {{ illust_preview(illust) }}
                     </td>
                     <td>
-                        <span><strong>Score:</strong> {{ illust.score }}</span><br>
-                         {% for key,val in helpers.illust.SiteMetricIterator(illust) %}
-                            <span><strong>{{ key.title() }}:</strong> {{ val }}</span>
-                            {% if not loop.last %}
-                                <br>
-                            {% endif %}
-                        {% endfor %}
+                        <a href="{{ illust.show_url }}">illust #{{ illust.id }}</a> <a href="{{ helpers.illust.PostIllustSearch(illust) }}">&raquo;</a><br>
+                        <span><strong>Domain:</strong> {{ illust.site_domain }}</span><br>
+                        <span><strong>Site ID:</strong> {{ illust.site_illust_id }}</span><br>
                     </td>
                     <td>
                         <div style="max-width: 20vw;">
@@ -48,7 +37,7 @@
                     </td>
                     <td>
                          {% for illust_url in illust.urls %}
-                            <span><strong>#{{ illust_url.order + 1 }}</strong>
+                            <span><strong>#{{ illust_url.order }}</strong>
                                 <code>[{{ 'Active' if illust_url.active else 'Inactive' }}]</code>
                                 ({{ illust_url.width }} x {{ illust_url.height }})</span><br>
                             <span><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</span>

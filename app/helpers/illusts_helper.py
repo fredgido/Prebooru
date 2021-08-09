@@ -104,7 +104,11 @@ def DanbooruBatchUrl(illust):
 
 # #### Link functions
 
-def PostIllustUrl(illust):
+def SiteIllustLink(illust):
+    return ExternalLink(ShortLink(illust), SiteIllustUrl(illust))
+
+
+def PostIllustLink(illust):
     site_key = GetSiteKey(illust.site_id)
     source = SOURCEDICT[site_key]
     post_url = source.GetPostUrl(illust)
