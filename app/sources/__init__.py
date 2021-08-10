@@ -1,11 +1,11 @@
-from . import pixiv
-from . import twitter
+from . import pixiv_source
+from . import twitter_source
 
-SOURCES = [pixiv, twitter]
+SOURCES = [pixiv_source, twitter_source]
 SOURCEDICT = {
-    'PIXIV': pixiv,
-    'PXIMG': pixiv,
-    'TWITTER': twitter,
-    'TWIMG': twitter,
-    'TWVIDEO': twitter
+    'PIXIV': pixiv_source,
+    'PXIMG': pixiv_source,
+    'TWITTER': twitter_source,
+    'TWIMG': twitter_source,
+    'TWVIDEO': twitter_source
 }

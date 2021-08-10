@@ -5,7 +5,7 @@
 
 {% block content %}
     <div class="form-heading heading">
-        Edit: <a href="{{ artist.show_url }}">{{ artist.shortlink }}</a>
+        Edit: {{ artist.show_link }}</a>
     </div>
     {% call render_form(form, 'POST', artist.create_url) %}
         {% for field_name,field_input in helpers.base.FormIterator(form) %}

@@ -15,8 +15,8 @@
         <tbody>
             {% for artist_url in artist_urls.items %}
                 <tr id="artist-url-{{ artist_url.id }}">
-                    <td><a href="{{ artist_url.show_url }}">{{ artist_url.shortlink }}</a></td>
-                    <td><a href="{{ url_for('artist.show_html', id=artist_url.artist_id) }}">artist #{{ artist_url.artist_id }}</a></td>
+                    <td>{{ artist_url.show_link }}</td>
+                    <td>{{ helpers.base.ShowLink('artist', artist_url.artist_id) }}</td>
                     <td>{{ artist_url.url }}</td>
                     <td>{{ artist_url.active | tojson }}</td>
                 </tr>

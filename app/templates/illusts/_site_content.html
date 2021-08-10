@@ -1,4 +1,5 @@
 {% from 'layouts/_macros.html' import items_block %}
+{% from 'tags/_macros.html' import tag_list %}
 
 <div id="illust-site-content">
     <div id="illust-site-content-1">
@@ -27,13 +28,7 @@
         </section>
         <section id="illust-tags">
             <h4>Tags</h4>
-            <ul>
-                {% for tag in illust.tags %}
-                    <li>{{ tag.name }}&emsp;<a href="{{ helpers.illust.PostTagSearch(tag) }}">&raquo;</a></li>
-                {% else %}
-                    <li><em>none</em></li>
-                {% endfor %}
-            </ul>
+            {{ tag_list(illust.tags) }}
         </section>
     </div>
     <div id="illust-site-content-2">

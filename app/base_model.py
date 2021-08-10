@@ -3,7 +3,7 @@
 # ## PYTHON IMPORTS
 import datetime
 from typing import List, _GenericAlias
-from flask import url_for
+from flask import url_for, Markup
 
 # ## LOCAL IMPORTS
 from . import DB
@@ -64,6 +64,10 @@ class JsonModel(DB.Model):
         return url_for(self.__table__.name + ".show_html", id=self.id)
 
     @property
+    def show_link(self):
+        return Markup('<a href="%s">%s</a>' % (self.show_url, self.shortlink))
+
+    @property
     def index_url(self):
         return url_for(self.__table__.name + ".index_html")
 
@@ -78,6 +82,9 @@ class JsonModel(DB.Model):
     @property
     def delete_url(self):
         return url_for(self.__table__.name + ".delete_html", id=self.id)
+
+    def column_dict(self):
+        return {k: getattr(self, k) for k in self.__table__.c.keys() if hasattr(self, k)}
 
     def to_json(self):
         fields = self.__dataclass_fields__

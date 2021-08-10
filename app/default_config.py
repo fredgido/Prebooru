@@ -1,38 +1,34 @@
 # APP/DEFAULT_CONFIG.PY
 
-# ##WINDOWS###
+# ## DIRECTORY VARIABLES
+
 """Filepaths need to end with a double backslash ('\\')"""
 """All backslashes ('\') in a filepath need to be double escaped ('\\')"""
-workingdirectory = "C:\\Temp\\"
-datafilepath = "data\\"
-imagefilepath = "pictures\\"
+
+WORKING_DIRECTORY = "C:\\Temp\\"
+DATA_FILEPATH = "data\\"
+IMAGE_FILEPATH = "pictures\\"
+
+
+# ## DATABASE VARIABLES
 
 # Relative path to the DB file
 DB_PATH = r'db\prebooru.db'
 CACHE_PATH = r'db\cache.db'
 SIMILARITY_PATH = r'db\similarity.db'
 
-# ##LINUX###
-'''
-"""Filepaths need to end with a forwardslash ('/')"""
-workingdirectory = "/home/USERNAME/temp/"
-datafilepath = "data/"
-jsonfilepath = "json/"
-imagefilepath = "pictures/"
 
-# Relative path to the DB file
-DB_PATH = 'db/prebooru.db'
-'''
-
-# ##GENERAL###
-
-# The user ID of the system
-SYSTEM_USER_ID = 2
-
-# Log into Pixiv and get this value from the cookie PHPSESSID
-PIXIV_PHPSESSID = None
+# ## NETWORK VARIABLES
 
 DANBOORU_HOSTNAME = 'https://danbooru.donmai.us'
 
 DANBOORU_USERNAME = None
 DANBOORU_APIKEY = None
+
+# Log into Pixiv and get this value from the cookie PHPSESSID
+PIXIV_PHPSESSID = None
+
+IMAGE_SERVER = 'http://127.0.0.1:1234/'
+
+WORKER_PORT = 4000
+SIMILARITY_PORT = 3000

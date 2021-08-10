@@ -1,11 +1,11 @@
-{% from "layouts/_macros.html" import timestamps_section %}
 {% from "boorus/_macros.html" import boorus_section %}
 {% from "illusts/_macros.html" import illusts_display %}
+{% from "layouts/_macros.html" import timestamps_section %}
 {% from "notations/_macros.html" import notations_section %}
 
 <div id="artist-sidebar">
     {{ boorus_section(artist.boorus, 'artist-boorus') }}
-    {{ illusts_display(artist.illust_search, artist.illust_count, 'artist-illusts') }}
+    {{ illusts_display(helpers.artist.IllustSearch(artist), artist.illust_count, 'artist-illusts') }}
     {{ timestamps_section(artist, 'artist-timestamps') }}
     {{ notations_section(artist.notations, 'artist-notations') }}
     <section id="artist-options">

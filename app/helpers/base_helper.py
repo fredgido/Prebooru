@@ -51,7 +51,7 @@ def AddContainer(tagname, markup_text, classlist=[], **attrs):
 
 def ExternalLink(text, url, **addons):
     addons['rel'] = addons['rel'] if 'rel' in addons else ""
-    addons['rel'] = ' '.join((addons['rel'].split() + ['external',  'noreferrer', 'nofollow']))
+    addons['rel'] = ' '.join((addons['rel'].split() + ['external', 'noreferrer', 'nofollow']))
     addons['target'] = '_blank'
     return GeneralLink(text, url, **addons)
 
@@ -59,6 +59,10 @@ def ExternalLink(text, url, **addons):
 def GeneralLink(text, url, **addons):
     attrs = ['%s="%s"' % (k, v) for (k, v) in addons.items()]
     return Markup('<a %s href="%s">%s</a>' % (' '.join(attrs), url, text))
+
+
+def ShowLink(model_type, model_id):
+    return GeneralLink("%s #%d" % (model_type, model_id), url_for(model_type + '.show_html', id=model_id))
 
 
 # #### Form functions

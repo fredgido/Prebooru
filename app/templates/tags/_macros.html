@@ -1,0 +1,9 @@
+{% macro tag_list(tags) -%}
+    <ul>
+        {% for tag in tags %}
+            <li>{{ helpers.base.GeneralLink(tag.name, tag.show_url) }}&emsp;<a href="{{ helpers.illust.PostTagSearch(tag) }}">&raquo;</a></li>
+        {% else %}
+            <li><em>none</em></li>
+        {% endfor %}
+    </ul>
+{%- endmacro %}

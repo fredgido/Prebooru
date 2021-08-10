@@ -10,7 +10,6 @@ from .base_helper import SearchUrlFor, ExternalLink
 
 # ## FUNCTIONS
 
-
 def IllustSearch(booru):
     return SearchUrlFor('illust.index_html', artist={'boorus': {'id': booru.id}})
 
@@ -33,5 +32,5 @@ def SiteBooruLink(booru):
     return ExternalLink(booru.current_name, DanbooruPageUrl(booru))
 
 
-def  SiteSearchLink(booru):
+def SiteSearchLink(booru):
     return ExternalLink('&raquo;', DanbooruPostSearch(booru))

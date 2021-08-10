@@ -7,7 +7,7 @@ from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
 from ..models import Illust, IllustUrl
-from ..sources.base import GetImageSiteId, GetImageSource
+from ..sources.base_source import GetImageSiteId, GetImageSource
 from ..database.illust_url_db import CreateIllustUrlFromParameters, UpdateIllustUrlFromParameters
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder, Paginate,\
     GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, NullifyBlanks, CheckParamRequirements, HideInput, SetDefault,\

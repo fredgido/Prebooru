@@ -1,4 +1,5 @@
 {% extends 'artists/_base.html' %}
+{% from 'layouts/_macros.html' import simple_list %}
 
 {% block title %}Artists{% endblock %}
 
@@ -16,42 +17,17 @@
         </thead>
         <tbody>
             {% for artist in artists.items %}
-                {% set outer_loop = loop %}
                 <tr id="artist-{{ artist.id }}">
-                    <td><a href="{{ artist.show_url }}">artist #{{ artist.id }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a></td>
+                    <td>{{ artist.show_link }} {{ helpers.base.GeneralLink('&raquo;', helpers.artist.PostSearch(artist)) }}</td>
                     <td>
                         <span><strong>Domain:</strong> {{ artist.site_domain }}</span><br>
                         <span><strong>Artist ID:</strong> {{ artist.site_artist_id }}</span>
                     </td>
-                    <td>
-                         {% for artist_name in artist.names %}
-                            {{ artist_name.name }}
-                            {% if not loop.last %}
-                                <br>
-                            {% endif %}
-                        {% else %}
-                            <em>none</em>
-                        {% endfor %}
-                    </td>
-                    <td>
-                         {% for site_account in artist.site_accounts %}
-                            {{ site_account.name }}
-                            {% if not loop.last %}
-                                <br>
-                            {% endif %}
-                        {% else %}
-                            <em>none</em>
-                        {% endfor %}
-                    </td>
-                    <td>
-                         {% for webpage in artist.webpages %}
-                            <code>[{{ 'Active' if webpage.active else 'Inactive' }}]</code> {{ webpage.url }}
-                            {% if not loop.last %}
-                                <br>
-                            {% endif %}
-                        {% else %}
-                            <em>none</em>
-                        {% endfor %}
+                    <td>{{ simple_list(artist.names, 'name') }}</td>
+                    <td>{{ simple_list(artist.site_accounts, 'name') }}</td>
+                    <td>{% call(webpage) simple_list(artist.webpages, 'url') %}
+                            <code>[{{ 'Active' if webpage.active else 'Inactive' }}]</code> {{ helpers.artist.WebpageLink(webpage.url) }}
+                        {% endcall %}
                     </td>
                     <td>
                         <strong>Requery:</strong> {{ helpers.base.FormatTimestamp(artist.requery) }}<br>

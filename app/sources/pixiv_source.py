@@ -20,6 +20,8 @@ from ..sites import Site, GetSiteDomain, GetSiteId
 
 # #### Module variables
 
+NAME = 'pixiv'
+
 IMAGE_HEADERS = {
     'Referer': 'https://app-api.pixiv.net/'
 }
@@ -31,8 +33,11 @@ ARTIST_SHORTLINK = 'pxuser #%d'
 
 ILLUST_HREFURL = 'https://www.pixiv.net/artworks/%d'
 ARTIST_HREFURL = 'https://www.pixiv.net/users/%d'
+TAG_SEARCH_HREFURL = 'https://www.pixiv.net/tags/%s/artworks'
 
 SITE_ID = Site.PIXIV.value
+
+HAS_TAG_SEARCH = True
 
 
 # #### Regex variables
@@ -175,6 +180,12 @@ def ArtistLinks(artist):
         # 'manga': ArtistMangaUrl(artist),
         'bookmarks': ArtistBookmarksUrl(artist),
     }
+
+
+# Tag
+
+def TagSearchUrl(tag):
+    return TAG_SEARCH_HREFURL % tag.name
 
 
 #   URL

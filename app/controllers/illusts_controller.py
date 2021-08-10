@@ -10,7 +10,7 @@ from wtforms.validators import DataRequired
 # ## LOCAL IMPORTS
 from ..models import Illust, IllustUrl, SiteData, Artist, Post, PoolIllust, PoolPost
 from ..logical.utility import EvalBoolString, IsFalsey
-from ..sources.base import GetSourceById, GetIllustRequiredParams
+from ..sources.base_source import GetSourceById, GetIllustRequiredParams
 from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters, UpdateIllustFromSource
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
     Paginate, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, HideInput, IntOrBlank,\
@@ -34,6 +34,7 @@ ILLUST_POOLS_SUBQUERY = Illust.query.join(PoolIllust, Illust._pools).filter(Illu
 POST_POOLS_SUBQUERY = Illust.query.join(IllustUrl, Illust.urls).join(Post, IllustUrl.post).join(PoolPost, Post._pools).filter(Post.id == PoolPost.post_id).with_entities(Illust.id)
 
 POOL_SEARCH_KEYS = ['has_pools', 'has_post_pools', 'has_illust_pools']
+
 
 # Forms
 

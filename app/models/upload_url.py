@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
 from .. import DB
-from .base import JsonModel
+from ..base_model import JsonModel
 
 
 # ##GLOBAL VARIABLES

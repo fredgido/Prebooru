@@ -24,6 +24,10 @@ div#booru-sidebar {
 div#booru-sidebar > section {
     margin-bottom: 1em;
 }
+section#booru-illusts {
+    font-size: 1.25em;
+    font-weight: bold;
+}
 div#booru-site-content {
     width: 70%;
 }

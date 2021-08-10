@@ -6,13 +6,13 @@ import time
 import traceback
 
 # ###LOCAL IMPORTS
-from ..config import workingdirectory, datafilepath
+from ..config import WORKING_DIRECTORY, DATA_FILEPATH
 from .file import LoadDefault, PutGetJSON
 
 
 # ##GLOBAL VARIABLES
 
-ERROR_LOG_FILE = workingdirectory + datafilepath + 'error_log.json'
+ERROR_LOG_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'error_log.json'
 
 
 # ##FUNCTIONS

@@ -1,12 +1,15 @@
 {% from 'posts/_macros.html' import post_preview %}
 
 <div class="heading">
-    <span id="recent-posts-heading">
+    <div id="recent-posts-heading">
         <u>Posts</u>
+        {% if post_count is defined %}
+            (&thinsp;{{ post_count }}&thinsp;)
+        {% endif %}
         {% if post_search_link is not none %}
             <a href="{{ post_search_link }}">&raquo;</a>
         {% endif %}
-    </span>
+    </div>
 </div>
 <div id="recent-posts-container">
      {% for post in posts %}

@@ -7,12 +7,12 @@ from argparse import ArgumentParser
 
 # ## LOCAL IMPORTS
 from app.logical.file import LoadDefault, PutGetJSON
-from app.config import workingdirectory, datafilepath
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH
 
 
 # ## GLOBAL VARIABLES
 
-PID_FILENAME_FORMAT = workingdirectory + datafilepath + '%s-server-pid.json'
+PID_FILENAME_FORMAT = WORKING_DIRECTORY + DATA_FILEPATH + '%s-server-pid.json'
 SERVER_NAMES = ['prebooru', 'worker', 'similarity']  # NGINX, ...
 
 SERVER_ARGS = {

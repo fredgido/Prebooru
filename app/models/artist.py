@@ -9,7 +9,7 @@ from flask import url_for
 # ##LOCAL IMPORTS
 from .. import DB
 from ..sites import GetSiteDomain, GetSiteKey
-from .base import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
+from ..base_model import JsonModel, RemoveKeys, DateTimeOrNull, IntOrNone, StrOrNone
 from .artist_url import ArtistUrl
 from .illust import Illust
 from .label import Label
@@ -110,11 +110,11 @@ class Artist(JsonModel):
 
     @property
     def show_url(self):
-        return url_for("artist.show_html", id=self.id)
+        return url_for('artist.show_html', id=self.id)
 
     @property
     def illust_search(self):
-        return url_for("illust.index_html", **{'search[artist_id]': self.id})
+        return url_for('illust.index_html', **{'search[artist_id]': self.id})
 
     def delete(self):
         self.names.clear()

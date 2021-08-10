@@ -8,7 +8,6 @@ from sqlalchemy import not_
 from sqlalchemy.orm import Session
 import atexit
 import random
-import requests
 import threading
 import itertools
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -17,7 +16,6 @@ from argparse import ArgumentParser
 # ## LOCAL IMPORTS
 from app import database
 from app import DB, SESSION, PREBOORU_APP
-from app.config import workingdirectory, datafilepath
 from app.cache import ApiData, MediaFile
 from app.models import Upload, Illust, Artist, Booru
 from app.database.artist_db import UpdateArtistFromSource
@@ -25,17 +23,20 @@ from app.database.booru_db import CreateBooruFromParameters
 from app.database.illust_db import CreateIllustFromSource, UpdateIllustFromSource
 from app.database.upload_db import IsDuplicate, SetUploadStatus
 from app.database.error_db import AppendError, CreateAndAppendError
-from app.sources import base as BASE_SOURCE, danbooru as DANBOORU_SOURCE
+from app.sources.base_source import GetPostSource, GetSourceById
+from app.sources.local_source import SimilarityCheckPosts
+from app.sources.danbooru_source import GetArtistsByMultipleUrls
 from app.logical.utility import MinutesAgo, GetCurrentTime
 from app.logical.file import LoadDefault, PutGetJSON
 from app.logical.logger import LogError
 from app.downloader.network_downloader import ConvertNetworkUpload
 from app.downloader.file_downloader import ConvertFileUpload
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH, WORKER_PORT
 
 
 # ## GLOBAL VARIABLES
 
-SERVER_PID_FILE = workingdirectory + datafilepath + 'worker-server-pid.json'
+SERVER_PID_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'worker-server-pid.json'
 SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
 SCHED = None
@@ -43,7 +44,7 @@ UPLOAD_SEM = threading.Semaphore()
 BOORU_SEM = threading.Semaphore()
 
 BOORU_ARTISTS_DATA = None
-BOORU_ARTISTS_FILE = workingdirectory + datafilepath + 'booru_artists_file.json'
+BOORU_ARTISTS_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'booru_artists_file.json'
 
 READ_ENGINE = DB.engine.execution_options(isolation_level="READ UNCOMMITTED")
 
@@ -111,7 +112,7 @@ def ProcessUpload(upload):
 
 def ProcessNetworkUpload(upload):
     # Request URL should have already been validated, so no null test needed
-    source = BASE_SOURCE.GetPostSource(upload.request_url)
+    source = GetPostSource(upload.request_url)
     site_illust_id = source.GetIllustId(upload.request_url)
     site_id = source.SITE_ID
     error = source.Prework(site_illust_id)
@@ -139,7 +140,7 @@ def ProcessNetworkUpload(upload):
 
 def ProcessFileUpload(upload):
     illust = upload.illust_url.illust
-    source = BASE_SOURCE.GetSourceById(illust.site_id)
+    source = GetSourceById(illust.site_id)
     if CheckRequery(illust):
         UpdateIllustFromSource(illust, source)
     if CheckRequery(illust.artist):
@@ -186,10 +187,7 @@ def CheckPendingUploads():
                 print("No pending uploads.")
                 break
         if len(post_ids):
-            try:
-                requests.get('http://127.0.0.1:3000/check_posts', timeout=2)
-            except Exception as e:
-                print("Unable to contact similarity server:", e)
+            SimilarityCheckPosts()
     finally:
         if len(post_ids) > 0:
             SCHED.add_job(CheckForNewArtistBoorus)
@@ -208,7 +206,7 @@ def CheckForNewArtistBoorus():
             if len(page.items) == 0:
                 break
             query_urls = [artist.booru_search_url for artist in page.items]
-            results = DANBOORU_SOURCE.GetArtistsByMultipleUrls(query_urls)
+            results = GetArtistsByMultipleUrls(query_urls)
             if results['error']:
                 print("Error:", results)
                 break
@@ -301,7 +299,7 @@ def Main(args):
         SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1)
         SCHED.add_job(CheckPendingUploads)
         SCHED.start()
-    PREBOORU_APP.run(threaded=True, port=4000)
+    PREBOORU_APP.run(threaded=True, port=WORKER_PORT)
 
 
 # ##EXECUTION START

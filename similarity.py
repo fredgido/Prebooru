@@ -27,17 +27,15 @@ from app.similarity.similarity_pool_element import SimilarityPoolElement
 from app.logical.file import PutGetRaw, CreateDirectory
 from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow, SetError
 from app.logical.network import GetHTTPFile
-from app.storage import CACHE_DATA_DIRECTORY
-import app.sources.twitter
-from app.sources import base as BASE_SOURCE
-from app.sources.base import NoSource
 from app.logical.file import LoadDefault, PutGetJSON
-from app.config import workingdirectory, datafilepath
+from app.sources.base_source import GetImageSource, NoSource
+from app.storage import CACHE_DATA_DIRECTORY
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH, SIMILARITY_PORT
 
 
 # ## GLOBAL VARIABLES
 
-SERVER_PID_FILE = workingdirectory + datafilepath + 'similarity-server-pid.json'
+SERVER_PID_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'similarity-server-pid.json'
 SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
 SCHED = None
@@ -339,7 +337,7 @@ def StartServer(args):
         SCHED = BackgroundScheduler(daemon=True)
         SCHED.add_job(ProcessSimilarity)
         SCHED.start()
-    PREBOORU_APP.run(threaded=True, port=3000)
+    PREBOORU_APP.run(threaded=True, port=SIMILARITY_PORT)
 
 
 # #### Route functions
@@ -353,7 +351,7 @@ def check_similarity():
         return SetError(retdata, "Must include url.")
     similar_results = []
     for image_url in request_urls:
-        source = BASE_SOURCE.GetImageSource(image_url) or NoSource()
+        source = GetImageSource(image_url) or NoSource()
         download_url = source.SmallImageUrl(image_url) if source is not None else image_url
         media = MediaFile.query.filter_by(media_url=download_url).first()
         if media is None:

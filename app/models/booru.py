@@ -9,7 +9,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
 from .. import DB
-from .base import JsonModel
+from ..base_model import JsonModel
 from .artist import Artist
 from .illust import Illust
 from .illust_url import IllustUrl

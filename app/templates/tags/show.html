@@ -1,0 +1,25 @@
+{% extends 'tags/_base.html' %}
+
+{% block title %}
+    {{ tag.shortlink.title() }}
+{% endblock %}
+
+{% block content %}
+    <div id="tag-heading" class="heading">
+        {{ tag.shortlink.title() }}
+    </div>
+    <div id="tag-content">
+        <ul>
+            <li><strong>Name:</strong>&emsp;{{ tag.name }}</li>
+            <li><strong>Links:</strong>&emsp;{{ helpers.tag.TagSearchLinks(tag) }}</li>
+        </ul>
+    </div>
+    <div id="tag-illusts">
+        <span class="heading">Illusts</span> (&thinsp;{{ tag.illust_count }}&thinsp;) <a href="{{ helpers.tag.IllustSearch(tag) }}">&raquo;</a>
+    </div>
+    <div id="tag-posts">
+        {% with posts=tag.recent_posts, post_count=tag.post_count, post_search_link=helpers.tag.PostSearch(tag) %}
+            {% include "posts/_recent_posts.html" %}
+        {% endwith %}
+    </div>
+{% endblock %}

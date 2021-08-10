@@ -8,7 +8,7 @@ from flask import Blueprint, request, Markup, jsonify
 # ## LOCAL IMPORTS
 from ..models import Post
 from ..logical.file import PutGetRaw
-from ..sources.base import GetSourceById
+from ..sources.base_source import GetSourceById
 from ..config import DANBOORU_USERNAME, DANBOORU_APIKEY
 
 

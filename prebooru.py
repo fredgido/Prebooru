@@ -11,11 +11,11 @@ from app import PREBOORU_APP
 from app import controllers
 from app import helpers
 from app.logical.file import LoadDefault, PutGetJSON
-from app.config import workingdirectory, datafilepath
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH
 
 # ## GLOBAL VARIABLES
 
-SERVER_PID_FILE = workingdirectory + datafilepath + 'prebooru-server-pid.json'
+SERVER_PID_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'prebooru-server-pid.json'
 SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
 
@@ -57,6 +57,7 @@ PREBOORU_APP.register_blueprint(controllers.upload.bp)
 PREBOORU_APP.register_blueprint(controllers.post.bp)
 PREBOORU_APP.register_blueprint(controllers.pool.bp)
 PREBOORU_APP.register_blueprint(controllers.pool_element.bp)
+PREBOORU_APP.register_blueprint(controllers.tag.bp)
 PREBOORU_APP.register_blueprint(controllers.notation.bp)
 PREBOORU_APP.register_blueprint(controllers.error.bp)
 PREBOORU_APP.register_blueprint(controllers.proxy.bp)

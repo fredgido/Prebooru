@@ -13,7 +13,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 # ##LOCAL IMPORTS
 from .. import DB, storage
 from ..logical.utility import UniqueObjects
-from .base import JsonModel, RemoveKeys
+from ..base_model import JsonModel, RemoveKeys
 from .error import Error
 from .illust_url import IllustUrl
 from .notation import Notation

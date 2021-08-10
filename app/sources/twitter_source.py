@@ -15,13 +15,15 @@ from ..logical.file import LoadDefault, PutGetJSON
 from ..database.local import CreateError, IsError
 from ..database.cache_db import GetApiArtist, GetApiIllust, SaveApiData
 from ..database.illust_db import GetSiteIllust
-from ..config import workingdirectory, datafilepath
+from ..config import WORKING_DIRECTORY, DATA_FILEPATH
 from ..sites import Site, GetSiteDomain, GetSiteId
 
 
 # ##GLOBAL VARIABLES
 
 # #### Module variables
+
+NAME = 'twitter'
 
 IMAGE_HEADERS = {}
 
@@ -32,8 +34,11 @@ ARTIST_SHORTLINK = 'twuser #%d'
 
 ILLUST_HREFURL = 'https://twitter.com/i/web/status/%d'
 ARTIST_HREFURL = 'https://twitter.com/i/user/%d'
+TAG_SEARCH_HREFURL = 'https://twitter.com/hashtag/%s'
 
 SITE_ID = Site.TWITTER.value
+
+HAS_TAG_SEARCH = True
 
 
 # #### Regex variables
@@ -175,7 +180,7 @@ TWITTER_ILLUST_TIMELINE_GRAPHQL = {
 IMAGE_SERVER = 'https://pbs.twimg.com'
 TWITTER_SIZES = [':orig', ':large', ':medium', ':small']
 
-TOKEN_FILE = workingdirectory + datafilepath + 'twittertoken.txt'
+TOKEN_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'twittertoken.txt'
 
 
 # ##FUNCTIONS
@@ -224,6 +229,11 @@ def ArtistLinks(artist):
         'media': ArtistMediaUrl(artist),
         'likes': ArtistLikesUrl(artist),
     }
+
+# Tag
+
+def TagSearchUrl(tag):
+    return TAG_SEARCH_HREFURL % tag.name
 
 
 #   URL

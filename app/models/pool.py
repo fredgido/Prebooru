@@ -9,7 +9,7 @@ from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import DB
-from .base import JsonModel, DateTimeOrNull
+from ..base_model import JsonModel, DateTimeOrNull
 from .post import Post
 from .illust import Illust
 from .notation import Notation

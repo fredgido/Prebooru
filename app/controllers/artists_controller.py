@@ -8,13 +8,15 @@ from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
 from ..models import Artist, Booru
-from ..sources.base import GetSourceById, GetArtistRequiredParams
-from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters, UpdateArtistFromSource, AppendBooru
+from ..sources.base_source import GetSourceById, GetArtistRequiredParams
+from ..sources.danbooru_source import GetArtistsByUrl
+from ..database.artist_db import CreateArtistFromParameters, UpdateArtistFromParameters, UpdateArtistFromSource, AppendBooru,\
+    ArtistDeleteProfile
 from ..database.booru_db import CreateBooruFromParameters
-from ..sources import danbooru
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
     DefaultOrder, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, ParseArrayParameter, CheckParamRequirements,\
     IntOrBlank, NullifyBlanks, SetDefault, ParseBoolParameter, HideInput
+
 
 # ## GLOBAL VARIABLES
 
@@ -150,7 +152,7 @@ def query_create():
 def query_booru(artist):
     source = GetSourceById(artist.site_id)
     search_url = source.ArtistBooruSearchUrl(artist)
-    artist_data = danbooru.GetArtistsByUrl(search_url)
+    artist_data = GetArtistsByUrl(search_url)
     if artist_data['error']:
         return artist_data
     existing_booru_ids = [booru.id for booru in artist.boorus]
@@ -161,6 +163,15 @@ def query_booru(artist):
         if booru.id not in existing_booru_ids:
             AppendBooru(artist, booru)
     return {'error': False, 'artist': artist, 'boorus': artist.boorus}
+
+
+def delete_profile(artist):
+    description_id = request.values.get('description_id', type=int)
+    retdata = {'error': False, 'params': {'description_id': description_id}}
+    if description_id is None:
+        return SetError(retdata, "Description ID not set or a bad value.")
+    retdata.update(ArtistDeleteProfile(artist, description_id))
+    return retdata
 
 
 # #### Route functions
@@ -284,4 +295,15 @@ def query_booru_html(id):
         flash(response['message'])
     else:
         flash('Artist updated.')
+    return redirect(url_for('artist.show_html', id=id))
+
+
+@bp.route('/artists/<int:id>/profile', methods=['DELETE'])
+def delete_profile_html(id):
+    artist = GetOrAbort(Artist, id)
+    results = delete_profile(artist)
+    if results['error']:
+        flash(results['message'], 'error')
+    else:
+        flash('Profile deleted.')
     return redirect(url_for('artist.show_html', id=id))

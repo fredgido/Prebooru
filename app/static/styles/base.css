@@ -51,6 +51,9 @@ menu>li {
     padding: 0 .2em;
     display: inline;
 }
+menu > li > a.nav-control {
+    color: darkorange;
+}
 header#top menu {
     margin-top: -2px;
     padding: 6px 20px;
@@ -172,8 +175,10 @@ div.illust-preview img {
     max-width: 150px;
     max-height: 150px;
 }
-span#recent-posts-heading {
+div#recent-posts-heading,
+div#related-posts-heading {
     font-size: 24px;
+    margin-bottom: 1em;
 }
 div#recent-posts-container {
     display: flex;

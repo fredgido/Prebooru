@@ -3,7 +3,7 @@
 import datetime
 
 from .. import models, SESSION
-from ..logical.utility import GetCurrentTime, ProcessUTCTimestring
+from ..logical.utility import GetCurrentTime, ProcessUTCTimestring, SetError
 from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections, AppendRelationshipCollections
 
 
@@ -139,6 +139,17 @@ def AppendBooru(artist, booru):
     artist.boorus.append(booru)
     artist.updated = GetCurrentTime()
     SESSION.commit()
+
+
+def ArtistDeleteProfile(artist, description_id):
+    retdata = {'error': False, 'descriptions': [profile.to_json() for profile in artist.profiles]}
+    remove_profile = next((profile for profile in artist.profiles if profile.id == description_id), None)
+    if remove_profile is None:
+        return SetError(retdata, "Profile with description #%d does not exist on artist #%d." % (description_id, artist.id))
+    artist.profiles.remove(remove_profile)
+    SESSION.commit()
+    retdata['item'] = artist.to_json()
+    return retdata
 
 
 # #### Query functions

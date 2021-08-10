@@ -9,7 +9,7 @@ from flask import url_for
 # ##LOCAL IMPORTS
 from .. import DB
 from ..logical.utility import UniqueObjects
-from .base import JsonModel, IntOrNone, StrOrNone
+from ..base_model import JsonModel, IntOrNone, StrOrNone
 from .upload_url import UploadUrl
 from .post import Post
 from .error import Error
@@ -105,7 +105,7 @@ class Upload(JsonModel):
 
     @property
     def _source(self):
-        from ..sources.base import GetPostSource, GetSourceById
+        from ..sources.base_source import GetPostSource, GetSourceById
         if self.request_url:
             return GetPostSource(self.request_url)
         elif self.illust_url_id:

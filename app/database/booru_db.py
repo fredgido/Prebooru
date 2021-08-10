@@ -3,8 +3,8 @@
 # ##LOCAL IMPORTS
 from .. import models, SESSION
 from ..logical.utility import GetCurrentTime
-from ..sources.base import GetArtistIdSource
-from ..sources.danbooru import GetArtistByID
+from ..sources.base_source import GetArtistIdSource
+from ..sources.danbooru_source import GetArtistByID
 from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections
 
 

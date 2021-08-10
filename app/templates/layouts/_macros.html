@@ -6,6 +6,21 @@
     </form>
 {%- endmacro %}
 
+{% macro simple_list(items, key) -%}
+    {% for item in items %}
+        {% if caller is undefined %}
+            {{ item[key] }}
+        {% else %}
+            {{ caller(item) }}
+        {% endif %}
+        {% if not loop.last %}
+            <br>
+        {% endif %}
+    {% else %}
+        <em>none</em>
+    {% endfor %}
+{%- endmacro %}
+
 {% macro items_list(items, key) -%}
     {% for item in items %}
         {% if loop.first %}
@@ -20,11 +35,11 @@
     {% endfor %}
 {%- endmacro %}
 
-{% macro items_block(items, item_plural) -%}
+{% macro items_block(items, item_plural, separator='<hr>') -%}
     {% for item in items %}
         {{ caller(item) }}
         {% if not loop.last %}
-            <hr>
+            {{ separator | safe }}
         {% endif %}
     {% else %}
         <span class="explanation">There are no {{ item_plural }}.</span>

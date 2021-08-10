@@ -2,12 +2,11 @@
 
 # ##PYTHON IMPORTS
 import urllib.parse
-from flask import render_template, Markup
 
 # ##LOCAL IMPORTS
 from ..sites import GetSiteDomain, GetSiteKey
 from ..sources import SOURCEDICT
-from ..sources.base import GetSourceById
+from ..sources.base_source import GetSourceById
 from .base_helper import SearchUrlFor, ExternalLink
 
 
@@ -113,4 +112,3 @@ def PostIllustLink(illust):
     source = SOURCEDICT[site_key]
     post_url = source.GetPostUrl(illust)
     return ExternalLink('&raquo;', post_url) if post_url != source.GetIllustUrl(illust.site_illust_id) else ""
-

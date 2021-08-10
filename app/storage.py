@@ -1,16 +1,14 @@
 # APP/STORAGE.PY
 
 # ##LOCAL IMPORTS
-from .config import workingdirectory, imagefilepath
+from .config import WORKING_DIRECTORY, IMAGE_FILEPATH, IMAGE_SERVER
 
 # ###GLOBAL VARIABLES
 
-IMAGE_DIRECTORY = workingdirectory + imagefilepath + 'prebooru\\'
-IMAGE_SERVER = 'http://127.0.0.1:1234/'
+IMAGE_DIRECTORY = WORKING_DIRECTORY + IMAGE_FILEPATH + 'prebooru\\'
 
 PREVIEW_DIMENSIONS = (300, 300)
 SAMPLE_DIMENSIONS = (1280, 1920)
-
 
 CACHE_DATA_DIRECTORY = IMAGE_DIRECTORY + 'cache\\'
 CACHE_NETWORK_URLPATH = IMAGE_SERVER + 'cache/'

@@ -1,12 +1,12 @@
 {% if posts | length > 0 %}
     <div id="related-posts">
         <div class="heading">
-            <span id="recent-posts-heading">
+            <div id="related-posts-heading">
                 Related posts
                 {% if post_search_link is not none %}
                     <a href="{{ post_search_link }}">&raquo;</a>
                 {% endif %}
-            </span>
+            </div>
         </div>
         <div id="recent-posts-container">
              {% for post in posts %}

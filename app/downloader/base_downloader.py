@@ -35,7 +35,7 @@ def ConvertVideoUpload(illust, upload, source, create_video_func):
         return False
     else:
         post = create_video_func(video_illust_url, thumb_illust_url, upload, source)
-        return RecordOutcome(post, upload) or result
+        return RecordOutcome(post, upload)
 
 
 def ConvertImageUpload(illust_urls, upload, source, create_image_func):

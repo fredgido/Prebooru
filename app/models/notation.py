@@ -7,7 +7,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
 from .. import DB
-from .base import JsonModel
+from ..base_model import JsonModel
 from .pool_element import PoolNotation
 
 

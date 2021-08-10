@@ -6,7 +6,7 @@
 
 {% block content %}
     <div class="heading" style="font-size: 28px">
-        Artist URL: <a href="{{ url_for('artist.show_html', id=artist_url.artist_id) }}">artist #{{ artist_url.artist_id }}</a>
+        Artist URL: {{ helpers.base.ShowLink('artist', artist_url.artist_id) }}
     </div>
     <div id="artist-url-content">
         <ul>

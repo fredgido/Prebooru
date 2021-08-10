@@ -6,6 +6,7 @@ from . import posts_helper as post  # noqa: F401
 from . import uploads_helper as upload  # noqa: F401
 from . import artists_helper as artist  # noqa: F401
 from . import illusts_helper as illust  # noqa: F401
+from . import tags_helper as tag  # noqa: F401
 from . import notations_helper as notation  # noqa: F401
 from . import pools_helper as pool  # noqa: F401
 from . import pool_elements_helper as pool_element  # noqa: F401

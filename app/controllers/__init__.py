@@ -15,6 +15,7 @@ from . import posts_controller as post  # noqa: F401
 from . import uploads_controller as upload  # noqa: F401
 from . import pools_controller as pool  # noqa: F401
 from . import pool_elements_controller as pool_element  # noqa: F401
+from . import tags_controller as tag  # noqa: F401
 from . import notations_controller as notation  # noqa: F401
 from . import errors_controller as error  # noqa: F401
 

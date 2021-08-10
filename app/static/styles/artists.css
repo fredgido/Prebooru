@@ -29,6 +29,10 @@ div#artist-sidebar {
 div#artist-sidebar > section {
     margin-bottom: 1em;
 }
+section#artist-illusts {
+    font-size: 1.25em;
+    font-weight: bold;
+}
 div#artist-notations-container {
     max-height: 250px;
     overflow-y: auto;
@@ -60,8 +64,10 @@ section#artist-webpages {
     line-height: 90%;
     word-break: break-word;
 }
-div.artist-webpage-block {
-    margin-bottom: 0.5em;
+div#artist-webpages-container {
+    margin-top: 0.5em;
+    max-height: 200px;
+    overflow-y: auto;
 }
 div.artist-webpage-block > ul {
     padding-right: 0.5em;
@@ -81,6 +87,12 @@ div#artist-profiles-container {
 }
 div.artist-profiles-block {
     margin: 0.5em;
+    position: relative;
+}
+span.artist-profile-delete {
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 div#artist-posts {
     margin-top: 2em;
