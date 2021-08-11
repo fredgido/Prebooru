@@ -1,5 +1,6 @@
 {% extends 'illusts/_base.html' %}
-{% from "illusts/_macros.html" import illust_preview %}
+{% from 'illusts/_macros.html' import illust_preview %}
+{% from 'tags/_macros.html' import simple_tag_list %}
 
 {% block title %}Illusts{% endblock %}
 
@@ -7,11 +8,11 @@
     <table id="illusts-table" class="striped" width="100%">
         <thead>
             <tr>
-                <th>Preview</th>
-                <th>Info</th>
-                <th>Tags</th>
-                <th>Illust urls</th>
-                <th>Timestamps</th>
+                <th width="1%">Preview</th>
+                <th width="10%">Info</th>
+                <th width="25%">Tags</th>
+                <th width="25%">Illust urls</th>
+                <th width="12%">Timestamps</th>
             </tr>
         </thead>
         <tbody>
@@ -27,22 +28,18 @@
                         <span><strong>Site ID:</strong> {{ illust.site_illust_id }}</span><br>
                     </td>
                     <td>
-                        <div style="max-width: 20vw;">
-                             {% for tag in illust.tags %}
-                                <span style="white-space: nowrap;">{{ tag.name }}</span>&emsp;
-                            {% else %}
-                                <em>none</em>
-                            {% endfor %}
+                        <div class="simple-tags-container">
+                            {{ simple_tag_list(illust.tags) }}
                         </div>
                     </td>
                     <td>
                          {% for illust_url in illust.urls %}
-                            <span><strong>#{{ illust_url.order }}</strong>
-                                <code>[{{ 'Active' if illust_url.active else 'Inactive' }}]</code>
-                                ({{ illust_url.width }} x {{ illust_url.height }})</span><br>
-                            <span><strong>URL:</strong> {{ helpers.illust.OriginalUrl(illust_url) }}</span>
+                            {{ helpers.illust.OriginalUrl(illust_url) }}
                             {% if not loop.last %}
                                 <br>
+                            {% else %}
+                                <br><br>
+                                <strong>{{ helpers.base.GeneralLink("&laquo;Search&raquo;", helpers.base.SearchUrlFor('illust_url.index_html', illust_id=illust.id)) }}</strong>
                             {% endif %}
                         {% else %}
                             <em>none</em>

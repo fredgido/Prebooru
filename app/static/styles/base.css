@@ -161,15 +161,16 @@ article.post > img {
     max-width: 300px;
 }
 div.illust-preview {
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    width: 315px;
+    display: grid;
+    grid-template-columns: repeat(2, 0fr);
 }
 div.illust-preview > article {
     width: 150px;
     height: 150px;
     padding: 2px;
+}
+div.illust-preview > span.explanation {
+    width: 150px;
 }
 div.illust-preview img {
     max-width: 150px;

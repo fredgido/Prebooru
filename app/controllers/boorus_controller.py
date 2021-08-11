@@ -72,7 +72,7 @@ def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
     q = Booru.query
-    q = q.options(selectinload(Booru.names), selectinload(Booru.artists).lazyload('*'))
+    q = q.options(selectinload(Booru.names))
     q = SearchFilter(q, search)
     q = DefaultOrder(q, search)
     return q
@@ -131,7 +131,8 @@ def show_json(id):
 
 @bp.route('/boorus/<int:id>', methods=['GET'])
 def show_html(id):
-    booru = GetOrAbort(Booru, id)
+    options = (selectinload(Booru.names), selectinload(Booru.artists).lazyload('*'))
+    booru = GetOrAbort(Booru, id, options=options)
     return render_template("boorus/show.html", booru=booru)
 
 

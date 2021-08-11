@@ -5,6 +5,7 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
+from sqlalchemy.orm import lazyload
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
@@ -46,7 +47,7 @@ class Booru(JsonModel):
     danbooru_id = DB.Column(DB.Integer, nullable=False)
     current_name = DB.Column(DB.String(255), nullable=False)
     names = DB.relationship(Label, secondary=BooruNames, lazy=True, backref=DB.backref('boorus', lazy=True))
-    artists = DB.relationship(Artist, secondary=BooruArtists, backref='boorus', lazy=True)
+    artists = DB.relationship(Artist, secondary=BooruArtists, lazy=True, backref=DB.backref('boorus', lazy=True))
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
@@ -55,8 +56,8 @@ class Booru(JsonModel):
     @property
     def recent_posts(self):
         if not hasattr(self, '_recent_posts'):
-            q = Post.query
-            q = q.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).join(Booru, Artist.boorus).filter(Booru.id == self.id)
+            q = self._post_query
+            q = q.options(lazyload('*'))
             q = q.order_by(Post.id.desc())
             q = q.limit(10)
             self._recent_posts = q.all()
@@ -64,11 +65,19 @@ class Booru(JsonModel):
 
     @property
     def illust_count(self):
-        return Illust.query.join(Artist, Illust.artist).join(Booru, Artist.boorus).filter(Booru.id == self.id).count()
+        return self._illust_query.get_count()
 
     @property
-    def illust_search(self):
-        return url_for("illust.index_html", **{'search[artist][boorus][id]': self.id})
+    def post_count(self):
+        return self._post_query.get_count()
+
+    @property
+    def _illust_query(self):
+        return Illust.query.join(Artist, Illust.artist).join(Booru, Artist.boorus).filter(Booru.id == self.id)
+
+    @property
+    def _post_query(self):
+        return Post.query.join(IllustUrl, Post.illust_urls).join(Illust, IllustUrl.illust).join(Artist, Illust.artist).join(Booru, Artist.boorus).filter(Booru.id == self.id)
 
     def delete(self):
         self.names.clear()

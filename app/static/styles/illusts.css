@@ -84,3 +84,7 @@ div.image-post {
     width: 25%;
     padding-right: 0.5em;
 }
+/****INDEX Page****/
+div.simple-tags-container {
+    max-width: 25vw;
+}

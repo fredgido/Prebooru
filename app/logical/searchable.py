@@ -139,13 +139,15 @@ def RelationAttributeFilters(query, model, attribute, params):
     relation = getattr(model, attribute)
     filters = ()
     if ('has_' + attribute) in params:
-        operator = 'any' if IsCollection(model, attribute) else 'has'
+        primaryjoin = relation.property.primaryjoin
+        subquery = model.query.join(primaryjoin.right.table, primaryjoin.left == primaryjoin.right).filter(primaryjoin.left == primaryjoin.right).with_entities(model.id)
+        subclause = model.id.in_(subquery)
         if IsTruthy(params['has_' + attribute]):
-            filters += (getattr(relation, operator)(),)
+            filters += (subclause,)
         elif IsFalsey(params['has_' + attribute]):
-            filters += (not_(getattr(relation, operator)()),)
+            filters += (not_(subclause),)
         else:
-            raise Exception("%s - value must be truthy or falsey" % ('has_' + attribute))
+            raise Exception("%s - value must be truthy or falsey" % ('direct_' + attribute))
     if attribute in params:
         relation_model = RelationshipModel(model, attribute)
         aliased_model = aliased(relation_model)

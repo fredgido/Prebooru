@@ -106,8 +106,11 @@ def Paginate(query, request):
 # #### ID helpers
 
 
-def GetOrAbort(model, id):
-    item = model.find(id)
+def GetOrAbort(model, id, options={}):
+    if len(options):
+        item = model.query.options(*options).filter_by(id=id).first()
+    else:
+        item = model.find(id)
     if item is None:
         abort(404, "%s not found." % model.__name__)
     return item

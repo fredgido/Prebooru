@@ -15,6 +15,9 @@ COLUMN_ATTRIBUTES = ['danbooru_id', 'current_name']
 UPDATE_SCALAR_RELATIONSHIPS = [('names', 'name', models.Label)]
 APPEND_SCALAR_RELATIONSHIPS = []
 
+CREATE_ALLOWED_ATTRIBUTES = ['danbooru_id', 'current_name', 'names']
+UPDATE_ALLOWED_ATTRIBUTES = ['danbooru_id', 'current_name', 'names']
+
 
 # ## FUNCTIONS
 
@@ -38,16 +41,12 @@ def SetAllNames(params, booru):
 def CreateBooruFromParameters(createparams):
     current_time = GetCurrentTime()
     SetAllNames(createparams, None)
-    data = {
-        'danbooru_id': createparams['danbooru_id'],
-        'current_name': createparams['current_name'],
-        'created': current_time,
-        'updated': current_time,
-    }
-    booru = models.Booru(**data)
-    SESSION.add(booru)
-    SESSION.commit()
-    UpdateRelationshipCollections(booru, UPDATE_SCALAR_RELATIONSHIPS, createparams)
+    booru = models.Booru(created=current_time, updated=current_time)
+    settable_keylist = set(createparams.keys()).intersection(CREATE_ALLOWED_ATTRIBUTES)
+    update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
+    UpdateColumnAttributes(booru, update_columns, createparams)
+    create_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
+    UpdateRelationshipCollections(booru, create_relationships, createparams)
     return booru
 
 
@@ -67,12 +66,13 @@ def CreateBooruFromID(danbooru_id):
 # ###### Update
 
 
-def UpdateBooruFromParameters(booru, updateparams, updatelist):
+def UpdateBooruFromParameters(booru, updateparams):
     update_results = []
     SetAllNames(updateparams, booru)
-    update_columns = set(updatelist).intersection(COLUMN_ATTRIBUTES)
+    settable_keylist = set(updateparams.keys()).intersection(UPDATE_ALLOWED_ATTRIBUTES)
+    update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
     update_results.append(UpdateColumnAttributes(booru, update_columns, updateparams))
-    update_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in updatelist]
+    update_relationships = [relationship for relationship in UPDATE_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
     update_results.append(UpdateRelationshipCollections(booru, update_relationships, updateparams))
     if any(update_results):
         print("Changes detected.")

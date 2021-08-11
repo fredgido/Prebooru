@@ -124,6 +124,11 @@ def index():
     q = q.options(selectinload(Illust.site_data), selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'), lazyload('*'))
     q = SearchFilter(q, search, negative_search)
     q = PoolFilter(q, search)
+    if 'has_illust_urls2' in search:
+        subclause = Illust.id.in_(Illust.query.unique_join(IllustUrl, Illust.urls).filter(Illust.id == IllustUrl.illust_id).with_entities(Illust.id))
+        if IsFalsey(search['has_illust_urls2']):
+            subclause = not_(subclause)
+        q = q.filter(subclause)
     q = DefaultOrder(q, search)
     return q
 

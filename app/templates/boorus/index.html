@@ -1,42 +1,27 @@
 {% extends 'boorus/_base.html' %}
+{% from 'layouts/_macros.html' import simple_list %}
 
 {% block title %}Boorus{% endblock %}
 
 {% block content %}
-    <table id="boorus-table" class="striped" width="100%">
+    <table id="boorus-table" class="striped" width="70%">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Info</th>
-                <th>Names</th>
-                <th>Artists</th>
-                <th>Timestamps</th>
+                <th width="10%">ID</th>
+                <th width="35%">Info</th>
+                <th width="35%">Names</th>
+                <th width="20%">Timestamps</th>
             </tr>
         </thead>
         <tbody>
             {% for booru in boorus.items %}
                 <tr id="booru-{{ booru.id }}">
-                    <td class="booru-id"><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></td>
+                    <td class="booru-id">{{ booru.show_link }} {{ helpers.base.GeneralLink('&raquo;', helpers.booru.PostSearch(booru)) }}</td>
                     <td class="booru-info">
                         <span><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</span><br>
-                        <span><strong>Current name:</strong> <a href="https://danbooru.donmai.us/artists/{{ booru.danbooru_id }}">{{ booru.current_name }}</a></span>
+                        <span><strong>Current name:</strong> {{ helpers.booru.SiteBooruLink(booru) }} {{ helpers.booru.SiteSearchLink(booru) }}</span>
                     </td>
-                    <td class="booru-names">
-                         {% for booru_name in booru.names %}
-                            {{ booru_name.name }}
-                            {% if not loop.last %}
-                                <br>
-                            {% endif %}
-                        {% endfor %}
-                    </td>
-                    <td class="booru-artists">
-                         {% for artist in booru.artists %}
-                            <a href="{{ artist.show_url }}">{{ artist.shortlink }}</a> <a href="{{ helpers.artist.PostSearch(artist) }}">&raquo;</a>
-                            {% if not loop.last %}
-                                <br>
-                            {% endif %}
-                        {% endfor %}
-                    </td>
+                    <td class="booru-names">{{ simple_list(booru.names, 'name') }}</td>
                     <td class="booru-timestamps">
                         <strong>Created:</strong> {{ helpers.base.FormatTimestamp(booru.created) }}<br>
                         <strong>Updated:</strong> {{ helpers.base.FormatTimestamp(booru.updated) }}

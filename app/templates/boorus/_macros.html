@@ -3,7 +3,7 @@
         <h4>Boorus</h4>
         <ul>
             {% for booru in boorus %}
-                <li><span class="item-heading"><a href="{{ booru.show_url }}">{{ booru.shortlink }}</a> <a href="{{ helpers.booru.PostSearch(booru) }}">&raquo;</a></span>
+                <li><span class="item-heading">{{ booru.show_link }} {{ helpers.base.GeneralLink('&raquo;', helpers.booru.PostSearch(booru)) }}</span>
                     <ul>
                         <li><strong>Danbooru ID:</strong> {{ booru.danbooru_id }}</li>
                         <li><strong>Name: {{ helpers.booru.SiteBooruLink(booru) }} {{ helpers.booru.SiteSearchLink(booru) }}</strong></li>

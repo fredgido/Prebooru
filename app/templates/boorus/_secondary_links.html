@@ -1,7 +1,8 @@
 <menu id="secondary-menu">
     {{ helpers.base.SubnavLinkTo("Listing", 'booru.index_html') }}
     {{ helpers.base.SubnavLinkTo("New", 'booru.new_html') }}
-    | {{ helpers.base.SubnavLinkTo("Create", 'booru.query_create_html', attrs={'class': 'nav-control', 'onclick': 'return Prebooru.promptArgPost(this, \'Enter the danbooru artist ID to create from:\', \'danbooru_id\')'}) }}
+    |
+    {{ helpers.base.SubnavLinkTo("Create", 'booru.query_create_html', attrs={'class': 'nav-control', 'onclick': 'return Booru.createFromId(this)'}) }}
     {% if booru.id != None %}
         {{ helpers.base.SubnavLinkTo("Show", 'booru.show_html', id=booru.id) }}
         {{ helpers.base.SubnavLinkTo("Edit", 'booru.edit_html', id=booru.id) }}

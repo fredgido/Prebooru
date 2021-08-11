@@ -5,3 +5,26 @@
         </a>
     </article>
 {%- endmacro %}
+
+{% macro recent_posts(posts, post_count=None, post_search=None) -%}
+    <div class="heading">
+        <div id="recent-posts-heading">
+            <u>Posts</u>
+            {% if post_count is not none %}
+                (&thinsp;{{ post_count }}&thinsp;)
+            {% endif %}
+            {% if post_search_link is not none %}
+                <a href="{{ post_search_link }}">&raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+    <div id="recent-posts-container">
+         {% for post in posts %}
+            <div class="recent-post-block">
+                {{ post_preview(post) }}
+            </div>
+        {% else %}
+            <span class="explanation">There are no posts.</span>
+        {% endfor %}
+    </div>
+{%- endmacro %}

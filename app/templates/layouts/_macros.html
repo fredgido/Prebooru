@@ -1,7 +1,14 @@
 {% macro render_form(form, method, url) -%}
+    {% set submethod = method.lower() if method not in ['GET', 'POST'] else None %}
+    {% set method = method if method.upper() in ['GET', 'POST'] else 'POST' %}
     <form method="{{ method }}" action="{{ url }}">
+        {% if submethod is not none %}
+            <input type="hidden" name="_method" value="{{ submethod }}">
+        {% endif %}
         {{ form.csrf_token }}
-        {{ caller() }}
+        {% for field_name, field_input in helpers.base.FormIterator(form) %}
+            {{ caller(field_name, field_input) }}
+        {% endfor %}
         <input type="submit" value="Submit">
     </form>
 {%- endmacro %}
