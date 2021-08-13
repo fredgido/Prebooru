@@ -1,25 +1,18 @@
 {% extends 'illust_urls/_base.html' %}
+{% from 'layouts/_macros.html' import render_form %}
 
-{% block title %}
-    New illust URL
-    {% if form.illust_id.data %}
-        for illust #{{ form.illust_id.data }}
-    {% endif %}
- {% endblock %}
+{% block title %}New illust URL{% endblock %}
 
 {% block content %}
-    <div class="heading" style="font-size: 28px">
-        {% if form.illust_id.data == None %}
-            New illust URL
-        {% else %}
-            New illust URL: <a href="{{ url_for('illust.show_html', id=form.illust_id.data) }}">illust #{{ form.illust_id.data }}</a>
-        {% endif %}
+    <div id="illust-url-form-heading" class="heading">
+        New Illust URL
     </div>
-    <form method="POST" action="{{ url_for('illust_url.create_html') }}">
-        {{ form.csrf_token }}
-        {% for field_name,field_input in helpers.base.FormIterator(form) %}
-            {{ field_input() }}
-        {% endfor %}
-        <input type="submit" value="Submit">
-    </form>
+    {% if illust is not none %}
+        <div id="illust-url-form-info">
+            For {{ illust.show_link }}:
+        </div>
+    {% endif %}
+    {% call(field_name, field_input) render_form(form, 'POST', illust_url.create_url) %}
+        {{ field_input() }}
+    {% endcall%}
 {% endblock %}

@@ -11,7 +11,6 @@ from ..base_model import JsonModel
 
 # ##GLOBAL VARIABLES
 
-
 @dataclass
 class Error(JsonModel):
     id: int

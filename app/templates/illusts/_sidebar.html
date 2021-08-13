@@ -1,7 +1,7 @@
-{% from "layouts/_macros.html" import timestamps_section %}
 {% from "boorus/_macros.html" import boorus_section %}
 {% from "artists/_macros.html" import artists_section %}
 {% from "pools/_macros.html" import pools_section %}
+{% from "layouts/_macros.html" import timestamps_section %}
 {% from "notations/_macros.html" import notations_section %}
 
 <div id="illust-sidebar">
@@ -16,8 +16,8 @@
             <li><a href="{{ url_for('illust.query_update_html', id=illust.id) }}" onclick="return Prebooru.linkPost(this)">Update from source</a></li>
             <li><a href="{{ helpers.illust.DanbooruBatchUrl(illust) }}" target="_blank">Batch bookmarklet</a></li>
             <li><a href="{{ url_for('illust_url.new_html', illust_id=illust.id) }}">Add media URL</a></li>
-            <li><a href="{{ url_for('pool_element.create_html') }}" data-illust-id="{{ illust.id }}" onclick="return Prebooru.createPool(this, 'illust')">Add to pool</a></li>
             <li><a href="{{ url_for('notation.new_html', illust_id=illust.id) }}">Add notation</a></li>
+            <li><a href="{{ url_for('pool_element.create_html') }}" data-illust-id="{{ illust.id }}" onclick="return Prebooru.createPool(this, 'illust')">Add to pool</a></li>
         </ul>
     </section>
 </div>

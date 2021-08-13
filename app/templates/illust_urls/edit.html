@@ -1,19 +1,16 @@
 {% extends 'illust_urls/_base.html' %}
+{% from 'layouts/_macros.html' import render_form %}
 
-{% block title %}
-    Edit illust URL for illust #{{ illust_url.illust_id }}
- {% endblock %}
+{% block title %}{{ illust_url.header }}{% endblock %}
 
 {% block content %}
-    <div class="heading" style="font-size: 28px">
-        Edit illust URL: <a href="{{ url_for('illust.show_html', id=illust_url.illust_id) }}">illust #{{ illust_url.illust_id }}</a>
+    <div id="illust-url-form-heading" class="heading">
+        Edit {{ illust_url.header }}
     </div>
-    <form method="POST" action="{{ url_for('illust_url.update_html', id=illust_url.id) }}">
-        <input type="hidden" name="_method" value="put">
-        {{ form.csrf_token }}
-        {% for field_name,field_input in helpers.base.FormIterator(form) %}
-            {{ field_input() }}
-        {% endfor %}
-        <input type="submit" value="Submit">
-    </form>
+    <div id="illust-url-form-info">
+        For {{ illust_url.illust.show_link }}:
+    </div>
+    {% call(field_name, field_input) render_form(form, 'PUT', illust_url.update_url) %}
+        {{ field_input() }}
+    {% endcall%}
 {% endblock %}

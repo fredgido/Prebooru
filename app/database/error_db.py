@@ -30,6 +30,7 @@ def CreateErrorFromParameters(createparams):
 
 # #### Misc functions
 
+# ###### Create
 
 def CreateError(module_name, message):
     return CreateErrorFromParameters({'module': module_name, 'message': message})
@@ -41,6 +42,8 @@ def CreateAndAppendError(module_name, message, instance):
     return error
 
 
+# ###### Add relationship
+
 def ExtendErrors(instance, errors):
     instance.errors.extend(errors)
     SESSION.commit()
@@ -50,6 +53,8 @@ def AppendError(instance, error):
     instance.errors.append(error)
     SESSION.commit()
 
+
+# ###### Test
 
 def IsError(instance):
     return isinstance(instance, models.Error)

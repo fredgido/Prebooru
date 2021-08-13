@@ -1,8 +1,12 @@
 {% macro post_preview(post) -%}
     <article class="post">
-        <a href="{{ post.show_url }}">
-            <img src="{{ post.preview_url }}">
-        </a>
+        {% if post is not none %}
+            <a href="{{ post.show_url }}">
+                <img src="{{ post.preview_url }}">
+            </a>
+        {% else %}
+            <span class="explanation">No post.</span>
+        {% endif %}
     </article>
 {%- endmacro %}
 
@@ -13,8 +17,8 @@
             {% if post_count is not none %}
                 (&thinsp;{{ post_count }}&thinsp;)
             {% endif %}
-            {% if post_search_link is not none %}
-                <a href="{{ post_search_link }}">&raquo;</a>
+            {% if post_search is not none %}
+                {{ helpers.base.GeneralLink('&raquo;', post_search) }}
             {% endif %}
         </div>
     </div>

@@ -96,6 +96,13 @@ class Illust(JsonModel):
     # Instance properties
 
     @property
+    def ordered_urls(self):
+        if not hasattr(self, '_ordered_urls'):
+            sorted_urls = sorted(self.urls, key=lambda x: x.order)
+            setattr(self, '_ordered_urls', sorted_urls)
+        return self._ordered_urls
+
+    @property
     def posts(self):
         return [post for post in self._posts if post is not None]
 

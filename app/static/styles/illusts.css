@@ -1,4 +1,13 @@
 /***FORMS****/
+div#illust-form-heading {
+    font-size: 28px;
+    margin-top: 1em;
+}
+div#illust-form-info {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 1em;
+}
 textarea#illust-tag-string {
     width: 20em;
     height: 5em;
@@ -21,6 +30,14 @@ form.pixiv-data > div.pixiv-data {
     display: block;
 }
 /****SHOW Page****/
+div#illust-heading {
+    font-size: 32px;
+    margin-top: 1em;
+}
+div#illust-content {
+    display: flex;
+    margin-top: 2em;
+}
 div#illust-sidebar {
     width: 20%;
     border: 2px solid #DDD;
@@ -77,12 +94,19 @@ div#illust-commentaries-container {
 div.illust-commentaries-block {
     margin: 0.5em;
 }
+div#illust-posts {
+    margin-top: 2em;
+}
 div#image-posts-container {
     display: flex;
 }
 div.image-post {
     width: 25%;
     padding-right: 0.5em;
+}
+<div.image-post-preview,
+<div.video-post-preview {
+    margin-top: 1em;
 }
 /****INDEX Page****/
 div.simple-tags-container {

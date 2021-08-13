@@ -14,7 +14,7 @@
                     <li><strong>{{ key }}:</strong> {{ val }}</li>
                 {% endfor %}
                 <li><strong>Pages:</strong> {{ illust.pages }}</li>
-                <li><strong>Active:</strong> {{ illust.active }}</li>
+                <li><strong>Active:</strong> {{ illust.active | tojson }}</li>
             </ul>
         </section>
         <section id="illust-metrics">

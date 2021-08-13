@@ -1,7 +1,8 @@
-{% macro render_form(form, method, url) -%}
+{% macro render_form(form, method, url, class=None) -%}
     {% set submethod = method.lower() if method not in ['GET', 'POST'] else None %}
     {% set method = method if method.upper() in ['GET', 'POST'] else 'POST' %}
-    <form method="{{ method }}" action="{{ url }}">
+    {% set class_string = 'class="%s"'|format(class) if class is not none else "" %}
+    <form id="form" {{ class_string | safe }} method="{{ method }}" action="{{ url }}">
         {% if submethod is not none %}
             <input type="hidden" name="_method" value="{{ submethod }}">
         {% endif %}

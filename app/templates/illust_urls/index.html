@@ -1,4 +1,5 @@
 {% extends 'illust_urls/_base.html' %}
+{% from 'posts/_macros.html'  import post_preview %}
 
 {% block title %}Illust URLs{% endblock %}
 
@@ -6,19 +7,21 @@
     <table id="illust-urls-table" class="striped" width="100%">
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Domain</th>
+                <th width="1%">Post</th>
+                <th width="10%">ID</th>
+                <th width="15%">Domain</th>
                 <th>Url</th>
-                <th>Dimensions</th>
-                <th>Active</th>
+                <th width="10%">Dimensions</th>
+                <th width="5%">Active</th>
             </tr>
         </thead>
         <tbody>
             {% for illust_url in illust_urls.items %}
                 <tr id="illust-url-{{ illust_url.id }}">
+                    <td>{{ post_preview(illust_url.post) }}</td>
                     <td><a href="{{ illust_url.show_url }}">{{ illust_url.shortlink }}</a></td>
                     <td>{{ illust_url.site_domain }}</td>
-                    <td>{{ illust_url.full_url }}</td>
+                    <td>{{ helpers.base.UrlLink(illust_url.full_url) }}</td>
                     <td>({{ illust_url.width }} x {{ illust_url.height }})</td>
                     <td>{{ illust_url.active | tojson }}</td>
                 </tr>

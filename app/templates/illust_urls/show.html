@@ -1,16 +1,18 @@
 {% extends 'illust_urls/_base.html' %}
+{% from 'posts/_macros.html'  import post_preview %}
 
 {% block title %}
-    Illust URL for illust #{{ illust_url.illust_id }}
+    {{ illust_url.header }}
  {% endblock %}
 
 {% block content %}
-    <div class="heading" style="font-size: 28px">
-        Illust URL: <a href="{{ url_for('illust.show_html', id=illust_url.illust_id) }}">illust #{{ illust_url.illust_id }}</a>
+    <div id="illust-url-heading" class="heading">
+        {{ illust_url.header }}
     </div>
     <div id="illust-url-content">
+        {{ post_preview(illust_url.post) }}
         <ul>
-            <li><strong>ID:</strong> {{ illust_url.id }}</li>
+            <li><strong>{{ illust_url.illust.show_link }}</strong></li>
             <li><strong>Domain:</strong> {{ illust_url.site_domain }}</li>
             <li><strong>URL:</strong> {{ helpers.base.UrlLink(illust_url.full_url) }}</li>
             <li><strong>Dimensions:</strong> ({{ illust_url.width }} x {{ illust_url.height }})</li>

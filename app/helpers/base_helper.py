@@ -65,6 +65,10 @@ def ShowLink(model_type, model_id):
     return GeneralLink("%s #%d" % (model_type, model_id), url_for(model_type + '.show_html', id=model_id))
 
 
+def UrlLink(url):
+    return ExternalLink(url, url)
+
+
 # #### Form functions
 
 def FormIterator(form):
@@ -118,10 +122,6 @@ def UrlForWithArgs(endpoint, **kwargs):
     if request.endpoint.find('.show_html') >= 0:
         url_args['id'] = int(re.search(r'\d+$', request.path).group(0))
     return url_for(endpoint, **url_args)
-
-
-def UrlLink(url):
-    return Markup('<a href="%s">%s</a>' % (url, url))
 
 
 # #### Navigation functions

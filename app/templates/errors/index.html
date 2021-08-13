@@ -15,9 +15,9 @@
         <tbody>
             {% for error in errors.items %}
                 <tr id="error-{{ errors.id }}">
-                    <td><a href="{{ error.show_url }}">{{ error.shortlink }}</a></td>
+                    <td>{{ error.show_link }}</a></td>
                     <td><code>{{ error.module }}</code></td>
-                    <td>{{ helpers.base.ConvertStrToHTML(error.message) }}</td>
+                    <td>{{ helpers.error.FormatMessage(error) }}</td>
                     <td>{{ helpers.base.FormatTimestamp(error.created) }}</td>
                 </tr>
             {% endfor %}

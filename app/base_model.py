@@ -60,6 +60,10 @@ class JsonModel(DB.Model):
         return "%s #%d" % (self.__table__.name, self.id)
 
     @property
+    def header(self):
+        return self.shortlink.replace('_', ' ').title()
+
+    @property
     def show_url(self):
         return url_for(self.__table__.name + ".show_html", id=self.id)
 
@@ -78,6 +82,10 @@ class JsonModel(DB.Model):
     @property
     def update_url(self):
         return url_for(self.__table__.name + ".update_html", id=self.id)
+
+    @property
+    def edit_url(self):
+        return url_for(self.__table__.name + ".edit_html", id=self.id)
 
     @property
     def delete_url(self):

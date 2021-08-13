@@ -163,6 +163,7 @@ def index_html():
 def new_html():
     """HTML access point to create function."""
     form = GetIllustUrlForm(**request.args)
+    illust = None
     if form.illust_id.data is not None:
         illust = Illust.find(form.illust_id.data)
         if illust is None:
@@ -170,7 +171,7 @@ def new_html():
             form.illust_id.data = None
         else:
             HideInput(form, 'illust_id', illust.id)
-    return render_template("illust_urls/new.html", form=form, illust_url=None)
+    return render_template("illust_urls/new.html", form=form, illust_url=None, illust=illust)
 
 
 @bp.route('/illust_urls', methods=['POST'])

@@ -186,6 +186,7 @@ def CheckPendingUploads():
             else:
                 print("No pending uploads.")
                 break
+            time.sleep(5)
         if len(post_ids):
             SimilarityCheckPosts()
     finally:

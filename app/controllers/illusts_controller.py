@@ -228,15 +228,16 @@ def index_html():
 def new_html():
     """HTML access point to create function."""
     form = GetIllustForm(**request.args)
+    artist = None
     if form.artist_id.data is not None:
-        illust = Artist.find(form.artist_id.data)
-        if illust is None:
+        artist = Artist.find(form.artist_id.data)
+        if artist is None:
             flash("illust #%d not a valid illust." % form.artist_id.data, 'error')
             form.artist_id.data = None
         else:
-            HideInput(form, 'artist_id', illust.id)
-            HideInput(form, 'site_id', illust.site_id)
-    return render_template("illusts/new.html", form=form, illust=Illust())
+            HideInput(form, 'artist_id', artist.id)
+            HideInput(form, 'site_id', artist.site_id)
+    return render_template("illusts/new.html", form=form, artist=artist, illust=Illust())
 
 
 @bp.route('/illusts', methods=['POST'])
