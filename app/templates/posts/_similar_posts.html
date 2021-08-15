@@ -12,7 +12,11 @@
                         <img src="{{ post_data.post.preview_url }}">
                     </a>
                 </article>
-                <div><strong>Score:</strong> {{ post_data.element.score }}</div>
+                <div>
+                    <strong>Score:</strong> {{ post_data.element.score }}<br>
+                    <strong>Type/Size:</strong> {{ post_data.post.file_ext.upper() }} @ {{ post_data.post.size }}<br>
+                    <strong>Dimensions:</strong> ( {{ post_data.post.width }} x {{ post_data.post.height }} )
+                </div>
             </div>
         {% else %}
             <span class="explanation">There are no similar posts.</span>

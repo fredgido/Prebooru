@@ -75,7 +75,8 @@ def IndexJson(query, request):
 
 # #### Query helpers
 
-def SearchFilter(query, search, negative_search={}):
+def SearchFilter(query, search, negative_search=None):
+    negative_search = negative_search if negative_search is not None else {}
     entity = _QueryModel(query)
     query = SearchAttributes(query, entity, search)
     if len(negative_search):
@@ -106,7 +107,8 @@ def Paginate(query, request):
 # #### ID helpers
 
 
-def GetOrAbort(model, id, options={}):
+def GetOrAbort(model, id, options=None):
+    options = options if options is not None else {}
     if len(options):
         item = model.query.options(*options).filter_by(id=id).first()
     else:

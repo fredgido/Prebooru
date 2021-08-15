@@ -27,26 +27,13 @@ class Notation(JsonModel):
     pool = association_proxy('_pool', 'pool')
 
     @property
-    def append_type(self):
-        if self._pool is not None:
-            return 'pool'
-        if self.artist is not None:
-            return 'artist'
-        if self.illust is not None:
-            return 'illust'
-        if self.post is not None:
-            return 'post'
+    def append_item(self):
+        return self.pool or self.artist or self.illust or self.post
 
-    def append_id(self, type):
-        if type == 'pool':
-            return self._pool.pool_id
-        if type == 'artist':
-            return self.artist.id
-        if type == 'illust':
-            return self.illust.id
-        if type == 'post':
-            return self.post.id
+    @property
+    def append_type(self):
+        return self.append_item.__table__.name
 
     @staticmethod
     def searchable_attributes():
-        return ['id', 'body', 'created', 'updated']
+        return ['id', 'body', 'created', 'updated', 'artist', 'illust', 'post']

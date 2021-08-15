@@ -2,7 +2,11 @@
     {% if helpers.pool.ItemIsOfType(item, 'post') %}
         {{ post_preview(item) }}
     {% elif helpers.pool.ItemIsOfType(item, 'illust') %}
-        {{ illust_preview(item) }}
+        {% if item.type == 'image' %}
+            {{ illust_preview(item) }}
+        {% elif item.type == 'video' %}
+            {{ post_preview(item.video_illust_url.post) }}
+        {% endif %}
     {% elif helpers.pool.ItemIsOfType(item, 'notation') %}
         <div class="pool-display-notation">{{ helpers.notation.ConvertToHTML(item) }}</div>
     {% endif %}

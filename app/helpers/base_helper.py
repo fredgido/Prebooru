@@ -134,7 +134,8 @@ def NavLinkTo(text, endpoint):
     return Markup(render_template("layouts/_nav_link.html", text=text, html_text=html_text, endpoint=endpoint, klass=klass))
 
 
-def SubnavLinkTo(text, endpoint, id=None, attrs={}, **kwargs):
+def SubnavLinkTo(text, endpoint, id=None, attrs=None, **kwargs):
+    attrs = attrs if attrs is not None else {}
     html_text = text.lower().replace(" ", "-")
     return Markup(render_template("layouts/_subnav_link.html", text=text, html_text=html_text, endpoint=endpoint, id=id, attrs=attrs, kwargs=kwargs))
 

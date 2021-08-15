@@ -1,15 +1,18 @@
 {% extends 'notations/_base.html' %}
+{% from 'layouts/_macros.html' import render_form %}
 
-{% block title %}Edit - {{ notation.shortlink.title() }}{% endblock %}
+{% block title %}Edit - {{ notation.header }}{% endblock %}
 
 {% block content %}
-    <form method="POST" action="{{ notation.update_url }}">
-        <div class="heading" style="font-size: 28px">Edit {{ helpers.notation.FormHeader(form) }}</div>
-        <input type="hidden" name="_method" value="put">
-        {{ form.csrf_token }}
-        {% for field_name,field_input in helpers.base.FormIterator(form) %}
-            {{ field_input() }}
-        {% endfor %}
-        <input type="submit" value="Submit">
-    </form>
+    <div id="notation-form-heading" class="heading">
+        Edit {{ notation.header }}
+    </div>
+    {% if notation.append_item is not none %}
+        <div id="notation-form-info">
+            For {{ notation.append_item.show_link }}:
+        </div>
+    {% endif %}
+    {% call(field_name, field_input) render_form(form, 'PUT', notation.update_url) %}
+        {{ field_input() }}
+    {% endcall %}
 {% endblock %}

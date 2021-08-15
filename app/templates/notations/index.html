@@ -6,26 +6,19 @@
     <table id="notations-table" class="striped" width="100%">
         <thead>
             <tr>
-                <th>ID</th>
+                <th width="10%">ID</th>
                 <th>Excerpt</th>
-                <th>Created</th>
-                <th>Updated</th>
+                <th width="10%">Created</th>
+                <th width="10%">Updated</th>
             </tr>
         </thead>
         <tbody>
             {% for notation in notations.items %}
-                {% set outer_loop = loop %}
                 <tr id="notation-{{ notation.id }}">
-                    <td><a href="{{ notation.show_url }}">{{ notation.shortlink }}</a></td>
-                    <td>
-                        <span>{{ helpers.notation.Excerpt(notation) }}</span>
-                    </td>
-                    <td>
-                        <span>{{ helpers.base.FormatTimestamp(notation.created) }}</span>
-                    </td>
-                    <td>
-                        <span>{{ helpers.base.FormatTimestamp(notation.updated) }}</span>
-                    </td>
+                    <td>{{ notation.show_link }}</td>
+                    <td>{{ helpers.notation.Excerpt(notation) }}</td>
+                    <td>{{ helpers.base.FormatTimestamp(notation.created) }}</td>
+                    <td>{{ helpers.base.FormatTimestamp(notation.updated) }}</td>
                 </tr>
             {% endfor %}
         </tbody>

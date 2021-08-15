@@ -1,4 +1,13 @@
 /****NEW/EDIT Page****/
+div#notation-form-heading {
+    font-size: 28px;
+    margin-top: 1em;
+}
+div#notation-form-info {
+    font-size: 20px;
+    font-weight: bold;
+    margin-top: 1em;
+}
 textarea#notation-body {
     width: 50em;
     height: 10em;

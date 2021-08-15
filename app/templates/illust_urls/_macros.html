@@ -13,16 +13,20 @@
                             <li><strong>URL:</strong> {{ helpers.base.UrlLink(illust_url.full_url) }}</li>
                             <li><strong>Dimensions:</strong> {{ illust_url.width }} x {{ illust_url.height }}</li>
                             <li><strong>Active:</strong> {{ illust_url.active | tojson }}</li>
+                            {% if illust_url.post is none %}
+                                <li><strong>Upload( <a href="{{ url_for('upload.new_html', illust_url_id=illust_url.id) }}">image</a> )</strong></li>
+                            {% endif %}
                         </ul>
                     </div>
-                    <div class="image-post-preview">
-                        {% if illust_url.post != None %}
+                    {% if illust_url.post is not none %}
+                        <div class="image-post-preview">
                             {{ post_preview(illust_url.post) }}
-                        {% else %}
-                            <em>No post.</em><br><br>
-                            ( <a href="{{ url_for('upload.new_html', illust_url_id=illust_url.id) }}">upload</a> )
-                        {% endif %}
-                    </div>
+                        </div>
+                    {% else %}
+                        <div class="no-post-preview">
+                            <span class="explanation">No post.</span>
+                        </div>
+                    {% endif %}
                 </div>
             {% endfor %}
         </div>

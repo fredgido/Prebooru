@@ -1,3 +1,12 @@
+{% macro notations_block(notation) -%
+    <strong>{{ notation.show_link }}</strong>
+    <div class="notation-block">
+        {{ helpers.notation.ConvertToHTML(notation) }}<br><br>
+        <span class="muted-timestamp">{{ helpers.base.FormatTimestamps(notation) }}</span>
+    </div>
+{%- endmacro %}
+
+
 {% macro notations_section(notations, section_id) -%}
     {% if notations | length > 0 %}
         <section id="{{ section_id }}">
@@ -5,7 +14,7 @@
             <div id="artist-notations-container">
                 <ul>
                     {% for notation in notations %}
-                        <li>{% include "notations/_notation_block.html" %}</li>
+                        <li>{{ notations_block(notation) }}</li>
                     {% endfor %}
                 </ul>
             </div>

@@ -8,7 +8,7 @@
     <a href="javascript:SelectInvert()">Invert</a>
     )
 </div>
-{% call render_form(form, 'POST', upload.create_url) %}
+{% call render_form(form, 'POST', upload.create_url, manual=True) %}
     {% for url_data in illust_urls %}
         <div style="border: 1px solid #EEE; padding: 5px; display: inline-block; margin: 5px;">
             <div class="input">

@@ -6,7 +6,7 @@ import html
 from flask import Markup, url_for
 
 # ##LOCAL IMPORTS
-from .base_helper import ConvertStrToHTML
+from .base_helper import ConvertStrToHTML, GeneralLink
 from . import artists_helper as ARTIST
 from . import illusts_helper as ILLUST
 
@@ -59,6 +59,10 @@ def Excerpt(notation):
 
 # ###### SHOW
 
+def ItemLink(item):
+    return GeneralLink(ItemLinkTitle(item), item.show_url)
+
+
 def ItemLinkTitle(item):
     if item.__table__.name == 'pool':
         return item.name
@@ -66,7 +70,7 @@ def ItemLinkTitle(item):
         return ARTIST.ShortLink(item)
     if item.__table__.name == 'illust':
         return ILLUST.ShortLink(item)
-    return item.shortlink.title()
+    return item.header
 
 
 def HasAppendItem(notation):
@@ -75,32 +79,3 @@ def HasAppendItem(notation):
 
 def AppendKey(notation):
     return next((key, getattr(notation, key)) for (attr, key) in APPEND_KEY_DICT.items() if (getattr(notation, attr) is not None))
-
-
-# ###### NEW/EDIT
-
-def FormTitle(form):
-    if form.pool_id.data:
-        return "for pool #%d" % form.pool_id.data
-    if form.artist_id.data:
-        return "for artist #%d" % form.artist_id.data
-    if form.illust_id.data:
-        return "for illust #%d" % form.illust_id.data
-    if form.post_id.data:
-        return "for post #%d" % form.post_id.data
-
-
-def FormHeader(form):
-    html_text = "notation"
-    if IsGeneralForm(form):
-        return html_text
-    html_text += ': '
-    if form.pool_id.data:
-        html_text += """<a href="%s">pool #%d</a>""" % (url_for('pool.show_html', id=form.pool_id.data), form.pool_id.data)
-    elif form.artist_id.data:
-        html_text += """<a href="%s">artist #%d</a>""" % (url_for('artist.show_html', id=form.artist_id.data), form.artist_id.data)
-    elif form.illust_id.data:
-        html_text += """<a href="%s">illust #%d</a>""" % (url_for('illust.show_html', id=form.illust_id.data), form.illust_id.data)
-    elif form.post_id.data:
-        html_text += """<a href="%s">post #%d</a>""" % (url_for('post.show_html', id=form.post_id.data), form.post_id.data)
-    return Markup(html_text)

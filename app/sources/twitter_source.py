@@ -586,7 +586,7 @@ def TwitterRequest(url, method='GET'):
     return {'error': False, 'body': data}
 
 
-def GetGraphQLTimelineEntries(data, found_tweets=[]):
+def GetGraphQLTimelineEntries(data, found_tweets):
     for key in data:
         if key == 'tweet_results':
             found_tweets.append(data[key])
@@ -607,7 +607,7 @@ def GetTwitterIllustTimeline(illust_id):
     data = TwitterRequest("https://twitter.com/i/api/graphql/uvk82Jn4z84yUPI1rViRsg/TweetDetail?%s" % urladdons)
     if data['error']:
         return CreateError('sources.twitter.GetTwitterTimelineIllust', data['message'])
-    found_tweets = GetGraphQLTimelineEntries(data['body'])
+    found_tweets = GetGraphQLTimelineEntries(data['body'], [])
     if len(found_tweets) == 0:
         print("No tweets found!")
         return CreateError('sources.twitter.GetTwitterTimelineIllust', "No tweets found in data.")

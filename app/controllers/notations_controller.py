@@ -2,11 +2,13 @@
 
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, redirect, url_for, flash
+from sqlalchemy import not_
 from wtforms import TextAreaField, IntegerField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from ..models import Notation
+from ..models import Notation, Pool, Artist, Illust, Post, PoolNotation
+from ..logical.utility import EvalBoolString, IsFalsey
 from ..database.notation_db import CreateNotationFromParameters, UpdateNotationFromParameters, AppendToItem, DeleteNotation
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, GetDataParams, CustomNameForm,\
     GetOrAbort, HideInput, NullifyBlanks, CheckParamRequirements, SetError
@@ -20,6 +22,8 @@ CREATE_REQUIRED_PARAMS = ['body']
 VALUES_MAP = {
     **{k: k for k in Notation.__table__.columns.keys()},
 }
+
+NOTATION_POOLS_SUBQUERY = Notation.query.join(PoolNotation, Notation._pool).filter(Notation.id == PoolNotation.notation_id).with_entities(Notation.id)
 
 APPEND_KEYS = ['pool_id', 'artist_id', 'illust_id', 'post_id']
 
@@ -39,6 +43,19 @@ def GetNotationForm(**kwargs):
 
 # ## FUNCTIONS
 
+# #### Query functions
+
+def PoolFilter(query, search):
+    if 'has_pool' in search and EvalBoolString(search['has_pool']) is not None:
+        subclause = Notation.id.in_(NOTATION_POOLS_SUBQUERY)
+        if IsFalsey(search['has_pool']):
+            subclause = not_(subclause)
+        query = query.filter(subclause)
+    elif 'pool_id' in search and search['pool_id'].isdigit():
+        query = query.unique_join(PoolNotation, Notation._pool).filter(PoolNotation.pool_id == int(search['pool_id']))
+    return query
+
+
 # #### Helper functions
 
 def AppendNewItems(notation, dataparams):
@@ -53,9 +70,12 @@ def AppendNewItems(notation, dataparams):
 
 # #### Form functions
 
-def NonGeneralFormCheck(form):
-    if any(getattr(form, key).data is not None for key in APPEND_KEYS):
-        for key in APPEND_KEYS:
+def HideNonGeneralInputs(form, item):
+    append_key = item.__table__.name + '_id'
+    for key in APPEND_KEYS:
+        if key == append_key:
+            HideInput(form, key, item.id)
+        else:
             HideInput(form, key)
 
 
@@ -85,6 +105,7 @@ def index():
     search = GetParamsValue(params, 'search', True)
     q = Notation.query
     q = SearchFilter(q, search)
+    q = PoolFilter(q, search)
     q = DefaultOrder(q, search)
     return q
 
@@ -148,8 +169,19 @@ def index_html():
 @bp.route('/notations/new', methods=['GET'])
 def new_html():
     form = GetNotationForm(**request.args)
-    NonGeneralFormCheck(form)
-    return render_template("notations/new.html", form=form, notation=Notation())
+    if form.pool_id.data:
+        item = Pool.find(form.pool_id.data)
+    elif form.artist_id.data:
+        item = Artist.find(form.artist_id.data)
+    elif form.illust_id.data:
+        item = Illust.find(form.illust_id.data)
+    elif form.post_id.data:
+        item = Post.find(form.post_id.data)
+    else:
+        item = None
+    if item is not None:
+        HideNonGeneralInputs(form, item)
+    return render_template("notations/new.html", form=form, item=item, notation=Notation())
 
 
 @bp.route('/notations', methods=['POST'])
@@ -175,10 +207,10 @@ def edit_html(id):
     append_type = notation.append_type
     if append_type is not None:
         append_key = append_type + '_id'
-        append_id = notation.append_id(append_type)
-        editparams[append_key] = append_id
+        append_item = notation.append_item
+        editparams[append_key] = append_item.id
     form = GetNotationForm(**editparams)
-    NonGeneralFormCheck(form)
+    HideNonGeneralInputs(form, append_item)
     return render_template("notations/edit.html", form=form, notation=notation)
 
 

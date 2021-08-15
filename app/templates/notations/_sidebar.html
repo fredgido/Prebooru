@@ -2,11 +2,11 @@
 
 <aside id="notation-sidebar">
     {% if helpers.notation.HasAppendItem(notation) %}
-        {% with append_key, append_item=helpers.notation.AppendKey(notation) %}
+        {% with append_key, append_item = helpers.notation.AppendKey(notation) %}
             <section id="{{ append_key }}-post">
                 <h4>{{ append_key.title() }}</h4>
                 <ul>
-                    <li><a href="{{ append_item.show_url }}">{{ helpers.notation.ItemLinkTitle(append_item) }}</a></li>
+                    <li>{{ helpers.notation.ItemLink(append_item) }}</li>
                 </ul>
             </section>
         {% endwith %}

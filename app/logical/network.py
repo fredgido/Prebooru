@@ -29,7 +29,8 @@ def CheckHTTPResponse(response):
     return False
 
 
-def GetHTTPFile(serverfilepath, headers={}, timeout=10):
+def GetHTTPFile(serverfilepath, headers=None, timeout=10):
+    headers = headers if headers is not None else {}
     for i in range(3):
         print("GetHTTPFile:", serverfilepath, headers)
         response = NetworkQuery(serverfilepath, headers, timeout)
