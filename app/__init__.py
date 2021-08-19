@@ -3,6 +3,7 @@
 # ## PYTHON IMPORTS
 import os
 from io import BytesIO
+from types import SimpleNamespace
 from sqlalchemy import event, MetaData
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -28,6 +29,7 @@ NAMING_CONVENTION = {
     "pk": "pk_%(table_name)s"
 }
 
+SERVER_INFO = SimpleNamespace(addr="127.0.0.1")
 
 # ## FUNCTIONS
 
@@ -56,6 +58,8 @@ class MethodRewriteMiddleware(object):
         self.input_name = input_name
 
     def __call__(self, environ, start_response):
+        SERVER_INFO.addr = environ['HTTP_HOST'].split(':')[0]
+        print("Server addr:", SERVER_INFO.addr)
         if environ['REQUEST_METHOD'] == 'POST':
             environ['wsgi.input'] = stream = BytesIO(get_input_stream(environ).read())
             form_method = environ['werkzeug.request'].values.get(self.input_name, default='').upper()
@@ -76,6 +80,7 @@ PREBOORU_APP.config.from_mapping(
         'cache': PREBOORU_CACHE_URL,
         'similarity': PREBOORU_SIMILARITY_URL,
     },
+    JSON_SORT_KEYS=False,
     SQLALCHEMY_ECHO=False,
     SECRET_KEY='\xfb\x12\xdf\xa1@i\xd6>V\xc0\xbb\x8fp\x16#Z\x0b\x81\xeb\x16',
     DEBUG=True,

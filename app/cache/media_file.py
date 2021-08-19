@@ -2,7 +2,7 @@
 
 # ##LOCAL IMPORTS
 from .. import DB
-from ..storage import CACHE_DATA_DIRECTORY, CACHE_NETWORK_URLPATH
+from ..storage import CACHE_DATA_DIRECTORY, CacheNetworkUrlpath
 
 
 # ##GLOBAL VARIABLES
@@ -17,7 +17,7 @@ class MediaFile(DB.Model):
 
     @property
     def file_url(self):
-        return CACHE_NETWORK_URLPATH + self.md5 + '.' + self.file_ext
+        return CacheNetworkUrlpath() + self.md5 + '.' + self.file_ext
 
     @property
     def file_path(self):

@@ -2,15 +2,12 @@
 
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, url_for, flash, redirect
-from wtforms import IntegerField
-from wtforms.validators import DataRequired
-
 
 # ## LOCAL IMPORTS
 from ..models import Pool, PoolElement
 from ..database.pool_element_db import CreatePoolElementFromParameters, DeletePoolElement
 from .base_controller import GetDataParams, CustomNameForm, ReferrerCheck, GetOrAbort, GetOrError, CheckParamRequirements,\
-    SetError, HideInput
+    SetError, HideInput, IndexJson, ShowJson, ProcessRequestValues, GetParamsValue, SearchFilter, DefaultOrder, ParseType
 
 
 # ## GLOBAL VARIABLES
@@ -21,6 +18,12 @@ CREATE_REQUIRED_PARAMS = ['pool_id']
 
 APPEND_KEYS = ['illust_id', 'post_id', 'notation_id']
 
+PARSE_PARAMS_DICT = {
+    'pool_id': int,
+    'illust_id': int,
+    'post_id': int,
+    'notation_id': int,
+}
 
 # Forms
 
@@ -44,10 +47,20 @@ def CheckCreateParams(dataparams):
 
 
 def ConvertDataParams(dataparams):
-    return GetPoolElementForm(**dataparams).data
+    return {key: ParseType(dataparams, key, parser) for (key, parser) in PARSE_PARAMS_DICT.items()}
 
 
 # #### Route auxiliary functions
+
+def index():
+    params = ProcessRequestValues(request.values)
+    search = GetParamsValue(params, 'search', True)
+    negative_search = GetParamsValue(params, 'not', True)
+    q = PoolElement.query
+    q = SearchFilter(q, search, negative_search)
+    q = DefaultOrder(q, search)
+    return q
+
 
 def create():
     dataparams = GetDataParams(request, 'pool_element')
@@ -72,17 +85,22 @@ def delete(pool_element):
 
 # #### Route functions
 
+# ###### SHOW
+
+@bp.route('/pool_elements/<int:id>.json', methods=['GET'])
+def show_json(id):
+    return ShowJson(PoolElement, id)
+
+
+# ###### INDEX
+
+@bp.route('/pool_elements.json', methods=['GET'])
+def index_json():
+    q = index()
+    return IndexJson(q, request)
+
+
 # ###### CREATE
-
-@bp.route('/pool_elements/new', methods=['GET'])
-def new_html():
-    """HTML access point to the create pool element function."""
-    form = GetPoolElementForm(**request.args)
-    if any((getattr(form, attr).data is not None) for attr in APPEND_KEYS):
-        for key in APPEND_KEYS:
-            HideInput(form, key)
-    return render_template("pool_elements/new.html", form=form)
-
 
 @bp.route('/pool_elements', methods=['POST'])
 def create_html():

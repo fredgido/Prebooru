@@ -157,13 +157,36 @@ def RegeneratePostSimilarity(result, post):
 
 def GeneratePostSimilarity(post):
     print("GeneratePostSimilarity")
-    image = Image.open(post.preview_path)
-    image_hash = imagehash.whash(image, hash_size=HASH_SIZE)
     ratio = round(post.width / post.height, 4)
-    simresult = SimilarityData(post_id=post.id, image_hash=str(image_hash), ratio=ratio)
+    preview_image = Image.open(post.preview_path)
+    preview_image = preview_image.convert("RGB")
+    preview_image_hash = str(imagehash.whash(preview_image, hash_size=HASH_SIZE))
+    simresult = SimilarityData(post_id=post.id, image_hash=preview_image_hash, ratio=ratio)
     SESSION.add(simresult)
     SESSION.commit()
-    PopulateSimilarityPools(simresult)
+    PopulateSimilarityPools(simresult) # Need to fix this so that it uses all available image hashes for the post
+    simresults = [simresult]
+    if post.file_ext != 'mp4':
+        full_image = Image.open(post.file_path)
+        full_image = full_image.convert("RGB")
+        full_image_hash = str(imagehash.whash(full_image, hash_size=HASH_SIZE))
+        score_results = CheckSimilarMatchScores(simresults, full_image_hash, 90.0)
+        if len(score_results) == 0:
+            print("FULL SIZE ADD")
+            simresult = SimilarityData(post_id=post.id, image_hash=full_image_hash, ratio=ratio)
+            SESSION.add(simresult)
+            SESSION.commit()
+            simresults.append(simresult)
+    if post.file_path != post.sample_path:
+        sample_image = Image.open(post.sample_path)
+        sample_image = sample_image.convert("RGB")
+        sample_image_hash = str(imagehash.whash(sample_image, hash_size=HASH_SIZE))
+        score_results = CheckSimilarMatchScores(simresults, sample_image_hash, 90.0)
+        if len(score_results) == 0:
+            print("SAMPLE SIZE ADD")
+            simresult = SimilarityData(post_id=post.id, image_hash=sample_image_hash, ratio=ratio)
+            SESSION.add(simresult)
+            SESSION.commit()
 
 
 def ProcessSimilaritySet():
@@ -279,7 +302,7 @@ def GenerateSimilarityResults(args):
             PopulateSimilarityPools(simresult)
         if not page.has_next:
             break
-        page = Post.query.filter(Post.id > max_post_id).paginate(page=page.next_num, per_page=100)
+        page = page.next()
     print("Done!")
 
 
@@ -325,6 +348,45 @@ def ComparePostSimilarity(args):
         miss_ratio = mismatching_bits / TOTAL_BITS
         score = round((1 - miss_ratio) * 100, 2)
         print("Mismatching:", mismatching_bits, "Ratio:", miss_ratio, "Score:", score)
+
+
+def ComparePosts(args):
+    page = Post.query.filter(Post.id > 43375).order_by(Post.id.asc()).paginate(per_page=100)
+    while True:
+        print("\n%d/%d" % (page.page, page.pages))
+        for post in page.items:
+            print("Post #", post.id)
+            starttime = time.time()
+            ratio = round(post.width / post.height, 4)
+            simresults = SimilarityData.query.filter_by(post_id=post.id).all()
+            if post.file_ext != 'mp4':
+                full_image = Image.open(post.file_path)
+                full_image = full_image.convert("RGB")
+                full_image_hash = str(imagehash.whash(full_image, hash_size=HASH_SIZE))
+                print("Full convert time:", time.time() - starttime)
+                score_results = CheckSimilarMatchScores(simresults, full_image_hash, 90.0)
+                if len(score_results) == 0:
+                    print("FULL SIZE ADD")
+                    simresult = SimilarityData(post_id=post.id, image_hash=full_image_hash, ratio=ratio)
+                    SESSION.add(simresult)
+                    SESSION.commit()
+                    simresults.append(simresult)
+                if post.file_path == post.sample_path:
+                    continue
+            starttime = time.time()
+            sample_image = Image.open(post.sample_path)
+            sample_image = sample_image.convert("RGB")
+            sample_image_hash = str(imagehash.whash(sample_image, hash_size=HASH_SIZE))
+            print("Sample convert time:", time.time() - starttime)
+            score_results = CheckSimilarMatchScores(simresults, sample_image_hash, 90.0)
+            if len(score_results) == 0:
+                print("SAMPLE SIZE ADD")
+                simresult = SimilarityData(post_id=post.id, image_hash=sample_image_hash, ratio=ratio)
+                SESSION.add(simresult)
+                SESSION.commit()
+        if not page.has_next:
+            break
+        page = page.next()
 
 
 def StartServer(args):
@@ -425,6 +487,7 @@ def Main(args):
         'generate': GenerateSimilarityResults,
         'pools': GenerateSimilarityPools,
         'compare': ComparePostSimilarity,
+        'compareposts': ComparePosts,
         'server': StartServer,
     }
     if args.logging:
@@ -438,7 +501,7 @@ def Main(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser(description="Worker to process uploads.")
-    parser.add_argument('type', choices=['generate', 'pools', 'compare', 'server'])
+    parser.add_argument('type', choices=['generate', 'pools', 'compare', 'compareposts', 'server'])
     parser.add_argument('--logging', required=False, default=False, action="store_true", help="Display the SQL commands.")
     parser.add_argument('--expunge', required=False, default=False, action="store_true", help="Expunge all similarity records.")
     parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")

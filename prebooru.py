@@ -41,7 +41,10 @@ def Main(args):
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
-    PREBOORU_APP.run(threaded=True)
+    if args.public:
+        PREBOORU_APP.run(threaded=True, host="0.0.0.0")
+    else:
+        PREBOORU_APP.run(threaded=True)
 
 
 # ### INITIALIZATION
@@ -76,5 +79,6 @@ if __name__ == '__main__':
     parser = ArgumentParser(description="Server to process network requests.")
     parser.add_argument('--extension', required=False, default=False, action="store_true", help="Enable Chrome extension.")
     parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")
+    parser.add_argument('--public', required=False, default=False, action="store_true", help="Makes the server visible to other computers.")
     args = parser.parse_args()
     Main(args)

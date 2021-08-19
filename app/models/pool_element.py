@@ -41,12 +41,16 @@ class PoolElement(JsonModel):
 
     id: int
     pool_id: int
+    position: int
     type: str
-
     id = DB.Column(DB.Integer, primary_key=True)
     pool_id = DB.Column(DB.Integer, DB.ForeignKey('pool.id'), nullable=False)
     position = DB.Column(DB.Integer, nullable=False)
     type = DB.Column(DB.String(50))
+
+    @staticmethod
+    def searchable_attributes():
+        return ['id', 'pool_id', 'position', 'type']
 
     __mapper_args__ = {
         'polymorphic_identity': 'pool_element',

@@ -28,7 +28,6 @@ DANBOORU_APIKEY = None
 # Log into Pixiv and get this value from the cookie PHPSESSID
 PIXIV_PHPSESSID = None
 
-IMAGE_SERVER = 'http://127.0.0.1:1234/'
-
+IMAGE_PORT = 1234
 WORKER_PORT = 4000
 SIMILARITY_PORT = 3000

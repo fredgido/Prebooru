@@ -87,6 +87,7 @@ div#artist-profiles-container {
 }
 div.artist-profiles-block {
     margin: 0.5em;
+    padding-right: 5em;
     position: relative;
 }
 span.artist-profile-delete {

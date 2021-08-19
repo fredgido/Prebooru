@@ -34,7 +34,11 @@ class Pool(JsonModel):
 
     @property
     def element_count(self):
-        return PoolElement.query.filter_by(pool_id=self.id).count()
+        return self._element_query.get_count()
+
+    @property
+    def _element_query(self):
+        return PoolElement.query.filter_by(pool_id=self.id)
 
     @property
     def show_url(self):

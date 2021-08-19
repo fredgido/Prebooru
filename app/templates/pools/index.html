@@ -16,7 +16,7 @@
         <tbody>
             {% for pool in pools.items %}
                 <tr id="pool-{{ pool.id }}">
-                    <td><a href="{{ pool.show_url }}">{{ pool.shortlink }}</a></td>
+                    <td>{{ pool.show_link }}</td>
                     <td>{{ pool.name }}</td>
                     <td>{{ pool.element_count }}</td>
                     <td>{{ helpers.base.FormatTimestamp(pool.created) }}</td>

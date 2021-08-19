@@ -84,7 +84,6 @@ def SearchFilter(query, search, negative_search=None):
         negative_query = SearchAttributes(negative_query, entity, negative_search)
         negative_query = negative_query.with_entities(entity.id)
         query = query.filter(not_(entity.id.in_(negative_query)))
-    print("Final query:\n", query)
     return query
 
 
@@ -208,7 +207,7 @@ def ParseItem(value, parser):
 
 def ParseType(params, key, parser):
     try:
-        return parser(params[key])
+        return ParseItem(params[key], parser)
     except Exception:
         return None
 

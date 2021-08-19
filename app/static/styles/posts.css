@@ -1,3 +1,7 @@
+/****INDEX Page****/
+div#posts-container {
+    margin-top: 2em;
+}
 /****SHOW Page****/
 div#sidebar-container {
     display: flex;

@@ -1,17 +1,13 @@
 {% extends 'pools/_base.html' %}
+{% from 'layouts/_macros.html' import render_form %}
 
-{% block title %}Edit - Pool #{{ pool.id }}{% endblock %}
+{% block title %}Edit {{ pool.header }}{% endblock %}
 
 {% block content %}
-    <div class="form-heading heading">
-        Edit: <a href="{{ pool.show_url }}">{{ pool.shortlink }}</a>
+    <div id="pool-form-heading" class="form-heading heading">
+        Edit {{ pool.header }}</a>
     </div>
-    <form method="POST" action="{{ pool.update_url }}">
-        <input type="hidden" name="_method" value="put">
-        {{ form.csrf_token }}
-        {% for field_name,field_input in helpers.base.FormIterator(form) %}
-            {{ field_input() }}
-        {% endfor %}
-        <input type="submit" value="Submit">
-    </form>
+    {% call(field_name, field_input) render_form(form, 'PUT', pool.update_url) %}
+        {{ field_input() }}
+    {% endcall %}
 {% endblock %}

@@ -2,7 +2,7 @@
 
 # ##PYTHON IMPORTS
 import re
-from sqlalchemy import and_, not_
+from sqlalchemy import and_, not_, func
 import sqlalchemy.sql.sqltypes as sqltypes
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.relationships import RelationshipProperty
@@ -94,7 +94,6 @@ def ColumnType(model, columnname):
 def SearchAttributes(query, model, params):
     all_filters, query = AllAttributeFilters(query, model, params)
     query = query.filter(*all_filters)
-    print("Query:\n", query)
     return query
 
 
@@ -147,7 +146,15 @@ def RelationAttributeFilters(query, model, attribute, params):
         elif IsFalsey(params['has_' + attribute]):
             filters += (not_(subclause),)
         else:
-            raise Exception("%s - value must be truthy or falsey" % ('direct_' + attribute))
+            raise Exception("%s - value must be truthy or falsey" % ('has_' + attribute))
+    elif ('count_' + attribute) in params:
+        primaryjoin = relation.property.primaryjoin
+        value = params['count_' + attribute]
+        count_clause = RelationshipCount(model, primaryjoin, value)
+        if count_clause is not None:
+            query = query.join(primaryjoin.right.table, primaryjoin.left==primaryjoin.right).group_by(model).having(count_clause)
+        else:
+            raise Exception("%s - invalid value: %s" % ('count_' + attribute, value))
     if attribute in params:
         relation_model = RelationshipModel(model, attribute)
         aliased_model = aliased(relation_model)
@@ -217,6 +224,27 @@ def BooleanFilters(model, columnname, params):
 
 # #### Type auxiliary functions
 
+def RelationshipCount(model, primaryjoin, value):
+    match = re.match(r'^\d+$', value)
+    if match:
+        return func.count(primaryjoin.right) == int(value)
+    match = re.match(r'^<=(\d+)$', value)
+    if match:
+        return func.count(primaryjoin.right) <= int(match.group(1))
+    match = re.match(r'^<(\d+)$', value)
+    if match:
+        return func.count(primaryjoin.right) < int(match.group(1))
+    match = re.match(r'^>=(\d+)$', value)
+    if match:
+        return func.count(primaryjoin.right) >= int(match.group(1))
+    match = re.match(r'^>(\d+)$', value)
+    if match:
+        return func.count(primaryjoin.right) > int(match.group(1))
+    match = re.match(r'^!=(\d+)$', value)
+    if match:
+        return func.count(primaryjoin.right) != int(match.group(1))
+
+
 def NumericMatching(model, columnname, value):
     type = ColumnType(model, columnname)
 
@@ -245,7 +273,6 @@ def NumericMatching(model, columnname, value):
         return getattr(model, columnname).__ne__(None)
     if value == 'none':
         return getattr(model, columnname).__eq__(None)
-    # Check searchable concern for other checks/tests other than integer
     return getattr(model, columnname) == parser(value)
 
 
