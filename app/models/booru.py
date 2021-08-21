@@ -85,8 +85,6 @@ class Booru(JsonModel):
         DB.session.delete(self)
         DB.session.commit()
 
-    @staticmethod
-    def searchable_attributes():
-        basic_attributes = ['id', 'danbooru_id', 'current_name', 'names', 'created', 'updated']
-        relation_attributes = ['names', 'artists']
-        return basic_attributes + relation_attributes
+    basic_attributes = ['id', 'danbooru_id', 'current_name', 'names', 'created', 'updated']
+    relation_attributes = ['names', 'artists']
+    searchable_attributes = basic_attributes + relation_attributes

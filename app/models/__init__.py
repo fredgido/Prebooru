@@ -31,7 +31,16 @@ from .subscription import Subscription  # noqa: F401
 # ## INITIALIZATION
 
 IllustUrl.uploads = DB.relationship(Upload, backref=DB.backref('illust_url', lazy=True), lazy=True)
-
+PoolElement.polymorphic_columns = {
+    'post_id': PoolPost,
+    'illust_id': PoolIllust,
+    'notation_id': PoolNotation,
+}
+PoolElement.polymorphic_relations = {
+    'post': PoolPost,
+    'illust': PoolIllust,
+    'notation': PoolNotation,
+}
 
 # ## GLOBAL VARIABLES
 

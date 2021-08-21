@@ -1,11 +1,14 @@
 <div id="similar-posts">
-    <div id="similar-posts-heading" class="heading">Similar posts (&thinsp;<a href="{{ url_for('similarity_pool.show_html', id=post.similar_pool_id) }}">{{ post.similar_post_count }}</a>&thinsp;)</div>
+    <div id="similar-posts-heading" class="heading">
+        Similar posts
+        (&thinsp;{{ helpers.post.SimilarityPostPoolLink(post) }}&thinsp;)
+    </div>
     <div id="similar-posts-container">
         {% for post_data in post.similar_posts %}
             <div class="similar-post-block">
-                <div class="heading">
-                    <strong><a href="{{ url_for('similarity_pool.show_html', id=post_data.element.sibling.pool_id) }}">{{ post_data.post.shortlink }}</a></strong>
-                    &emsp;(&thinsp;<a class="warning-link" href="{{ post_data.element.delete_url }}" onclick="return Posts.deleteSimilarPost(this)">remove</a>&thinsp;)
+                <div class="similar-heading">
+                    <strong>{{ helpers.post.SimilaritySiblingPoolLink(post_data) }}</strong>
+                    &ensp;(&thinsp;{{ helpers.post.DeleteSimilarityElementLink(post_data.element) }}&thinsp;)
                 </div>
                 <article class="post similar-post">
                     <a href="{{ post_data.post.show_url }}">

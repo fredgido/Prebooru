@@ -11,9 +11,7 @@
             <li><strong>Dimensions:</strong> ( {{ illust_url.width }} x {{ illust_url.height }} )</li>
         </ul>
     {% endif %}
-    {% call render_form(form, 'POST', upload.create_url) %}
-        {% for _, field_input in helpers.base.FormIterator(form) %}
-            {{ field_input() }}
-        {% endfor %}
+    {% call(field_name, field_input) render_form(form, 'POST', upload.create_url) %}
+        {{ field_input() }}
     {% endcall %}
 {% endblock %}

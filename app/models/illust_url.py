@@ -49,8 +49,6 @@ class IllustUrl(JsonModel):
     def site_domain(self):
         return GetSiteDomain(self.site_id)
 
-    @staticmethod
-    def searchable_attributes():
-        basic_attributes = ['id', 'site_id', 'url', 'width', 'height', 'order', 'illust_id', 'active']
-        relation_attributes = ['illust', 'post']
-        return basic_attributes + relation_attributes
+    basic_attributes = ['id', 'site_id', 'url', 'width', 'height', 'order', 'illust_id', 'active']
+    relation_attributes = ['illust', 'post']
+    searchable_attributes = basic_attributes + relation_attributes

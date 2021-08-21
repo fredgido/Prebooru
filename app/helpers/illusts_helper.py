@@ -7,7 +7,7 @@ import urllib.parse
 from ..sites import GetSiteDomain, GetSiteKey
 from ..sources import SOURCEDICT
 from ..sources.base_source import GetSourceById
-from .base_helper import SearchUrlFor, ExternalLink
+from .base_helper import SearchUrlFor, ExternalLink, UrlLink
 
 
 # ##GLOBAL VARIABLES
@@ -72,7 +72,7 @@ def IllustUrlsOrdered(illust):
 # #### URL functions
 
 def OriginalUrl(illust_url):
-    return 'https://' + GetSiteDomain(illust_url.site_id) + illust_url.url
+    return UrlLink('https://' + GetSiteDomain(illust_url.site_id) + illust_url.url)
 
 
 def ShortLink(illust):

@@ -1,17 +1,16 @@
 {% extends 'uploads/_base.html' %}
+{% from "posts/_macros.html" import recent_posts %}
 
-{% block title %}{{ upload.shortlink.title() }}{% endblock %}
+{% block title %}{{ upload.header }}{% endblock %}
 
 {% block content %}
-    <div id="upload-heading" class="heading">Upload #{{ upload.id }}</div>
+    <div id="upload-heading" class="heading">{{ upload.header }}</div>
     <div id="upload-content">
         {% include "uploads/_sidebar.html" %}
         {% include "uploads/_site_content.html" %}
     </div>
     <div id="upload-posts">
-        {% with posts=upload.posts, post_search_link=None %}
-            {% include "posts/_recent_posts.html" %}
-        {% endwith %}
+        {{ recent_posts(upload.posts) }}
     </div>
 {% endblock %}
 

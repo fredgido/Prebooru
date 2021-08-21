@@ -18,6 +18,4 @@ class Label(JsonModel):
     id = DB.Column(DB.Integer, primary_key=True)
     name = DB.Column(DB.Unicode(255), nullable=False)
 
-    @staticmethod
-    def searchable_attributes():
-        return ['id', 'name']
+    searchable_attributes = ['id', 'name']

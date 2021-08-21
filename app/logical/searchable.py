@@ -32,7 +32,7 @@ TEXT_ARRAY_RE = '%%s_(%s)' % '|'.join(ALL_ARRAY_TYPES)
 # #### Test functions
 
 def IsRelationship(model, columnname):
-    return type(getattr(model, columnname).property) is RelationshipProperty
+    return hasattr(model, columnname) and type(getattr(model, columnname).property) is RelationshipProperty
 
 
 def RelationshipModel(model, attribute):
@@ -49,6 +49,10 @@ def IsPolymorphic(model, attribute):
 
 def IsColumn(model, columnname):
     return columnname in model.__table__.c.keys()
+
+
+def IsPolymorphicColumn(model, columnname):
+    return hasattr(model, 'polymorphic_columns') and columnname in model.polymorphic_columns
 
 
 # #### Helper functions
@@ -98,11 +102,13 @@ def SearchAttributes(query, model, params):
 
 
 def AllAttributeFilters(query, model, params):
-    attributes = model.searchable_attributes()
+    attributes = model.searchable_attributes
     basic_attributes = [attribute for attribute in attributes if IsColumn(model, attribute)]
     basic_filters = ()
     for attribute in basic_attributes:
-        basic_filters += BasicAttributeFilters(model, attribute, params)
+        print(attribute, IsPolymorphicColumn(model, attribute))
+        basic_model = model if not IsPolymorphicColumn(model, attribute) else model.polymorphic_columns[attribute]
+        basic_filters += BasicAttributeFilters(basic_model, attribute, params)
     relationship_attributes = [attribute for attribute in attributes if IsRelationship(model, attribute)]
     relationship_filters = ()
     for attribute in relationship_attributes:
@@ -134,7 +140,7 @@ def BasicAttributeFilters(model, columnname, params):
 
 def RelationAttributeFilters(query, model, attribute, params):
     if IsPolymorphic(model, attribute):
-        raise Exception("%s - polymorphic attributes are currently unhandled" % attribute)
+        raise Exception("%s - polymorphic relationships are currently unhandled" % attribute)
     relation = getattr(model, attribute)
     filters = ()
     if ('has_' + attribute) in params:

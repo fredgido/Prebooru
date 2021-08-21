@@ -83,6 +83,4 @@ class Pool(JsonModel):
                 page.items[i] = next(filter(lambda x: x.id == page_item.notation_id, notations))
         return page
 
-    @staticmethod
-    def searchable_attributes():
-        return ['id', 'name', 'created', 'updated']
+    searchable_attributes = ['id', 'name', 'created', 'updated']

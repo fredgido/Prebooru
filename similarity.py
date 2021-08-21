@@ -407,6 +407,7 @@ def StartServer(args):
 @PREBOORU_APP.route('/check_similarity.json', methods=['GET'])
 def check_similarity():
     request_urls = request.args.getlist('urls[]')
+    request_score = request.args.get('score', type=float, default=90.0)
     include_posts = request.args.get('include_posts', type=bool, default=False)
     retdata = {'error': False}
     if request_urls is None:
@@ -426,7 +427,7 @@ def check_similarity():
         image_hash = str(imagehash.whash(image, hash_size=HASH_SIZE))
         ratio = round(image.width / image.height, 4)
         smatches = SimilarityData.query.filter(SimilarityData.ratio_clause(ratio), SimilarityData.cross_similarity_clause2(image_hash)).all()
-        score_results = CheckSimilarMatchScores(smatches, image_hash, 90.0)
+        score_results = CheckSimilarMatchScores(smatches, image_hash, request_score)
         if include_posts:
             post_ids = [result['post_id'] for result in score_results]
             posts = app.models.Post.query.filter(app.models.Post.id.in_(post_ids)).all()
@@ -464,10 +465,8 @@ def generate_similarity():
 
 @PREBOORU_APP.route('/check_posts', methods=['GET'])
 def check_posts():
-    if SIMILARITY_SEM._value > 0:
-        SCHED.add_job(ProcessSimilarity)
-        return jsonify(True)
-    return jsonify(False)
+    SCHED.add_job(ProcessSimilarity)
+    return jsonify(SIMILARITY_SEM._value > 0)
 
 
 # #### Initialization

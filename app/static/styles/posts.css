@@ -58,11 +58,22 @@ div#related-posts-heading,
 div#similar-posts-heading {
     font-size: 28px;
 }
+div#related-posts-container {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 1em;
+}
+div.related-post-block {
+    width: 340px;
+}
 div#similar-posts-container {
     display: flex;
     flex-wrap: wrap;
     margin-top: 1em;
     font-size: 20px;
+}
+div.similar-heading {
+    line-height: 1.5em;
 }
 div.similar-post-block {
     width: 320px;

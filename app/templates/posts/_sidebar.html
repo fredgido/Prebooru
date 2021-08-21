@@ -31,10 +31,10 @@
     <section id="post-options">
         <h4>Options</h4>
         <ul>
-            <li><a href="{{ post.file_url }}">Original file</a></li>
-            <li><a href="javascript:prompt('Copy file link:', '{{ post.file_path.encode('unicode-escape').decode() }}');false;">File link</a></li>
-            <li><a href="{{ url_for('pool_element.create_html') }}" data-post-id="{{ post.id }}" onclick="return Prebooru.createPool(this, 'post')">Add to pool</a></li>
-            <li><a href="{{ url_for('notation.new_html', post_id=post.id) }}">Add notation</a></li>
+            <li>{{ helpers.base.GeneralLink("Original file", post.file_url) }}</li>
+            <li>{{ helpers.post.FileLink(post) }}</li>
+            <li>{{ helpers.post.AddToPoolLink(post) }}</li>
+            <li>{{ helpers.base.GeneralLink("Add notation", url_for('notation.new_html', post_id=post.id)) }}</li>
         </ul>
     </section>
 </aside>

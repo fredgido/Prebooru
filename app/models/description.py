@@ -18,6 +18,4 @@ class Description(JsonModel):
     id = DB.Column(DB.Integer, primary_key=True)
     body = DB.Column(DB.UnicodeText, nullable=False)
 
-    @staticmethod
-    def searchable_attributes():
-        return ['id', 'body']
+    searchable_attributes = ['id', 'body']

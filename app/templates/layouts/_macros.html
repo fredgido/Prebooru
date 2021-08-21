@@ -34,17 +34,29 @@
 {%- endmacro %}
 
 {% macro items_list(items, key) -%}
-    {% for item in items %}
-        {% if loop.first %}
-            <ul>
-        {% endif %}
-            <li>{{ item[key] }}</li>
-        {% if loop.last %}
-            </ul>
+    {% if items | length == 1 %}
+        {% if caller is undefined %}
+            {{ items[0][key] }}
+        {% else %}
+            {{ caller(items[0]) }}
         {% endif %}
     {% else %}
-        <em>none</em>
-    {% endfor %}
+        {% for item in items %}
+            {% if loop.first %}
+                <ul>
+            {% endif %}
+            {% if caller is undefined %}
+                <li>{{ item[key] }}</li>
+            {% else %}
+                <li>{{ caller(item) }}</li>
+            {% endif %}
+            {% if loop.last %}
+                </ul>
+            {% endif %}
+        {% else %}
+            <em>none</em>
+        {% endfor %}
+    {% endif %}
 {%- endmacro %}
 
 {% macro items_block(items, item_plural, separator='<hr>') -%}

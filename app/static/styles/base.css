@@ -176,8 +176,7 @@ div.illust-preview img {
     max-width: 150px;
     max-height: 150px;
 }
-div#recent-posts-heading,
-div#related-posts-heading {
+div#recent-posts-heading {
     font-size: 24px;
     margin-bottom: 1em;
 }

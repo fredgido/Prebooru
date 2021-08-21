@@ -739,6 +739,7 @@ def GetVideoUrls(tweet):
 
 
 def GetIllustParametersFromTweet(tweet):
+    site_artist_id = SafeGet(tweet, 'user', 'id_str') or SafeGet(tweet, 'user_id_str')
     return {
         'site_id': SITE_ID,
         'site_illust_id': int(tweet['id_str']),
@@ -753,7 +754,7 @@ def GetIllustParametersFromTweet(tweet):
         'commentaries': GetIllustCommentary(tweet) or None,
         'illust_urls': GetIllustUrls(tweet),
         'active': True,
-        'site_artist_id': SafeGet(tweet, 'user', 'id_str') or SafeGet(tweet, 'user_id_str'),
+        'site_artist_id': int(site_artist_id) if site_artist_id is not None else None,
     }
 
 

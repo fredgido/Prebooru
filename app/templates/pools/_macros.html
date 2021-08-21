@@ -64,7 +64,10 @@
             <ul>
                 {% for pool_element in item._pools %}
                     <li>
-                        <strong>{{ helpers.base.GeneralLink(pool_element.pool.name, pool_element.pool.show_url) }}</strong>
+                        <strong>
+                            {{ helpers.base.GeneralLink(pool_element.pool.name, pool_element.pool.show_url) }}
+                            [{{ helpers.base.GeneralLink("%d/%d"|format(pool_element.position1, pool_element.pool.element_count), pool_element.page_url) }}]
+                        </strong>
                         <span class="delete-control">
                             ( <a href="{{ pool_element.delete_url }}" onclick="return Prebooru.deletePool(this)">remove</a> )
                         </span>

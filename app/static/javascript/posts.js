@@ -6,4 +6,10 @@ Posts.createUpload = function(obj) {
         Prebooru.postRequest(obj.href, {'upload[request_url]': url});
     }
     return false;
-}
+};
+
+Posts.copyFileLink = function(obj) {
+    console.log(obj);
+    prompt('Copy file link:', obj.dataset.filePath);
+    return false;
+};

@@ -259,10 +259,8 @@ def ExpungeCacheRecords():
 
 @PREBOORU_APP.route('/check_uploads')
 def check_uploads():
-    if UPLOAD_SEM._value > 0:
-        SCHED.add_job(CheckPendingUploads)
-        return jsonify(True)
-    return jsonify(False)
+    SCHED.add_job(CheckPendingUploads)
+    return jsonify(UPLOAD_SEM._value > 0)
 
 
 # #### Initialization

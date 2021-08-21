@@ -34,6 +34,4 @@ class Notation(JsonModel):
     def append_type(self):
         return self.append_item.__table__.name
 
-    @staticmethod
-    def searchable_attributes():
-        return ['id', 'body', 'created', 'updated', 'artist', 'illust', 'post']
+    searchable_attributes = ['id', 'body', 'created', 'updated', 'artist', 'illust', 'post']

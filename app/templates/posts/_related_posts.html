@@ -1,16 +1,14 @@
 {% if posts | length > 0 %}
     <div id="related-posts">
-        <div class="heading">
-            <div id="related-posts-heading">
-                Related posts
-                {% if post_search_link is not none %}
-                    <a href="{{ post_search_link }}">&raquo;</a>
-                {% endif %}
-            </div>
+        <div id="related-posts-heading" class="heading">
+            Related posts
+            {% if post_search_link is not none %}
+                {{ helpers.base.GeneralLink("&raquo;", post_search_link) }}
+            {% endif %}
         </div>
-        <div id="recent-posts-container">
+        <div id="related-posts-container">
              {% for post in posts %}
-                <div class="recent-post-block">
+                <div class="related-post-block">
                     {{ post_preview(post) }}
                 </div>
             {% else %}

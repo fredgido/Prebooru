@@ -13,7 +13,8 @@ from . import illusts_helper as ILLUST
 
 # ##GLOBAL VARIABLES
 
-HTTP_RG = re.compile(r'(\b(?:http|https)(?::\/{2}[\w]+)(?:[\/|\.]?)(?:[^\s<>\uff08\uff09\u3011\u3000"\[\]]*))', re.ASCII)
+HTTP_RG = re.compile(r'(\b(?:http|https)(?::\/{2}[\w]+)(?:[\/|\.]?)(?:[^\s<>\uff08\uff09\u3011\u3000"\[\]]*))', re.IGNORECASE | re.ASCII)
+SHORTLINK_RG = re.compile(r'\b(booru|artist|illust|post|upload|pool|notation) #(\d+)\b', re.IGNORECASE)
 
 APPEND_ATTRS = ['_pool', 'artist', 'illust', 'post']
 APPEND_KEY_DICT = {
@@ -45,7 +46,20 @@ def ConvertToHTML(notation):
         html_link = '<a href="%s">%s</a>' % (link, link)
         output_html = output_html[:link_match.start()] + html_link + output_html[link_match.end():]
     output_html = re.sub(r'\r?\n', '<br>', output_html)
+    output_html = ConvertShortlinks(output_html)
     return Markup(output_html)
+
+
+def ConvertShortlinks(notation_text):
+    position = 0
+    while True:
+        match = SHORTLINK_RG.search(notation_text, pos=position)
+        if not match:
+            return notation_text
+        link_url = url_for(match.group(1) + '.show_html', id=int(match.group(2)))
+        link = str(GeneralLink(match.group(0), link_url))
+        notation_text = notation_text[:match.start()] + link + notation_text[match.end():]
+        position = match.start() + len(link)
 
 
 # #### Route functions

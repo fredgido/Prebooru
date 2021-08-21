@@ -1,12 +1,12 @@
 # APP/HELPERS/POSTS_HELPER.PY
 
 # ##PYTHON IMPORTS
-from flask import Markup
+from flask import Markup, url_for
 import urllib.parse
 
 # ##LOCAL IMPORTS
 from ..sources.base_source import GetSourceById
-from .base_helper import SearchUrlFor, ExternalLink
+from .base_helper import SearchUrlFor, GeneralLink, ExternalLink
 
 
 # ## GLOBAL VARIABLES
@@ -72,6 +72,27 @@ def DanbooruPostBookmarkletLinks(post):
     return Markup(' | ').join(image_links)
 
 
+def FileLink(post):
+    return GeneralLink("File link", "#", **{'onclick': 'return Posts.copyFileLink(this)', 'data-file-path': post.file_path})
+
+
+def AddToPoolLink(post):
+    return GeneralLink("Add to pool", url_for('pool_element.create_html'), **{'onclick': "return Prebooru.createPool(this, 'post')", 'data-post-id': post.id})
+
+
 def RelatedPostsSearch(post):
     illust_ids_str = ','.join([str(illust.id) for illust in post.illusts])
     return SearchUrlFor('post.index_html', illust_urls={'illust_id': illust_ids_str})
+
+
+def SimilarityPostPoolLink(post):
+    return GeneralLink(post.similar_post_count, url_for('similarity_pool.show_html', id=post.similar_pool_id))
+
+
+def SimilaritySiblingPoolLink(post_data):
+    return GeneralLink(post_data.post.shortlink, url_for('similarity_pool.show_html', id=post_data.element.sibling.pool_id))
+
+
+def DeleteSimilarityElementLink(element):
+    return GeneralLink("remove", element.delete_url, **{'onclick': 'return Posts.deleteSimilarPost(this)', 'class': 'warning-link'})
+

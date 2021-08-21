@@ -171,8 +171,6 @@ class Post(JsonModel):
                 pool._elements.reorder()
             DB.session.commit()
 
-    @staticmethod
-    def searchable_attributes():
-        basic_attributes = ['id', 'width', 'height', 'size', 'file_ext', 'md5', 'created']
-        relation_attributes = ['illust_urls', 'notations', 'errors']
-        return basic_attributes + relation_attributes
+    basic_attributes = ['id', 'width', 'height', 'size', 'file_ext', 'md5', 'created']
+    relation_attributes = ['illust_urls', 'notations', 'errors']
+    searchable_attributes = basic_attributes + relation_attributes

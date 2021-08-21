@@ -154,7 +154,7 @@ def index_json():
 def index_html():
     q = index()
     illust_urls = Paginate(q, request)
-    return render_template("illust_urls/index.html", illust_urls=illust_urls, illust_url=None)
+    return render_template("illust_urls/index.html", illust_urls=illust_urls, illust_url=IllustUrl())
 
 
 # ###### CREATE
@@ -171,7 +171,7 @@ def new_html():
             form.illust_id.data = None
         else:
             HideInput(form, 'illust_id', illust.id)
-    return render_template("illust_urls/new.html", form=form, illust_url=None, illust=illust)
+    return render_template("illust_urls/new.html", form=form, illust_url=IllustUrl(), illust=illust)
 
 
 @bp.route('/illust_urls', methods=['POST'])

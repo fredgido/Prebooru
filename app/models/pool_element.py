@@ -1,6 +1,8 @@
 # APP/MODELS/POOL_ELEMENT.PY
 
 # ##PYTHON IMPORTS
+import math
+from flask import url_for
 from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
@@ -48,9 +50,17 @@ class PoolElement(JsonModel):
     position = DB.Column(DB.Integer, nullable=False)
     type = DB.Column(DB.String(50))
 
-    @staticmethod
-    def searchable_attributes():
-        return ['id', 'pool_id', 'position', 'type']
+    @property
+    def position1(self):
+        # Logic is position 0 based, but the display needs to be position 1 based
+        return self.position + 1
+
+    @property
+    def page_url(self):
+        page = math.ceil(self.position1 / 20)
+        return url_for('pool.show_html', id=self.pool_id, page=page)
+
+    searchable_attributes = ['id', 'pool_id', 'position', 'type', 'post_id', 'illust_id', 'notation_id']
 
     __mapper_args__ = {
         'polymorphic_identity': 'pool_element',

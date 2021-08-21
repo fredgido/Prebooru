@@ -48,6 +48,4 @@ class Tag(JsonModel):
         from .illust import Illust
         return Post.query.join(IllustUrl, Post.illust_urls).join(Illust).join(Tag, Illust.tags).filter(Tag.id == self.id)
 
-    @staticmethod
-    def searchable_attributes():
-        return ['id', 'name']
+    searchable_attributes = ['id', 'name']
