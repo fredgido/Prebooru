@@ -131,7 +131,8 @@ def danbooru_iqdb():
     post = Post.find(post_id)
     if post is None:
         return "Post #d not found." % post_id
-    buffer = PutGetRaw(post.file_path, 'rb')
+    file_path = post.file_path if post.file_ext != 'mp4' else post.sample_path
+    buffer = PutGetRaw(file_path, 'rb')
     files = {
         'search[file]': buffer,
     }
@@ -153,7 +154,8 @@ def saucenao():
     post = Post.find(post_id)
     if post is None:
         return "Post #d not found." % post_id
-    buffer = PutGetRaw(post.file_path, 'rb')
+    file_path = post.file_path if post.file_ext != 'mp4' else post.sample_path
+    buffer = PutGetRaw(file_path, 'rb')
     files = {
         'file': buffer,
     }
@@ -175,7 +177,8 @@ def ascii2d():
     post = Post.find(post_id)
     if post is None:
         return "Post #d not found." % post_id
-    buffer = PutGetRaw(post.file_path, 'rb')
+    file_path = post.file_path if post.file_ext != 'mp4' else post.sample_path
+    buffer = PutGetRaw(file_path, 'rb')
     filename = post.md5 + '.' + post.file_ext
     files = {
         'file': (filename, buffer, 'application/octet-stream')

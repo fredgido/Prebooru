@@ -1,7 +1,11 @@
 {% extends 'layouts/base.html' %}
+{% from 'layouts/_macros.html' import image_select_controls %}
 {% from 'posts/_macros.html' import post_preview %}
 
-{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/similar_posts.css') }}">{% endblock %}
+{% block css %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/similar_pools.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/similar_posts.css') }}">
+{% endblock %}
 
 {% block linkscript %}<script src="{{ url_for('static', filename='javascript/similarity_posts.js') }}"></script>{% endblock %}
 
@@ -9,36 +13,29 @@
 
 {% block content %}
     <div id="similarity-pool-content">
-        <div class="heading" style="font-size: 32px">Similarity Pool: <a href="{{ post.show_url }}">{{ post.shortlink }}</a></div>
-        <div style="margin-top: 1em;">
-            <div id="posts-container" style="">
-                {{ post_preview(post) }}
-            </div>
-            <div style="font-size: 20px; margin-top: 1em;">
-                <strong>Controls:</strong>
-                (
-                <a href="javascript:SelectAll()">All</a> |
-                <a href="javascript:SelectNone()">None</a> | 
-                <a href="javascript:SelectInvert()">Invert</a>
-                )
-                <strong>[ <a style="color: red;" href="javascript:SubmitForm()">DELETE</a> ]</strong>
-            </div>
+        <div id="similarity-pool-heading" class="heading">
+            Similarity Pool: {{ post.show_link }}
+        </div>
+        <div class="similarity-pool-content">
+            {{ post_preview(post) }}
+            {% call image_select_controls() %}
+                <strong>[ <a class="warning-link" href="javascript:SubmitForm()">DELETE</a> ]</strong>
+            {% endcall %}
         </div>
         <form id="form" method="POST" action="{{ url_for('similarity_pool_element.batch_delete_html') }}">
             <div id="similar-posts-container">
                 {% for post_data in elements.items %}
                     <div class="similar-post-block">
                         <div class="input">
-                            <label style="padding: 0.5em; margin-top: 0;" for="similar-post-{{ post_data.post.id }}">
+                            <label for="similar-post-{{ post_data.post.id }}">
                                 <input type="checkbox" class="similar-post-input" id="similar-post-{{ post_data.post.id }}" name="similarity_pool_element[id][]" value="{{ post_data.element.id }}">
                             </label>
                         </div>
-                        <div><strong><a href="{{ url_for('similarity_pool.show_html', id=post_data.element.sibling.pool_id)}}">{{ post_data.post.shortlink }}</strong></a>&emsp;(&thinsp;<a style="color: red;" href="{{ post_data.element.delete_url }}" onclick="return SimilarityPosts.deleteElement(this)">remove</a>&thinsp;)</div>
-                        <article class="post similar-post">
-                            <a href="{{ post_data.post.show_url }}">
-                                <img src="{{ post_data.post.preview_url }}">
-                            </a>
-                        </article>
+                        <div class="similar-post-controls">
+                            <strong>{{ helpers.similarity_pool.SiblingPoolLink(post_data.element, post_data.post) }}</strong>&nbsp;
+                            (&thinsp;{{ helpers.post.DeleteSimilarityElementLink(post_data.element) }}&thinsp;)
+                        </div>
+                        {{ post_preview(post_data.post) }}
                         <div><strong>Score:</strong> {{ post_data.element.score }}</div>
                     </div>
                 {% endfor %}

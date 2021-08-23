@@ -201,6 +201,10 @@ div.notation-block {
 span.notation-list-item {
     word-break: break-word;
 }
+div#image-select-controls {
+    font-size: 20px;
+    margin-top: 1em;
+}
 footer {
     margin: 1.5em;
     padding: 0.5em;

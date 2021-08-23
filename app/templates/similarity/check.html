@@ -1,29 +1,37 @@
 {% extends 'layouts/base.html' %}
 {% from 'posts/_macros.html' import post_preview %}
 
+{% block css %}<link rel="stylesheet" href="{{ url_for('static', filename='styles/similarity.css') }}">{% endblock %}
+
 {% block title %}Similarity results{% endblock %}
 
 {% block content %}
-    <div id="similarity-results-content">
-        <div class="heading" style="font-size: 32px">Similarity results</div>
-        <div style="margin-top: 1em; margin-left: 1em;">
+    <div id="similarity-content">
+        <div id="similarity-heading" class="heading">Similarity results</div>
+        <div id="similarity-results-content">
             {% for similar_result in similar_results %}
-                <div style="margin-top: 1em;">
-                    <div class="heading" style="font-size: 28px;">Image #{{ loop.index }}</div>
-                    <div style="margin-top: 1em; margin-left: 1em;">
-                        <article class="post" style="border: 1px solid lightgrey; padding: 5px;">
-                            <img src="{{ similar_result['cache'] }}" style="max-width: 300px; max-height: 300px; width: auto; height: auto;">
+                <div class="similarity-result-container">
+                    <div class="similarity-result-heading heading">Image #{{ loop.index }}</div>
+                    <div class="similarity-proxy-block">
+                        <article class="proxy-post">
+                            <img src="{{ similar_result.cache }}">
                         </article>
-                        <div style="font-size: 20px; margin-top: 1em;"><strong>Image url:</strong> {{ similar_result['image_url'] }}</div>
+                        <div class="proxy-image-details">
+                            <strong>Image url:</strong> {{ similar_result.image_url }}
+                        </div>
                     </div>
-                    <div style="margin-top: 1em; border: 2px solid #ddd; background-color: #eee; width: 95%; padding: 1em;">
-                        {% for result in similar_result['post_results'] %}
-                            <div style="display: inline-block; border: 1px solid grey; padding: 5px; margin: 5px;">
-                                {{ post_preview(result['post']) }}
-                                <div style="margin-top: 1em; font-size: 18px;"><strong>Score:</strong> {{ result['score']}} </div>
+                    <div class="similarity-result-block">
+                        {% for post_result in similar_result.post_results %}
+                            <div class="similarity-post">
+                                {{ post_preview(post_result.post) }}
+                                <div class="similarity-post-info">
+                                    <strong>Score:</strong> {{ post_result.score }}<br>
+                                    <strong>Type/Size:</strong> {{ post_result.post.file_ext.upper() }} @ {{ post_result.post.size }}<br>
+                                    <strong>Dimensions:</strong> ( {{ post_result.post.width }} x {{ post_result.post.height }} )
+                                </div>
                             </div>
                         {% else %}
-                            <div style="font-size: 20px; font-weight: bold; height: 50px;">No results.</div>
+                            <div class="no-results">No results.</div>
                         {% endfor %}
                     </div>
                 </div>

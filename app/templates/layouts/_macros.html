@@ -82,3 +82,17 @@
         </ul>
     </section>
 {%- endmacro %}
+
+{% macro image_select_controls() -%}
+    <div id="image-select-controls">
+        <strong>Controls:</strong>
+        (
+        <a href="javascript:SelectAll()">All</a> |
+        <a href="javascript:SelectNone()">None</a> | 
+        <a href="javascript:SelectInvert()">Invert</a>
+        )
+        {% if caller is defined %}
+            {{ caller() }}
+        {% endif %}
+    </div>
+{%- endmacro %}

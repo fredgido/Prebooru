@@ -2,6 +2,7 @@
 
 # ## PYTHON IMPORTS
 import requests
+from types import SimpleNamespace
 from flask import Blueprint, request, render_template, abort
 
 # ## LOCAL IMPORTS
@@ -28,10 +29,13 @@ def check():
     data = resp.json()
     if data['error']:
         abort(504, data['message'])
-    for similarity_result in data['similar_results']:
-        post_ids = [result['post_id'] for result in similarity_result['post_results']]
+    similar_results = []
+    for json_result in data['similar_results']:
+        similarity_result = SimpleNamespace(**json_result)
+        similarity_result.post_results = [SimpleNamespace(**post_result) for post_result in similarity_result.post_results]
+        post_ids = [post_result.post_id for post_result in similarity_result.post_results]
         posts = GetPostsByID(post_ids)
-        for result in similarity_result['post_results']:
-            post = next(filter(lambda x: x.id == result['post_id'], posts), None)
-            result['post'] = post
-    return render_template("similarity/check.html", similar_results=data['similar_results'])
+        for post_result in similarity_result.post_results:
+            post_result.post = next(filter(lambda x: x.id == post_result.post_id, posts), None)
+        similar_results.append(similarity_result)
+    return render_template("similarity/check.html", similar_results=similar_results)

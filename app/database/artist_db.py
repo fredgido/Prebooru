@@ -51,7 +51,6 @@ def CreateArtistFromParameters(createparams):
     append_relationships = [relationship for relationship in APPEND_SCALAR_RELATIONSHIPS if relationship[0] in settable_keylist]
     AppendRelationshipCollections(artist, append_relationships, createparams)
     if 'webpages' in createparams:
-        print(artist, createparams['webpages'])
         UpdateArtistWebpages(artist, createparams['webpages'])
     return artist
 

@@ -30,7 +30,7 @@ class NoSource():
 
     @staticmethod
     def GetMediaExtension(url):
-        return GetFileExtension(GetHTTPFilename(url))
+        return GetFileExtension(GetHTTPFilename(url)).replace('jpeg', 'jpg')
 
 
 # ##FUNCTIONS

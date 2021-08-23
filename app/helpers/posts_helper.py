@@ -33,8 +33,11 @@ def SimilarSearchLinks(post, format_url, proxy_url=None):
         encoded_url = urllib.parse.quote_plus(small_url)
         href_url = format_url + encoded_url
         image_links.append(ExternalLink(illust.shortlink, href_url))
-    if len(image_links) == 0 and proxy_url is not None:
-        image_links.append(ExternalLink('file', proxy_url + '?post_id=' + str(post.id)))
+    if len(image_links) == 0:
+        if proxy_url is not None:
+            image_links.append(ExternalLink('file', proxy_url + '?post_id=' + str(post.id)))
+        else:
+            image_links.append('N/A')
     return Markup(' | ').join(image_links)
 
 
