@@ -1,4 +1,5 @@
 {% extends 'pools/_base.html' %}
+{% from 'layouts/_macros.html' import page_navigation %}
 {% from 'pools/_macros.html' import pool_display_block, pool_info_block %}
 
 {% block title %}{{ pool.header }}{% endblock %}
@@ -26,4 +27,4 @@
     </div>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(elements) }}{% endblock %}
+{% block pages %}{{ page_navigation(elements) }}{% endblock %}

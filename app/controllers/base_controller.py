@@ -239,6 +239,18 @@ def SetDefault(indict, key, default):
     indict[key] = indict[key] if (key in indict and indict[key] is not None) else default
 
 
+def BuildUrlArgs(params, permit_list):
+    urlparams = []
+    for key, value in params.items():
+        if key not in permit_list:
+            continue
+        if type(value) is list:
+            for item in value:
+                urlparams.append(urllib.parse.urlencode({key + '[]': item}))
+        elif value is not None:
+            urlparams.append(urllib.parse.urlencode({key: value}))
+    return '&'.join(urlparams)
+
 # #### Private functions
 
 def _CustomOrder(ids, entity):

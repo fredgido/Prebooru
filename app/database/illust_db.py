@@ -121,6 +121,19 @@ def UpdateIllustFromSource(illust, source):
     UpdateIllustFromParameters(illust, updateparams)
 
 
+# ###### Misc
+
+def IllustDeleteCommentary(illust, description_id):
+    retdata = {'error': False, 'descriptions': [commentary.to_json() for commentary in illust.commentaries]}
+    remove_commentary = next((commentary for commentary in illust.commentaries if commentary.id == description_id), None)
+    if remove_commentary is None:
+        return SetError(retdata, "Commentary with description #%d does not exist on illust #%d." % (description_id, illust.id))
+    illust.commentaries.remove(remove_commentary)
+    SESSION.commit()
+    retdata['item'] = illust.to_json()
+    return retdata
+
+
 # #### Query functions
 
 def GetSiteIllust(site_illust_id, site_id):

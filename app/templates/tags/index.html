@@ -1,4 +1,5 @@
 {% extends 'tags/_base.html' %}
+{% from 'layouts/_macros.html' import page_navigation %}
 
 {% block title %}Tags{% endblock %}
 
@@ -21,4 +22,4 @@
     </table>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(tags) }}{% endblock %}
+{% block pages %}{{ page_navigation(tags) }}{% endblock %}

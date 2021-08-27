@@ -29,6 +29,7 @@ from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow, 
 from app.logical.network import GetHTTPFile
 from app.logical.file import LoadDefault, PutGetJSON
 from app.sources.base_source import GetImageSource, NoSource
+from app.database.similarity_pool_element_db import BatchDeleteSimilarityPoolElement
 from app.storage import CACHE_DATA_DIRECTORY
 from app.config import WORKING_DIRECTORY, DATA_FILEPATH, SIMILARITY_PORT
 
@@ -449,37 +450,59 @@ def check_similarity():
         ratio = round(image.width / image.height, 4)
         smatches = SimilarityData.query.filter(SimilarityData.ratio_clause(ratio), SimilarityData.cross_similarity_clause2(image_hash)).all()
         score_results = CheckSimilarMatchScores(smatches, image_hash, request_score)
+        all_post_ids = set(result['post_id'] for result in score_results)
+        final_results = []
+        for post_id in all_post_ids:
+            post_results = [result for result in score_results if result['post_id'] == post_id]
+            if len(post_results) > 1:
+                post_results = sorted(post_results, key=lambda x: x['score'], reverse=True)
+            final_results.append(post_results[0])
+        final_results = sorted(final_results, key=lambda x: x['score'], reverse=True)
         if include_posts:
-            post_ids = [result['post_id'] for result in score_results]
+            post_ids = [result['post_id'] for result in final_results]
             posts = app.models.Post.query.filter(app.models.Post.id.in_(post_ids)).all()
-            for result in score_results:
+            for result in final_results:
                 post = next(filter(lambda x: x.id == result['post_id'], posts), None)
                 result['post'] = post.to_json() if post is not None else post
         normalized_url = source.NormalizedImageUrl(image_url) if not use_original else image_url
-        similar_results.append({'image_url': normalized_url, 'post_results': score_results, 'cache': media.file_url})
+        similar_results.append({'image_url': normalized_url, 'post_results': final_results, 'cache': media.file_url})
     retdata['similar_results'] = similar_results
     return retdata
 
 
 @PREBOORU_APP.route('/generate_similarity.json', methods=['POST'])
 def generate_similarity():
-    post_ids = request.args.getlist('post_ids[]', type=int)
+    post_ids = request.values.getlist('post_ids[]', type=int)
     if post_ids is None:
         return {'error': True, 'message': "Must include post_ids."}
     GENERATE_SEM.acquire()
     print("<generate semaphore acquire>")
+    print(post_ids, request.values)
     try:
         posts = Post.query.filter(Post.id.in_(post_ids)).all()
-        results = SimilarityData.query.filter(SimilarityData.post_id.in_(post_ids)).all()
+        #results = SimilarityData.query.filter(SimilarityData.post_id.in_(post_ids)).all()
+        #print(posts, results)
         for post in posts:
-            simresult = next(filter(lambda x: x.post_id == post.id, results), None)
-            if simresult is None:
-                GeneratePostSimilarity(post)
-            else:
-                RegeneratePostSimilarity(simresult, post)
+            print("Regenerating post #", post.id)
+            SimilarityData.query.filter_by(post_id=post.id).delete()
+            SESSION.commit()
+            GeneratePostSimilarity(post)
+            pool = SimilarityPool.query.filter_by(post_id=post.id).first()
+            if pool is not None and len(pool.elements) > 0:
+                print("Deleting existing pool elements.")
+                BatchDeleteSimilarityPoolElement(pool.elements)
+            sdata_items = SimilarityData.query.filter_by(post_id=post.id).all()
+            PopulateSimilarityPools(sdata_items)
+            #simresult = next(filter(lambda x: x.post_id == post.id, results), None)
+            #if simresult is None:
+            #    GeneratePostSimilarity(post)
+            #else:
+            #    print("Regenerate:")
+            #    RegeneratePostSimilarity(simresult, post)
+            #PopulateSimilarityPools
     finally:
         GENERATE_SEM.release()
-        print("<upload semaphore release>")
+        print("<generate semaphore release>")
     return {'error': False}
 
 

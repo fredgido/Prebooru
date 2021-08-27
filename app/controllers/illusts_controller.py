@@ -11,7 +11,8 @@ from wtforms.validators import DataRequired
 from ..models import Illust, IllustUrl, SiteData, Artist, Post, PoolIllust, PoolPost
 from ..logical.utility import EvalBoolString, IsFalsey
 from ..sources.base_source import GetSourceById, GetIllustRequiredParams
-from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters, UpdateIllustFromSource
+from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters, UpdateIllustFromSource,\
+    IllustDeleteCommentary
 from .base_controller import GetParamsValue, ProcessRequestValues, ShowJson, IndexJson, SearchFilter, DefaultOrder,\
     Paginate, GetDataParams, CustomNameForm, GetOrAbort, GetOrError, SetError, HideInput, IntOrBlank,\
     NullifyBlanks, SetDefault, CheckParamRequirements, ParseArrayParameter, ParseBoolParameter
@@ -192,6 +193,15 @@ def query_create():
     return retdata
 
 
+def delete_commentary(illust):
+    description_id = request.values.get('description_id', type=int)
+    retdata = {'error': False, 'params': {'description_id': description_id}}
+    if description_id is None:
+        return SetError(retdata, "Description ID not set or a bad value.")
+    retdata.update(IllustDeleteCommentary(illust, description_id))
+    return retdata
+
+
 # #### Route functions
 
 # ###### SHOW
@@ -306,4 +316,15 @@ def query_update_html(id):
     source = GetSourceById(illust.site_id)
     UpdateIllustFromSource(illust, source)
     flash("Illust updated.")
+    return redirect(url_for('illust.show_html', id=id))
+
+
+@bp.route('/illusts/<int:id>/commentary', methods=['DELETE'])
+def delete_commentary_html(id):
+    illust = GetOrAbort(Illust, id)
+    results = delete_commentary(illust)
+    if results['error']:
+        flash(results['message'], 'error')
+    else:
+        flash('Commentary deleted.')
     return redirect(url_for('illust.show_html', id=id))

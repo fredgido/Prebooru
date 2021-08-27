@@ -1,4 +1,5 @@
 {% extends 'artist_urls/_base.html' %}
+{% from 'layouts/_macros.html' import page_navigation %}
 
 {% block title %}Artist URLs{% endblock %}
 
@@ -25,4 +26,4 @@
     </table>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(artist_urls) }}{% endblock %}
+{% block pages %}{{ page_navigation(artist_urls) }}{% endblock %}

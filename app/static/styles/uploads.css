@@ -1,4 +1,7 @@
 /****NEW/EDIT Page****/
+div#upload-url-info {
+    margin: 1em;
+}
 input#upload-media-filepath,
 input#upload-sample-filepath {
     width: 100em;
@@ -46,4 +49,51 @@ section#upload-sources {
 div#upload-posts {
     margin-top: 2em;
 }
-/****OTHER****/
+/****INDEX****/
+div.upload-preview {
+    display: grid;
+    grid-template-columns: repeat(2, 0fr);
+}
+div.upload-preview > article.upload-post {
+    width: 150px;
+    height: 150px;
+    padding: 2px;
+}
+div.upload-preview > article.overflow { 
+    background-color: grey;
+    padding: 5px;
+}
+div.upload-preview > article.overflow > span {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+div.upload-preview > span.explanation {
+    width: 150px;
+}
+div.upload-preview img {
+    max-width: 150px;
+    max-height: 150px;
+}
+/****SELECT****/
+div.select-image-block {
+    border: 1px solid #EEE;
+    padding: 5px;
+    display: inline-block;
+    margin: 5px;
+}
+div.select-image-block div.input label {
+    padding: 0.5em;
+    margin-top: 0;
+}
+div.select-image-block div.missing-image {
+    font-size: 150%;
+    font-style: italic;
+    color: grey;
+    margin-bottom: 1em;
+}
+div.select-image-block div.full-url {
+    font-size: 125%;
+    text-align: left;
+    word-break: break-word;
+}

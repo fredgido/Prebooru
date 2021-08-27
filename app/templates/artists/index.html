@@ -1,5 +1,5 @@
 {% extends 'artists/_base.html' %}
-{% from 'layouts/_macros.html' import simple_list %}
+{% from 'layouts/_macros.html' import simple_list, page_navigation %}
 
 {% block title %}Artists{% endblock %}
 
@@ -40,4 +40,4 @@
     </table>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(artists) }}{% endblock %}
+{% block pages %}{{ page_navigation(artists) }}{% endblock %}

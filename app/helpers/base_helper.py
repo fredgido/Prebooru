@@ -91,7 +91,7 @@ def FormIterator(form):
             description = kwargs['description'] if 'description' in kwargs else field.description
             if description:
                 built_markup += DescriptionText(description)
-            classlist = ['input'] + kwargs['classlist'] if 'classlist' in kwargs else []
+            classlist = ['input'] + (kwargs['classlist'] if 'classlist' in kwargs else [])
             return AddContainer('div', built_markup, classlist=classlist)
 
         yield field_name, _builder
@@ -153,10 +153,16 @@ def PageNavigation(paginate):
     pages += list(range(left, right + 1))
     pages += ['...'] if right != penultimate_page else []
     pages += [last_page] if last_page > 1 else []
-    return Markup(render_template("layouts/_paginator.html", prev_page=previous_page, current_page=current_page, next_page=next_page, pages=pages))
+    return previous_page, current_page, next_page, pages
 
 
 # #### Misc functions
+
+def EndpointClasses(request):
+    controller, action = [item.replace('_', '-') for item in request.endpoint.split('.')]
+    controller = 'c-' + controller
+    action = 'a-' + action.replace('-html', "")
+    return controller + ' ' + action
 
 def HasErrorMessages(messages):
     return any((category, message) for (category, message) in messages if category == 'error')

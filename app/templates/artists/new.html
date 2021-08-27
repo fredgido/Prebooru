@@ -5,9 +5,7 @@
 
 {% block content %}
     <div class="form-heading heading">New Artist</div>
-    {% call render_form(form, 'POST', artist.create_url) %}
-        {% for _, field_input in helpers.base.FormIterator(form) %}
-            {{ field_input() }}
-        {% endfor %}
+    {% call(field_name, field_input) render_form(form, 'POST', artist.create_url) %}
+        {{ field_input() }}
     {% endcall %}
 {% endblock %}

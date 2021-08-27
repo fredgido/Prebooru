@@ -98,15 +98,11 @@ def create(get_request=False):
     dataparams = GetDataParams(request, 'upload')
     createparams = ConvertCreateParams(dataparams)
     retdata = {'error': False, 'data': createparams, 'params': dataparams}
-    print("Create params:", request.values, dataparams, createparams)
     errors = CheckCreateParams(createparams, request_url_only)
-    print("Errors:", errors)
     if len(errors) > 0:
         return SetError(retdata, '\n'.join(errors))
-    # print("Image URLS:", image_urls_only, ['image_urls'])
     if image_urls_only and len(createparams['image_urls']) == 0:
         return SetError(retdata, "No image URLs set!")
-    # return SetError(retdata, "BREAKPOINT")
     if not force_download:
         check_upload = UniquenessCheck(createparams)
         if check_upload is not None:
@@ -130,7 +126,7 @@ def upload_select():
     dataparams = GetDataParams(request, 'upload')
     selectparams = ConvertDataParams(dataparams)
     retdata = {'error': False, 'data': selectparams, 'params': dataparams}
-    errors = CheckParamRequirements(selectparams, ['request_url'])
+    errors = CheckCreateParams(selectparams, True)
     if len(errors):
         return SetError(retdata, '\n'.join(errors))
     source = GetPostSource(selectparams['request_url'])
@@ -228,16 +224,10 @@ def create_json():
 
 @bp.route('/uploads/all', methods=['GET'])
 def upload_all_html():
-    no_process = request.values.get('noprocess', type=EvalBoolString)
-    if not no_process:
-        results = create(True)
-        if results['error']:
-            flash(results['message'], 'error')
-            form = GetUploadForm(**results['data'])
-            return render_template("uploads/all.html", form=form, upload=Upload())
-    else:
-        print("No process!")
-        form = GetUploadForm(request_url=request.values.get('upload[request_url]'))
+    results = create(True)
+    if results['error']:
+        flash(results['message'], 'error')
+        form = GetUploadForm(**results['data'])
         return render_template("uploads/all.html", form=form, upload=Upload())
     return redirect(url_for('upload.show_html', id=results['item']['id']))
 

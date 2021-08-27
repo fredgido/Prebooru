@@ -65,3 +65,28 @@ span.thin-list {
     position: relative;
     left: -8px;
 }
+div.illust-preview {
+    display: grid;
+    grid-template-columns: repeat(2, 0fr);
+}
+div.illust-preview > article {
+    width: 150px;
+    height: 150px;
+    padding: 2px;
+}
+div.illust-preview > article.overflow { 
+    background-color: grey;
+    padding: 5px;
+}
+div.illust-preview > article.overflow > span {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+div.illust-preview > span.explanation {
+    width: 150px;
+}
+div.illust-preview img {
+    max-width: 150px;
+    max-height: 150px;
+}

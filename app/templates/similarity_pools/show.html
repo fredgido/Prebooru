@@ -1,5 +1,5 @@
 {% extends 'layouts/base.html' %}
-{% from 'layouts/_macros.html' import image_select_controls %}
+{% from 'layouts/_macros.html' import image_select_controls, page_navigation %}
 {% from 'posts/_macros.html' import post_preview %}
 
 {% block css %}
@@ -18,7 +18,7 @@
         </div>
         <div class="similarity-pool-content">
             {{ post_preview(post) }}
-            {% call image_select_controls() %}
+            {% call image_select_controls('similar-post-input') %}
                 <strong>[ <a class="warning-link" href="javascript:SubmitForm()">DELETE</a> ]</strong>
             {% endcall %}
         </div>
@@ -43,7 +43,7 @@
         </form>
     </div>
 {% endblock %}
-{% block pages %}{{ helpers.base.PageNavigation(elements) }}{% endblock %}
+{% block pages %}{{ page_navigation(elements) }}{% endblock %}
 
 {% block pagescript %}
 <script>
@@ -51,21 +51,6 @@
         if (confirm("Remove posts from similarity pool?")) {
             document.getElementById('form').submit();
         }
-    }
-    function SelectAll() {
-        [...document.getElementsByClassName('similar-post-input')].forEach((input)=>{
-            input.checked = true;
-        });
-    }
-    function SelectNone() {
-        [...document.getElementsByClassName('similar-post-input')].forEach((input)=>{
-            input.checked = false;
-        });
-    }
-    function SelectInvert() {
-        [...document.getElementsByClassName('similar-post-input')].forEach((input)=>{
-            input.checked = !input.checked;
-        });
     }
 </script>
 {% endblock %}

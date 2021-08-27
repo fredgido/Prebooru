@@ -1,4 +1,6 @@
 {% extends 'uploads/_base.html' %}
+{% from 'layouts/_macros.html' import page_navigation %}
+{% from 'posts/_macros.html' import multi_post_preview %}
 
 {% block title %}Upload # {{ upload.id }}{% endblock %}
 
@@ -6,10 +8,9 @@
     <table id="uploads-table" class="striped" width="100%">
         <thead>
             <tr>
-                <th>ID</th>
+                <th width="1%">Preview</th>
                 <th>Info</th>
                 <th>Urls</th>
-                <th>Posts</th>
                 <th>Errors</th>
                 <th>Status</th>
                 <th>Uploaded</th>
@@ -19,24 +20,18 @@
             {% for upload in uploads.items %}
                 {% set outer_loop = loop %}
                 <tr id="upload-{{ upload.id }}">
-                    <td><a href="{{ upload.show_url }}">upload #{{ upload.id }}</a></td>
+                    <td>{{ multi_post_preview(upload, 'upload') }}</td>
                     <td>
+                        <span><strong>{{ upload.show_link }} {{ helpers.base.GeneralLink('&raquo;', helpers.upload.PostSearch(upload)) }}</strong></span><br>
                         <span><strong>Type:</strong> {{ upload.type }}</span><br>
                         <span><strong>Successes:</strong> {{ upload.successes }}</span><br>
                         <span><strong>Failures:</strong> {{ upload.failures }}</span>
                     </td>
                     <td>
-                        <span><strong>Request:</strong> {{ upload.request_url }}</span><br>
+                        <span><strong>Request:</strong> {{ helpers.base.UrlLink(upload.request_url) }}</span><br>
                         <span><strong>Image urls:</strong></span>
                         {% for image_url in upload.image_urls%}
-                            <br>&emsp;{{ image_url.url }}
-                        {% else %}
-                            <em>none</em>
-                        {% endfor %}
-                    </td>
-                    <td>
-                        {% for post in upload.posts %}
-                            <a href="{{ post.show_url }}">post #{{ post.id }}</a>&emsp;
+                            <br>&emsp;{{ helpers.base.UrlLink(image_url.url) }}
                         {% else %}
                             <em>none</em>
                         {% endfor %}
@@ -60,4 +55,4 @@
     </table>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(uploads) }}{% endblock %}
+{% block pages %}{{ page_navigation(uploads) }}{% endblock %}

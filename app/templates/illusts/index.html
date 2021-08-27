@@ -1,5 +1,6 @@
 {% extends 'illusts/_base.html' %}
-{% from 'illusts/_macros.html' import illust_preview %}
+{% from 'layouts/_macros.html' import page_navigation %}
+{% from 'posts/_macros.html' import multi_post_preview %}
 {% from 'tags/_macros.html' import simple_tag_list %}
 
 {% block title %}Illusts{% endblock %}
@@ -20,10 +21,10 @@
                 {% set outer_loop = loop %}
                 <tr id="illust-{{ illust.id }}">
                     <td>
-                        {{ illust_preview(illust) }}
+                        {{ multi_post_preview(illust, 'illust') }}
                     </td>
                     <td>
-                        {{ illust.show_link }} {{ helpers.base.GeneralLink('&raquo;', helpers.illust.PostIllustSearch(illust)) }}<br>
+                        <span><strong>{{ illust.show_link }} {{ helpers.base.GeneralLink('&raquo;', helpers.illust.PostIllustSearch(illust)) }}</strong></span><br>
                         <span><strong>Domain:</strong> {{ illust.site_domain }}</span><br>
                         <span><strong>Site ID:</strong> {{ illust.site_illust_id }}</span><br>
                     </td>
@@ -34,11 +35,13 @@
                     </td>
                     <td>
                          {% for illust_url in illust.urls %}
-                            {{ helpers.base.UrlLink(illust_url.full_url) }}
-                            {% if not loop.last %}
+                            {% if loop.index == 8 %}
+                                ......<br>
+                            {% elif loop.index < 8 %}
+                                {{ helpers.base.UrlLink(illust_url.full_url) }}<br>
+                            {% endif %}
+                            {% if loop.last %}
                                 <br>
-                            {% else %}
-                                <br><br>
                                 <strong>{{ helpers.base.GeneralLink("&laquo;Search&raquo;", helpers.base.SearchUrlFor('illust_url.index_html', illust_id=illust.id)) }}</strong>
                             {% endif %}
                         {% else %}
@@ -56,4 +59,4 @@
     </table>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(illusts) }}{% endblock %}
+{% block pages %}{{ page_navigation(illusts) }}{% endblock %}

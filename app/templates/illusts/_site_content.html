@@ -43,7 +43,11 @@
             <div id="illust-commentaries-container">
                 {% call(commentary) items_block(illust.commentaries, 'commentaries') %}
                     <div class="illust-commentaries-block">
+                        <span class="illust-commentary-delete">
+                            (&thinsp;<a class="warning-link" href="{{ url_for('illust.delete_commentary_html', id=illust.id, description_id=commentary.id) }}" onclick="return Prebooru.deleteConfirm(this)">remove</a>&thinsp;)
+                        </span>
                         {{ helpers.base.ConvertStrToHTML(commentary.body) }}
+                    </div>
                 {% endcall %}
             </div>
         </section>

@@ -20,8 +20,9 @@ bp = Blueprint("tag", __name__)
 def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
+    negative_search = GetParamsValue(params, 'not', True)
     q = Tag.query
-    q = SearchFilter(q, search)
+    q = SearchFilter(q, search, negative_search)
     q = DefaultOrder(q, search)
     return q
 

@@ -8,6 +8,13 @@ Posts.createUpload = function(obj) {
     return false;
 };
 
+Posts.regenerateSimilarity = function(obj) {
+    if (confirm("Regenerate similarity data and pools?")) {
+        Prebooru.postRequest(obj.href);
+    }
+    return false;
+};
+
 Posts.copyFileLink = function(obj) {
     console.log(obj);
     prompt('Copy file link:', obj.dataset.filePath);

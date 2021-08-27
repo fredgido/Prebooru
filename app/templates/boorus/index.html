@@ -1,5 +1,5 @@
 {% extends 'boorus/_base.html' %}
-{% from 'layouts/_macros.html' import simple_list %}
+{% from 'layouts/_macros.html' import simple_list, page_navigation %}
 
 {% block title %}Boorus{% endblock %}
 
@@ -32,4 +32,4 @@
     </table>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(boorus) }}{% endblock %}
+{% block pages %}{{ page_navigation(boorus) }}{% endblock %}

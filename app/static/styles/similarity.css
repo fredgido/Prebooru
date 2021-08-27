@@ -2,6 +2,21 @@
 div#similarity-heading {
     font-size: 32px;
 }
+form#form.hidden {
+    display: none;
+}
+textarea#similarity-urls {
+    width: 50em;
+    height: 4em;
+}
+input#similarity-score {
+    width: 5em;
+}
+div#display-form {
+    padding: 1em 0 0 1em;
+    font-size: 20px;
+    font-weight: bold;
+}
 div#similarity-results-content {
     margin-top: 1em;
     margin-left: 1em;

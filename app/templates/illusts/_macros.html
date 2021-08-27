@@ -1,25 +1,5 @@
 {% from 'tags/_macros.html' import tag_list %}
 
-{% macro illust_preview(illust) -%}
-    <div class="illust-preview">
-        {% for post in illust.posts %}
-            {% if (loop.index == 4) and ((illust.posts | length) > 4) %}
-                <article class="illust-post" style="background-color: grey; padding: 5px;">
-                    <span style="font-size: 20px; font-weight: bold; color: white">{{ illust.posts | length - 3 }} more posts available</span>
-                </article>
-                {% break %}
-            {% endif %}
-            <article class="illust-post">
-                <a href="{{ post.show_url }}">
-                    <img src="{{ post.preview_url }}">
-                </a>
-            </article>
-        {% else %}
-            <span class="explanation">There are no posts.</span>
-        {% endfor %}
-    </div>
-{%- endmacro %}
-
 {% macro illusts_display(illust_search_url, illust_count, section_id, section=True) -%}
     {% if section %}
         {% set container_tag = 'section' %}

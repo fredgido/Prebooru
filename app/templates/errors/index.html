@@ -1,4 +1,5 @@
 {% extends 'errors/_base.html' %}
+{% from 'layouts/_macros.html' import page_navigation %}
 
 {% block title %}Errors{% endblock %}
 
@@ -25,4 +26,4 @@
     </table>
 {% endblock %}
 
-{% block pages %}{{ helpers.base.PageNavigation(errors) }}{% endblock %}
+{% block pages %}{{ page_navigation(errors) }}{% endblock %}

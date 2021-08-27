@@ -1,15 +1,16 @@
 # APP\CONTROLLERS\POSTS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template
+from flask import Blueprint, request, render_template, redirect, url_for, flash
 from sqlalchemy import not_, or_
 from sqlalchemy.orm import lazyload
 
 # ## LOCAL IMPORTS
 from ..models import Post, Illust, IllustUrl, PoolPost, PoolIllust
 from ..logical.utility import EvalBoolString, IsFalsey
+from ..sources.local_source import SimilarityRegeneratePost
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
-    DefaultOrder, GetOrAbort
+    DefaultOrder, GetOrAbort, GetOrError
 
 
 # ## GLOBAL VARIABLES
@@ -86,3 +87,19 @@ def index_html():
     q = index()
     posts = Paginate(q, request)
     return render_template("posts/index.html", posts=posts, post=Post())
+
+
+# ###### MISC
+
+@bp.route('/posts/<int:id>/regenerate', methods=['GET'])
+def regenerate_html(id):
+    post = GetOrError
+    if type(post) is dict:
+        flash(post['message'], 'error')
+    else:
+        results = SimilarityRegeneratePost(id)
+        if results['error']:
+            flash(results['error'], 'error')
+        else:
+            flash("Similarity regenerated.")
+    return redirect(url_for('post.show_html', id=id))

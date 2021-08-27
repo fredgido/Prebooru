@@ -28,6 +28,12 @@
                 <li><a href="{{ url_for('notation.new_html') }}">New</a></li>
             </ul>
         </section>
+        <section id="static-tags">
+            <h4>Tags</h4>
+            <ul>
+                <li><a href="{{ url_for('tag.index_html') }}">Listing</a></li>
+            </ul>
+        </section>
         <section id="static-pools">
             <h4>Pools</h4>
             <ul>
@@ -42,7 +48,7 @@
             </ul>
         </section>
     </div>
-    <div id="static-local-data">
+    <div id="static-site-data">
         <h3>Site data</h3>
         <section id="static-boorus">
             <h4>Boorus</h4>
@@ -76,6 +82,15 @@
             <ul>
                 <li><a href="{{ url_for('illust_url.index_html') }}">Listing</a></li>
                 <li><a href="{{ url_for('illust_url.new_html') }}">New</a></li>
+            </ul>
+        </section>
+    </div>
+    <div id="static-other">
+        <h3>Other</h3>
+        <section id="static-illust-urls">
+            <h4>Tools</h4>
+            <ul>
+                <li><a href="{{ url_for('similarity.check_html') }}">Check Similarity</a></li>
             </ul>
         </section>
     </div>

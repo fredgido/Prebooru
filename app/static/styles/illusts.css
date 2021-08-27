@@ -93,16 +93,24 @@ div#illust-commentaries-container {
 }
 div.illust-commentaries-block {
     margin: 0.5em;
+    padding-right: 5em;
+    position: relative;
+}
+span.illust-commentary-delete {
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 div#illust-posts {
     margin-top: 2em;
 }
 div#image-posts-container {
     display: flex;
+    flex-wrap: wrap;
 }
 div.image-post {
     width: 25%;
-    padding-right: 0.5em;
+    margin-top: 1em;
 }
 div.image-post-info {
     height: 100px;
@@ -124,4 +132,29 @@ div.no-post-preview {
 /****INDEX Page****/
 div.simple-tags-container {
     max-width: 25vw;
+}
+div.illust-preview {
+    display: grid;
+    grid-template-columns: repeat(2, 0fr);
+}
+div.illust-preview > article {
+    width: 150px;
+    height: 150px;
+    padding: 2px;
+}
+div.illust-preview > article.overflow { 
+    background-color: grey;
+    padding: 5px;
+}
+div.illust-preview > article.overflow > span {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+div.illust-preview > span.explanation {
+    width: 150px;
+}
+div.illust-preview img {
+    max-width: 150px;
+    max-height: 150px;
 }

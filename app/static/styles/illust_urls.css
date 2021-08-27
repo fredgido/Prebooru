@@ -22,11 +22,11 @@ div#illust-url-content {
     margin-top: 1em;
 }
 /****INDEX Page****/
-div#illust-urls-table article.post {
+table#illust-urls-table article.post {
     width: 204px;
     height: 204px;
 }
-div#illust-urls-table article.post img {
+table#illust-urls-table article.post img {
     max-height: 200px;
     max-width: 200px;
 }

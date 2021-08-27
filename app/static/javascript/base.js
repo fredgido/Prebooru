@@ -38,7 +38,7 @@ Prebooru.deleteConfirm = function(obj) {
         Prebooru.linkDelete(obj);
     }
     return false;
-}
+};
 
 Prebooru.createPool = function (obj, type) {
     let item_id = obj.dataset[type + 'Id'];
@@ -47,11 +47,29 @@ Prebooru.createPool = function (obj, type) {
         Prebooru.postRequest(obj.href, {'pool_element[pool_id]': pool_id, [`pool_element[${type}_id]`]: item_id});
     }
     return false;
-}
+};
 
 Prebooru.deletePool = function(obj) {
     if (confirm('Remove item from pool?')) {
         Prebooru.linkDelete(obj);
     }
     return false;
-}
+};
+
+Prebooru.selectAll = function(classname) {
+    [...document.getElementsByClassName(classname)].forEach((input)=>{
+        input.checked = true;
+    });
+};
+
+Prebooru.selectNone = function(classname) {
+    [...document.getElementsByClassName(classname)].forEach((input)=>{
+        input.checked = false;
+    });
+};
+
+Prebooru.selectInvert = function(classname) {
+    [...document.getElementsByClassName(classname)].forEach((input)=>{
+        input.checked = !input.checked;
+    });
+};

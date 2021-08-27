@@ -75,8 +75,12 @@ def DanbooruPostBookmarkletLinks(post):
     return Markup(' | ').join(image_links)
 
 
+def RegenerateSimilarityLink(post):
+    return GeneralLink("Regenerate similarity", url_for('post.regenerate_html', id=post.id), **{'onclick': "return Post.regenerateSimilarity(this)"})
+
+
 def FileLink(post):
-    return GeneralLink("File link", "#", **{'onclick': 'return Posts.copyFileLink(this)', 'data-file-path': post.file_path})
+    return GeneralLink("Copy file link", "#", **{'onclick': 'return Posts.copyFileLink(this)', 'data-file-path': post.file_path})
 
 
 def AddToPoolLink(post):
@@ -93,7 +97,7 @@ def SimilarityPostPoolLink(post):
 
 
 def SimilaritySiblingPoolLink(post_data):
-    return GeneralLink(post_data.post.shortlink, url_for('similarity_pool.show_html', id=post_data.element.sibling.pool_id))
+    return GeneralLink(post_data.post.shortlink, url_for('similarity_pool.show_html', id=post_data.element.sibling.pool_id)) if post_data.element.sibling is not None else "Sibling missing"
 
 
 def DeleteSimilarityElementLink(element):

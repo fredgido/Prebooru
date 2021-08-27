@@ -10,6 +10,26 @@
     </article>
 {%- endmacro %}
 
+{% macro multi_post_preview(item, type) -%}
+    <div class="{{ type }}-preview">
+        {% for post in item.posts %}
+            {% if (loop.index == 4) and ((item.posts | length) > 4) %}
+                <article class="overflow">
+                    <span>{{ item.posts | length - 3 }} more posts available</span>
+                </article>
+                {% break %}
+            {% endif %}
+            <article class="{{ type }}-post">
+                <a href="{{ post.show_url }}">
+                    <img src="{{ post.preview_url }}">
+                </a>
+            </article>
+        {% else %}
+            <span class="explanation">There are no posts.</span>
+        {% endfor %}
+    </div>
+{%- endmacro %}
+
 {% macro recent_posts(posts, post_count=None, post_search=None) -%}
     <div class="heading">
         <div id="recent-posts-heading">

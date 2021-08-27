@@ -172,5 +172,5 @@ class Post(JsonModel):
             DB.session.commit()
 
     basic_attributes = ['id', 'width', 'height', 'size', 'file_ext', 'md5', 'created']
-    relation_attributes = ['illust_urls', 'notations', 'errors']
+    relation_attributes = ['illust_urls', 'uploads', 'notations', 'errors']
     searchable_attributes = basic_attributes + relation_attributes

@@ -15,16 +15,15 @@
             {% block secondary_links %}{% endblock %}
         </nav>
     </header>
-    <section id="content">
+    <section id="content" class="{{ helpers.base.EndpointClasses(request) }}">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div id="notice" style="position: fixed; top: 1em; left: 25%; width: 50%; z-index: 9999; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);">
+                <div id="notice">
                     {% for category, message in messages %}
-                        {# Use CSS class styles for the following instead. #}
                         {% if category == 'error' %}
-                            <div class="notice-error" style="padding: .5em; background: #fbe3e3; border: 1px solid #ffc3c3;">{{ message }}</div>
+                            <div class="notice-error">{{ message }}</div>
                         {% else %}
-                            <div class="notice-{{ category }}" style="padding: .5em; background: #fdf6e6; border: 1px solid #f7e7c3;">{{ message }}</div>
+                            <div class="notice-{{ category }}">{{ message }}</div>
                         {% endif %}
                     {% endfor %}
                 </div>
@@ -42,6 +41,6 @@
         {% block pagescript %}{% endblock %}
     </section>
     <footer>
-        <div>Prebooru / <a href="https://github.com/brokeneagle/prebooru">Github</a></div>
+        <div>Prebooru / <a href="https://github.com/BrokenEagle/prebooru">Github</a></div>
     </footer>
 </body>

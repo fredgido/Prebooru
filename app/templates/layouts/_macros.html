@@ -83,16 +83,44 @@
     </section>
 {%- endmacro %}
 
-{% macro image_select_controls() -%}
+{% macro image_select_controls(classname) -%}
     <div id="image-select-controls">
         <strong>Controls:</strong>
         (
-        <a href="javascript:SelectAll()">All</a> |
-        <a href="javascript:SelectNone()">None</a> | 
-        <a href="javascript:SelectInvert()">Invert</a>
+        <a href="javascript:Prebooru.selectAll('{{ classname }}')">All</a> |
+        <a href="javascript:Prebooru.selectNone('{{ classname }}')">None</a> | 
+        <a href="javascript:Prebooru.selectInvert('{{ classname }}')">Invert</a>
         )
         {% if caller is defined %}
             {{ caller() }}
         {% endif %}
     </div>
+{%- endmacro %}
+
+{% macro page_navigation(pagination) -%}
+    {% with previous_page, current_page, next_page, pages = helpers.base.PageNavigation(pagination) %}
+        <div class="paginator numbered-paginator">
+            {% if prev_page is none %}
+                <span>&lt;</span>
+            {% else %}
+                <a href="{{ helpers.base.UrlForWithArgs(request.endpoint, page=prev_page) }}">&lt;</a>
+            {% endif %}
+
+            {% for page in pages %}
+                {% if page == "..." %}
+                    <span>...</span>
+                {% elif page == current_page %}
+                    <span>{{ current_page }}</span>
+                {% else %}
+                    <a href="{{ helpers.base.UrlForWithArgs(request.endpoint, page=page) }}">{{ page }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if next_page is none %}
+                <span>&gt;</span>
+            {% else %}
+                <a href="{{ helpers.base.UrlForWithArgs(request.endpoint, page=next_page) }}">&gt;</a>
+            {% endif %}
+        </div>
+    {% endwith %}
 {%- endmacro %}

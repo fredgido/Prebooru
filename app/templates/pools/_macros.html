@@ -1,5 +1,4 @@
-{% from "illusts/_macros.html" import illust_preview %}
-{% from 'posts/_macros.html' import post_preview %}
+{% from 'posts/_macros.html' import post_preview, multi_post_preview %}
 {% from 'notations/_macros.html' import notationlist %}
 
 {% macro itemlist(item_ids, item_type) -%}
@@ -20,7 +19,7 @@
             {{ post_preview(item) }}
         {% elif helpers.pool.ItemIsOfType(item, 'illust') %}
             {% if item.type == 'image' %}
-                {{ illust_preview(item) }}
+                {{ multi_post_preview(item, 'illust') }}
             {% elif item.type == 'video' %}
                 {{ post_preview(item.video_illust_url.post) }}
             {% endif %}

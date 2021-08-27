@@ -21,3 +21,11 @@ def SimilarityCheckPosts():
         requests.get('http://127.0.0.1:%d/check_posts' % SIMILARITY_PORT, timeout=2)
     except Exception as e:
         print("Unable to contact similarity server:", e)
+
+
+def SimilarityRegeneratePost(post_id):
+    try:
+        requests.get('http://127.0.0.1:%d/check_posts' % SIMILARITY_PORT, timeout=2)
+    except Exception as e:
+        return {'error': True, 'message': "Unable to contact similarity server: %s" % str(e)}
+    return {'error': False}
