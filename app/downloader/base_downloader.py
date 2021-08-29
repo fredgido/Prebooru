@@ -109,8 +109,11 @@ def CheckImageDimensions(image, image_illust_url, post_errors):
 def CheckVideoDimensions(filepath, video_illust_url, post_errors):
     try:
         probe = ffmpeg.probe(filepath)
+    except FileNotFoundError:
+        CreatePostError('utility.downloader.CheckVideoDimensions', "Must install ffprobe.exe. See Github page for details.", post_errors)
+        return video_illust_url.width, video_illust_url.height
     except Exception as e:
-        CreatePostError('utility.downloader.CheckVideoDimensions', "Error reading video metadata: %e" % e, post_errors)
+        CreatePostError('utility.downloader.CheckVideoDimensions', "Error reading video metadata: %s" % e, post_errors)
         return video_illust_url.width, video_illust_url.height
     video_stream = next(filter(lambda x: x['codec_type'] == 'video', probe['streams']), None)
     if video_stream is None:

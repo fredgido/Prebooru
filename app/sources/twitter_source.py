@@ -40,6 +40,8 @@ SITE_ID = Site.TWITTER.value
 
 HAS_TAG_SEARCH = True
 
+TWITTER_HEADERS = None
+
 
 # #### Regex variables
 
@@ -491,10 +493,10 @@ def Prework(site_illust_id):
 def LoadGuestToken():
     global TOKEN_TIMESTAMP
     try:
-        TOKEN_TIMESTAMP = os.path.getmtime(TOKEN_FILE)
+        TOKEN_TIMESTAMP = os.path.getmtime(TOKEN_FILE) if os.path.exists(TOKEN_FILE) else None
         data = LoadDefault(TOKEN_FILE, {"token": None})
         print(data, type(data), type(data['token']))
-        return str(data['token'])
+        return str(data['token']) if data['token'] is not None else None
     except Exception:
         return None
 
@@ -506,7 +508,7 @@ def SaveGuestToken(guest_token):
 def CheckTokenFile():
     global TOKEN_TIMESTAMP
     last_timestamp = TOKEN_TIMESTAMP if 'TOKEN_TIMESTAMP' in globals() else None
-    TOKEN_TIMESTAMP = os.path.getmtime(TOKEN_FILE)
+    TOKEN_TIMESTAMP = os.path.getmtime(TOKEN_FILE) if os.path.exists(TOKEN_FILE) else None
     return last_timestamp == TOKEN_TIMESTAMP
 
 
@@ -514,18 +516,20 @@ def CheckTokenFile():
 
 def CheckGuestAuth(func):
     def wrapper(*args, **kwargs):
-        if 'twitter_headers' not in globals() or twitter_headers is None or not CheckTokenFile():
+        print("CheckGuestAuth:", TWITTER_HEADERS is None, not CheckTokenFile())
+        if TWITTER_HEADERS is None or not CheckTokenFile():
             AuthenticateGuest()
         return func(*args, **kwargs)
     return wrapper
 
 
 def AuthenticateGuest(override=False):
-    global twitter_headers
-    twitter_headers = {
+    global TWITTER_HEADERS
+    TWITTER_HEADERS = {
         'authorization': 'Bearer %s' % TWITTER_GUEST_AUTH
     }
     guest_token = LoadGuestToken() if not override else None
+    print("AuthenticateGuest", guest_token, type(guest_token), guest_token is None)
     if guest_token is None:
         print("Authenticating as guest...")
         data = TwitterRequest('https://api.twitter.com/1.1/guest/activate.json', 'POST')
@@ -533,7 +537,7 @@ def AuthenticateGuest(override=False):
         SaveGuestToken(guest_token)
     else:
         print("Loaded guest token from file.")
-    twitter_headers['x-guest-token'] = guest_token
+    TWITTER_HEADERS['x-guest-token'] = guest_token
 
 
 def ReauthenticationCheck(response):
@@ -563,7 +567,7 @@ def TwitterRequest(url, method='GET'):
     reauthenticated = False
     for i in range(3):
         try:
-            response = REQUEST_METHODS[method](url, headers=twitter_headers, timeout=10)
+            response = REQUEST_METHODS[method](url, headers=TWITTER_HEADERS, timeout=10)
         except (requests.exceptions.ReadTimeout, requests.exceptions.ConnectionError) as e:
             if i == 2:
                 print("Connection errors exceeded!")

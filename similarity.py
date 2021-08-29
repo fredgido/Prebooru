@@ -191,7 +191,7 @@ def GeneratePostSimilarity(post):
 
 def ProcessSimilaritySet():
     print("ProcessSimilaritySet")
-    max_post_id = SESSION.query(func.max(SimilarityData.post_id)).scalar()
+    max_post_id = SESSION.query(func.max(SimilarityData.post_id)).scalar() or 0
     page = Post.query.filter(Post.id > max_post_id).paginate(per_page=100)
     if len(page.items) == 0:
         return False
@@ -287,7 +287,7 @@ def CreateSimilarityPairings(post_id, score_results, main_pool, sibling_pools, i
 
 def ProcessSimilarityPool():
     print("ProcessSimilarityPool")
-    max_post_id = SESSION.query(func.max(SimilarityPool.post_id)).scalar()
+    max_post_id = SESSION.query(func.max(SimilarityPool.post_id)).scalar() or 0
     page = Post.query.filter(Post.id > max_post_id).with_entities(Post.id).paginate(per_page=100)
     while True:
         print("\n%d/%d" % (page.page, page.pages))
@@ -309,7 +309,7 @@ def GenerateSimilarityResults(args):
     if args.expunge:
         SimilarityData.query.delete()
         SESSION.commit()
-    max_post_id = SESSION.query(func.max(SimilarityData.post_id)).scalar()
+    max_post_id = SESSION.query(func.max(SimilarityData.post_id)).scalar() or 0
     page = Post.query.filter(Post.id > max_post_id).paginate(per_page=100)
     while True:
         print("\n%d/%d" % (page.page, page.pages))
@@ -327,7 +327,7 @@ def GenerateSimilarityPools(args):
         SESSION.commit()
         SimilarityPool.query.delete()
         SESSION.commit()
-    max_post_id = SESSION.query(func.max(SimilarityPool.post_id)).scalar()
+    max_post_id = SESSION.query(func.max(SimilarityPool.post_id)).scalar() or 0
     page = Post.query.filter(Post.id > max_post_id).with_entities(Post.id).paginate(per_page=100)
     while True:
         print("\n%d/%d" % (page.page, page.pages))

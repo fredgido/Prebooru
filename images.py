@@ -2,6 +2,7 @@
 
 # ## PYTHON IMPORTS
 import os
+import sys
 import atexit
 from argparse import ArgumentParser
 from flask import Flask, request, send_from_directory
@@ -12,9 +13,16 @@ from app.storage import IMAGE_DIRECTORY
 from app.config import WORKING_DIRECTORY, DATA_FILEPATH, IMAGE_PORT
 
 
+# #### Python Check
+
+if sys.version_info.major == 3 and sys.version_info.minor < 7:
+    print("Python version must be at least 3.7 to run this application.")
+    exit(-1)
+
+
 # ## GLOBAL VARIABLES
 
-SERVER_PID_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'image-server-pid.json'
+SERVER_PID_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'images-server-pid.json'
 SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
 IMAGES_APP = Flask(__name__)

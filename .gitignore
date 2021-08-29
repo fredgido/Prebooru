@@ -140,3 +140,6 @@ migrations.old/
 junk/
 pythonsave.bat
 projectsave.bat
+ffprobe.exe
+prebooru-install/
+

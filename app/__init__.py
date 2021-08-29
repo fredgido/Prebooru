@@ -2,6 +2,7 @@
 
 # ## PYTHON IMPORTS
 import os
+import sys
 from io import BytesIO
 from types import SimpleNamespace
 from sqlalchemy import event, MetaData
@@ -12,6 +13,12 @@ from werkzeug.wsgi import get_input_stream
 # ## LOCAL IMPORTS
 from .logical import query_extensions
 from .config import DB_PATH, CACHE_PATH, SIMILARITY_PATH
+
+# #### Python Check
+
+if sys.version_info.major == 3 and sys.version_info.minor < 7:
+    print("Python version must be at least 3.7 to run this application.")
+    exit(-1)
 
 
 # ## GLOBAL VARIABLES

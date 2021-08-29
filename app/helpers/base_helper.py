@@ -153,6 +153,7 @@ def PageNavigation(paginate):
     pages += list(range(left, right + 1))
     pages += ['...'] if right != penultimate_page else []
     pages += [last_page] if last_page > 1 else []
+    print(previous_page, current_page, next_page, pages)
     return previous_page, current_page, next_page, pages
 
 
