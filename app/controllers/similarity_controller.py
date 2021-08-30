@@ -1,19 +1,16 @@
 # APP\CONTROLLERS\SIMILARITY_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-import urllib
 import requests
 from types import SimpleNamespace
 from flask import Blueprint, request, render_template, abort
-from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField, FloatField
+from wtforms import TextAreaField, BooleanField, FloatField
 from wtforms.validators import DataRequired
 
 
 # ## LOCAL IMPORTS
 from ..database.post_db import GetPostsByID
-from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams,\
-    HideInput, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort, CheckParamRequirements, ReferrerCheck,\
-    ProcessRequestValues, ParseArrayParameter, ParseBoolParameter, ParseType, BuildUrlArgs
+from .base_controller import ProcessRequestValues, CustomNameForm, ParseArrayParameter, ParseBoolParameter, ParseType, BuildUrlArgs
 
 
 # ## GLOBAL VARIABLES

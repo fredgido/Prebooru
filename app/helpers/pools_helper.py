@@ -1,9 +1,5 @@
 # APP\HELPERS\POOLS_HELPER.PY
 
-# ## PYTHON IMPORTS
-from flask import render_template
-
-
 # ## FUNCTIONS
 
 def ItemIsOfType(item, type):

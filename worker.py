@@ -187,13 +187,18 @@ def CheckPendingUploads():
                 print("No pending uploads.")
                 break
             time.sleep(5)
-        if len(post_ids):
-            SimilarityCheckPosts()
     finally:
         if len(post_ids) > 0:
+            SCHED.add_job(ContactSimilarityServer)
             SCHED.add_job(CheckForNewArtistBoorus)
         UPLOAD_SEM.release()
         print("<upload semaphore release>")
+
+
+def ContactSimilarityServer():
+    results = SimilarityCheckPosts()
+    if results['error']:
+        print(results['message'])
 
 
 def CheckForNewArtistBoorus():

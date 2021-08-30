@@ -251,6 +251,7 @@ def BuildUrlArgs(params, permit_list):
             urlparams.append(urllib.parse.urlencode({key: value}))
     return '&'.join(urlparams)
 
+
 # #### Private functions
 
 def _CustomOrder(ids, entity):

@@ -5,7 +5,7 @@ import datetime
 
 # ##LOCAL IMPORTS
 from .. import models, SESSION
-from ..logical.utility import GetCurrentTime
+from ..logical.utility import GetCurrentTime, SetError
 from .base_db import UpdateColumnAttributes, UpdateRelationshipCollections, AppendRelationshipCollections, SetTimesvalue
 from .artist_db import CreateArtistFromSource, GetSiteArtist
 from .illust_url_db import UpdateIllustUrlFromParameters

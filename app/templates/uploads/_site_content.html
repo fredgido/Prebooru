@@ -4,7 +4,13 @@
     <section id="upload-info">
         <h4>Info</h4>
         <ul>
-            <li><strong>Status:</strong> {{ upload.status }}</li>
+            <li><strong>Status:</strong>
+                {% if upload.status == 'pending' %}
+                    {{ helpers.upload.CheckPendingLink() }}
+                {% else %}
+                    {{ upload.status }}
+                {% endif %}
+            </li>
             <li><strong>Type:</strong> {{ upload.type }}</li>
             <li><strong>Successes:</strong> {{ upload.successes }}</li>
             <li><strong>Failures:</strong> {{ upload.failures }}</li>

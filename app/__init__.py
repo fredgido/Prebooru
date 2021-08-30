@@ -5,7 +5,7 @@ import os
 import sys
 from io import BytesIO
 from types import SimpleNamespace
-from sqlalchemy import event, MetaData
+from sqlalchemy import event, MetaData, Table, Column, String, select
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.wsgi import get_input_stream
@@ -23,6 +23,8 @@ if sys.version_info.major == 3 and sys.version_info.minor < 7:
 
 # ## GLOBAL VARIABLES
 
+DATABASE_VERSION = '90330c1045b2'
+
 # For imports outside the relative path
 PREBOORU_DB_URL = os.environ.get('PREBOORU_DB') if os.environ.get('PREBOORU_DB') is not None else 'sqlite:///%s' % DB_PATH
 PREBOORU_CACHE_URL = os.environ.get('PREBOORU_CACHE') if os.environ.get('PREBOORU_CACHE') is not None else 'sqlite:///%s' % CACHE_PATH
@@ -37,6 +39,7 @@ NAMING_CONVENTION = {
 }
 
 SERVER_INFO = SimpleNamespace(addr="127.0.0.1")
+
 
 # ## FUNCTIONS
 
@@ -109,3 +112,20 @@ PREBOORU_APP.wsgi_app = MethodRewriteMiddleware(PREBOORU_APP.wsgi_app)
 # #### Extend Python imports
 
 query_extensions.Initialize()
+
+
+# #### Validate database versions
+
+if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    t_alembic_version = Table('alembic_version', MetaData(), Column('version_num', String))
+    for bind in [None, 'cache', 'similarity']:
+        engine = DB.get_engine(bind=bind).engine
+        connection = engine.connect()
+        try:
+            version = connection.execute(select([t_alembic_version.c.version_num])).first()[0]
+        except Exception:
+            print("\nError querying database for version number:", engine.url)
+            exit(-1)
+        if version != DATABASE_VERSION:
+            print("\nMust upgrade the database:", version, '->', DATABASE_VERSION)
+            exit(-1)

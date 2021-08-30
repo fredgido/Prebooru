@@ -4,7 +4,6 @@
 import datetime
 from typing import List
 from dataclasses import dataclass
-from flask import url_for
 from sqlalchemy.orm import lazyload
 from sqlalchemy.ext.associationproxy import association_proxy
 

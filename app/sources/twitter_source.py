@@ -232,6 +232,7 @@ def ArtistLinks(artist):
         'likes': ArtistLikesUrl(artist),
     }
 
+
 # Tag
 
 def TagSearchUrl(tag):

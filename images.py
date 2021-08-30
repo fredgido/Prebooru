@@ -5,7 +5,7 @@ import os
 import sys
 import atexit
 from argparse import ArgumentParser
-from flask import Flask, request, send_from_directory
+from flask import Flask, send_from_directory
 
 # ## LOCAL IMPORTS
 from app.logical.file import LoadDefault, PutGetJSON
@@ -57,7 +57,7 @@ def StartServer(args):
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
-    IMAGES_APP.run(threaded=True, port=2345) # IMAGE_PORT
+    IMAGES_APP.run(threaded=True, port=IMAGE_PORT)
 
 
 # ## EXECUTION START

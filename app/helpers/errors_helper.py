@@ -3,7 +3,7 @@
 # ## PYTHON IMPORTS
 import re
 import html
-from flask import url_for, Markup
+from flask import url_for
 
 # ## LOCAL IMPORTS
 from .base_helper import GeneralLink

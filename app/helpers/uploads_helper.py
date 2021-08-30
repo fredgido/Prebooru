@@ -6,6 +6,7 @@ from flask import Markup, url_for
 # ##LOCAL IMPORTS
 from .base_helper import SearchUrlFor
 
+
 # ## FUNCTIONS
 
 def FormTitleApellation(illust_url):

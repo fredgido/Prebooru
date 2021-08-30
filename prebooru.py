@@ -24,6 +24,7 @@ SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 # the setup.bat script, then running "flask db" will show all of the available commands.
 migrate = Migrate(PREBOORU_APP, DB, render_as_batch=True)  # noqa: F841
 
+
 # ## FUNCTIONS
 
 @atexit.register

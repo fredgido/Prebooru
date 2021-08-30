@@ -1,13 +1,13 @@
 # APP\CONTROLLERS\POOL_ELEMENTS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
-from flask import Blueprint, request, render_template, url_for, flash, redirect
+from flask import Blueprint, request, url_for, flash, redirect
 
 # ## LOCAL IMPORTS
 from ..models import Pool, PoolElement
 from ..database.pool_element_db import CreatePoolElementFromParameters, DeletePoolElement
-from .base_controller import GetDataParams, CustomNameForm, ReferrerCheck, GetOrAbort, GetOrError, CheckParamRequirements,\
-    SetError, HideInput, IndexJson, ShowJson, ProcessRequestValues, GetParamsValue, SearchFilter, DefaultOrder, ParseType
+from .base_controller import GetDataParams, ReferrerCheck, GetOrAbort, GetOrError, CheckParamRequirements, SetError, IndexJson, ShowJson,\
+    ProcessRequestValues, GetParamsValue, SearchFilter, DefaultOrder, ParseType
 
 
 # ## GLOBAL VARIABLES
@@ -24,17 +24,6 @@ PARSE_PARAMS_DICT = {
     'post_id': int,
     'notation_id': int,
 }
-
-# Forms
-
-def GetPoolElementForm(**kwargs):
-    # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
-    class PoolElementForm(CustomNameForm):
-        pool_id = IntegerField('Pool ID', id='pool-element-pool-id', custom_name='pool_element[pool_id]', validators=[DataRequired()])
-        illust_id = IntegerField('Illust ID', id='pool-element-illust-id', custom_name='pool_element[illust_id]')
-        post_id = IntegerField('Post ID', id='pool-element-post-id', custom_name='pool_element[post_id]')
-        notation_id = IntegerField('Notation ID', id='pool-element-notation-id', custom_name='pool_element[notation_id]')
-    return PoolElementForm(**kwargs)
 
 
 # ## FUNCTIONS

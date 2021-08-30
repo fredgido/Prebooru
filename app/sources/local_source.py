@@ -13,19 +13,21 @@ def WorkerCheckUploads():
     try:
         requests.get('http://127.0.0.1:%d/check_uploads' % WORKER_PORT, timeout=2)
     except Exception as e:
-        print("Unable to contact worker server:", e)
+        return {'error': True, 'message': "Unable to contact worker server: %s" % str(e)}
+    return {'error': False}
 
 
 def SimilarityCheckPosts():
     try:
         requests.get('http://127.0.0.1:%d/check_posts' % SIMILARITY_PORT, timeout=2)
     except Exception as e:
-        print("Unable to contact similarity server:", e)
+        return {'error': True, 'message': "Unable to contact similarity server: %s" % str(e)}
+    return {'error': False}
 
 
 def SimilarityRegeneratePost(post_id):
     try:
-        requests.get('http://127.0.0.1:%d/check_posts' % SIMILARITY_PORT, timeout=2)
+        data = requests.get('http://127.0.0.1:%d/post_ids[]=%d' % (SIMILARITY_PORT, post_id), timeout=2)
     except Exception as e:
         return {'error': True, 'message': "Unable to contact similarity server: %s" % str(e)}
-    return {'error': False}
+    return data

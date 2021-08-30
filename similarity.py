@@ -302,7 +302,6 @@ def ProcessSimilarityPool():
         page = page.next()
 
 
-
 # #### Main execution functions
 
 def GenerateSimilarityResults(args):
@@ -323,7 +322,7 @@ def GenerateSimilarityResults(args):
 
 def GenerateSimilarityPools(args):
     if args.expunge:
-        SimilarityPoolElement.query.delete() # This may not work due to the sibling relationship; may need to do a mass update first
+        SimilarityPoolElement.query.delete()  # This may not work due to the sibling relationship; may need to do a mass update first
         SESSION.commit()
         SimilarityPool.query.delete()
         SESSION.commit()
@@ -480,8 +479,6 @@ def generate_similarity():
     print(post_ids, request.values)
     try:
         posts = Post.query.filter(Post.id.in_(post_ids)).all()
-        #results = SimilarityData.query.filter(SimilarityData.post_id.in_(post_ids)).all()
-        #print(posts, results)
         for post in posts:
             print("Regenerating post #", post.id)
             SimilarityData.query.filter_by(post_id=post.id).delete()
@@ -493,13 +490,6 @@ def generate_similarity():
                 BatchDeleteSimilarityPoolElement(pool.elements)
             sdata_items = SimilarityData.query.filter_by(post_id=post.id).all()
             PopulateSimilarityPools(sdata_items)
-            #simresult = next(filter(lambda x: x.post_id == post.id, results), None)
-            #if simresult is None:
-            #    GeneratePostSimilarity(post)
-            #else:
-            #    print("Regenerate:")
-            #    RegeneratePostSimilarity(simresult, post)
-            #PopulateSimilarityPools
     finally:
         GENERATE_SEM.release()
         print("<generate semaphore release>")

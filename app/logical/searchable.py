@@ -158,7 +158,7 @@ def RelationAttributeFilters(query, model, attribute, params):
         value = params['count_' + attribute]
         count_clause = RelationshipCount(model, primaryjoin, value)
         if count_clause is not None:
-            query = query.join(primaryjoin.right.table, primaryjoin.left==primaryjoin.right).group_by(model).having(count_clause)
+            query = query.join(primaryjoin.right.table, primaryjoin.left == primaryjoin.right).group_by(model).having(count_clause)
         else:
             raise Exception("%s - invalid value: %s" % ('count_' + attribute, value))
     if attribute in params:

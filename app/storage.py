@@ -13,6 +13,7 @@ SAMPLE_DIMENSIONS = (1280, 1920)
 
 CACHE_DATA_DIRECTORY = IMAGE_DIRECTORY + 'cache\\'
 
+
 # ## FUNCTIONS
 
 def DataDirectory(type, md5):

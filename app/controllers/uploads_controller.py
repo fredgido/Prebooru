@@ -13,7 +13,7 @@ from ..sources.local_source import WorkerCheckUploads
 from ..database.upload_db import CreateUploadFromParameters
 from ..database.cache_db import GetMediaData
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams,\
-    HideInput, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort, CheckParamRequirements, ReferrerCheck
+    HideInput, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort, ReferrerCheck
 
 
 # ## GLOBAL VARIABLES
@@ -118,7 +118,6 @@ def create(get_request=False):
         createparams['type'] = 'file'
     upload = CreateUploadFromParameters(createparams)
     retdata['item'] = upload.to_json()
-    WorkerCheckUploads()
     return retdata
 
 
@@ -212,12 +211,19 @@ def create_html():
         if ReferrerCheck('upload.upload_select_html', request):
             return redirect(url_for('upload.upload_select_html', **data))
         return redirect(url_for('upload.new_html', **results['data']))
+    worker_results = WorkerCheckUploads()
+    if worker_results['error']:
+        flash(worker_results['message'], 'error')
     return redirect(url_for('upload.show_html', id=results['item']['id']))
 
 
 @bp.route('/uploads.json', methods=['POST'])
 def create_json():
-    return create()
+    results = create()
+    if results['error']:
+        return results
+    results['worker'] = WorkerCheckUploads()
+    return results
 
 
 # ###### MISC
@@ -229,6 +235,9 @@ def upload_all_html():
         flash(results['message'], 'error')
         form = GetUploadForm(**results['data'])
         return render_template("uploads/all.html", form=form, upload=Upload())
+    worker_results = WorkerCheckUploads()
+    if worker_results['error']:
+        flash(worker_results['message'], 'error')
     return redirect(url_for('upload.show_html', id=results['item']['id']))
 
 
@@ -241,3 +250,11 @@ def upload_select_html():
         flash(results['message'], 'error')
         return render_template("uploads/select.html", illust_urls=None, form=form, upload=Upload())
     return render_template("uploads/select.html", form=form, illust_urls=results['item'], upload=Upload())
+
+
+@bp.route('/uploads/check', methods=['GET'])
+def upload_check_html():
+    results = WorkerCheckUploads()
+    if results['error']:
+        flash(results['message'], 'error')
+    return redirect(request.referrer)

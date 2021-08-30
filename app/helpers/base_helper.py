@@ -165,5 +165,6 @@ def EndpointClasses(request):
     action = 'a-' + action.replace('-html', "")
     return controller + ' ' + action
 
+
 def HasErrorMessages(messages):
     return any((category, message) for (category, message) in messages if category == 'error')
