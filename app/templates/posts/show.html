@@ -7,7 +7,7 @@
     <div id="sidebar-container">
         {% include "posts/_sidebar.html" %}
         <div id="post-content">
-            <section id="image-container" onclick="ResizeImage(this)">
+            <section id="image-container" onclick="ResizeImage(this)" class="fullsize">
                 <picture>
                     <img src="{{ post.sample_url }}">
                 </picture>

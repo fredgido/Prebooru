@@ -2,12 +2,13 @@
 
 # ##PYTHON IMPORTS
 import urllib.parse
+from flask import url_for
 
 # ##LOCAL IMPORTS
 from ..sites import GetSiteDomain, GetSiteKey
 from ..sources import SOURCEDICT
 from ..sources.base_source import GetSourceById
-from .base_helper import SearchUrlFor, ExternalLink, UrlLink
+from .base_helper import SearchUrlFor, ExternalLink, UrlLink, GeneralLink
 
 
 # ##GLOBAL VARIABLES
@@ -102,6 +103,26 @@ def DanbooruBatchUrl(illust):
 
 
 # #### Link functions
+
+def DanbooruUploadLink(illust):
+    return ExternalLink("Danbooru", DanbooruBatchUrl(illust))
+
+
+def UpdateFromSourceLink(illust):
+    return GeneralLink("Update from source", url_for('illust.query_update_html', id=illust.id), **{'onclick': "return Prebooru.linkPost(this)"})
+
+
+def AddMediaUrlLink(illust):
+    return GeneralLink("Add media url", url_for('illust_url.new_html', illust_id=illust.id))
+
+
+def AddNotationLink(illust):
+    return GeneralLink("Add notation", url_for('notation.new_html', illust_id=illust.id))
+
+
+def AddPoolLink(illust):
+    return GeneralLink("Add pool", url_for('pool_element.create_html'), **{'onclick': "return Prebooru.createPool(this, 'illust')", 'data-illust-id': illust.id})
+
 
 def SiteIllustLink(illust):
     return ExternalLink(ShortLink(illust), SiteIllustUrl(illust))

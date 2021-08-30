@@ -100,10 +100,10 @@
 {% macro page_navigation(pagination) -%}
     {% with previous_page, current_page, next_page, pages = helpers.base.PageNavigation(pagination) %}
         <div class="paginator numbered-paginator">
-            {% if prev_page is none %}
+            {% if previous_page is none %}
                 <span>&lt;</span>
             {% else %}
-                <a href="{{ helpers.base.UrlForWithArgs(request.endpoint, page=prev_page) }}">&lt;</a>
+                <a href="{{ helpers.base.UrlForWithArgs(request.endpoint, page=previous_page) }}">&lt;</a>
             {% endif %}
 
             {% for page in pages %}
