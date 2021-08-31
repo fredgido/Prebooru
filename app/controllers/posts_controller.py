@@ -99,7 +99,7 @@ def regenerate_html(id):
     else:
         results = SimilarityRegeneratePost(id)
         if results['error']:
-            flash(results['error'], 'error')
+            flash(results['message'], 'error')
         else:
             flash("Similarity regenerated.")
     return redirect(url_for('post.show_html', id=id))

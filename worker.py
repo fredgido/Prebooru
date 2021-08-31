@@ -303,6 +303,7 @@ def Main(args):
         SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1)
         SCHED.add_job(CheckPendingUploads)
         SCHED.start()
+    PREBOORU_APP.name = 'worker'
     PREBOORU_APP.run(threaded=True, port=WORKER_PORT)
 
 

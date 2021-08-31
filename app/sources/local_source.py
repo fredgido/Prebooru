@@ -26,8 +26,13 @@ def SimilarityCheckPosts():
 
 
 def SimilarityRegeneratePost(post_id):
+    data = {
+        'post_ids': [post_id],
+    }
     try:
-        data = requests.get('http://127.0.0.1:%d/post_ids[]=%d' % (SIMILARITY_PORT, post_id), timeout=2)
+        resp = requests.post('http://127.0.0.1:%d/generate_similarity.json' % SIMILARITY_PORT, json=data, timeout=5)
     except Exception as e:
         return {'error': True, 'message': "Unable to contact similarity server: %s" % str(e)}
-    return data
+    if resp.status_code != 200:
+        return {'error': True, 'message': "Similarity server - HTTP %d: %s" % (resp.status_code, resp.reason)}
+    return resp.json()

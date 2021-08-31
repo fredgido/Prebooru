@@ -419,6 +419,7 @@ def StartServer(args):
         SCHED = BackgroundScheduler(daemon=True)
         SCHED.add_job(ProcessSimilarity)
         SCHED.start()
+    PREBOORU_APP.name = 'similarity'
     PREBOORU_APP.run(threaded=True, port=SIMILARITY_PORT)
 
 
@@ -471,14 +472,13 @@ def check_similarity():
 
 @PREBOORU_APP.route('/generate_similarity.json', methods=['POST'])
 def generate_similarity():
-    post_ids = request.values.getlist('post_ids[]', type=int)
-    if post_ids is None:
+    data = request.get_json()
+    if 'post_ids' not in data or len(data['post_ids']) == 0:
         return {'error': True, 'message': "Must include post_ids."}
     GENERATE_SEM.acquire()
     print("<generate semaphore acquire>")
-    print(post_ids, request.values)
     try:
-        posts = Post.query.filter(Post.id.in_(post_ids)).all()
+        posts = Post.query.filter(Post.id.in_(data['post_ids'])).all()
         for post in posts:
             print("Regenerating post #", post.id)
             SimilarityData.query.filter_by(post_id=post.id).delete()
