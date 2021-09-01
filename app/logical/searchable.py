@@ -39,10 +39,6 @@ def RelationshipModel(model, attribute):
     return getattr(model, attribute).property.mapper.class_
 
 
-def IsCollection(model, columnname):
-    return getattr(model, columnname).property.uselist
-
-
 def IsPolymorphic(model, attribute):
     return getattr(model, attribute).property.mapper.polymorphic_on is not None
 
@@ -115,14 +111,6 @@ def AllAttributeFilters(query, model, params):
         filters, query = RelationAttributeFilters(query, model, attribute, params)
         relationship_filters += filters
     return (basic_filters + relationship_filters), query
-
-
-def AttributeFilters(query, model, attribute, params):
-    if IsColumn(model, attribute):
-        return BasicAttributeFilters(query, model, attribute, params)
-    if IsRelationship(model, attribute):
-        return RelationAttributeFilters(query, model, attribute, params)
-    raise Exception("%s is not a column or relationship" % attribute)
 
 
 def BasicAttributeFilters(model, columnname, params):

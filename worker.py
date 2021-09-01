@@ -19,7 +19,7 @@ from app import DB, SESSION, PREBOORU_APP
 from app.cache import ApiData, MediaFile
 from app.models import Upload, Illust, Artist, Booru
 from app.database.artist_db import UpdateArtistFromSource
-from app.database.booru_db import CreateBooruFromParameters
+from app.database.booru_db import CreateBooruFromParameters, BooruAppendArtist
 from app.database.illust_db import CreateIllustFromSource, UpdateIllustFromSource
 from app.database.upload_db import IsDuplicate, SetUploadStatus
 from app.database.error_db import AppendError, CreateAndAppendError
@@ -96,14 +96,12 @@ def ProcessUploadWrap(upload):
         print("Unlocking the database...")
         SESSION.rollback()
         LogError('worker.ProcessUpload', "Unhandled exception occurred on upload #%d: %s" % (upload.id, e))
-        upload.status = 'error'
-        SESSION.commit()
+        SetUploadStatus(upload, 'error')
         return False
 
 
 def ProcessUpload(upload):
-    upload.status = 'processing'
-    SESSION.commit()
+    SetUploadStatus(upload, 'processing')
     if upload.type == 'post':
         ProcessNetworkUpload(upload)
     elif upload.type == 'file':
@@ -122,7 +120,7 @@ def ProcessNetworkUpload(upload):
     if illust is None:
         illust = CreateIllustFromSource(site_illust_id, source)
         if illust is None:
-            upload.status = 'error'
+            SetUploadStatus(upload, 'error')
             CreateAndAppendError('worker.ProcessNetworkUpload', "Unable to create illust: %s" % (source.ILLUST_SHORTLINK % site_illust_id), upload)
             return
     elif CheckRequery(illust):
@@ -146,10 +144,9 @@ def ProcessFileUpload(upload):
     if CheckRequery(illust.artist):
         UpdateArtistFromSource(illust.artist, source)
     if ConvertFileUpload(upload, source):
-        upload.status = 'complete'
+        SetUploadStatus(upload, 'complete')
     else:
-        upload.status = 'error'
-    SESSION.commit()
+        SetUploadStatus(upload, 'error')
 
 
 # #### Booru functions
@@ -160,8 +157,7 @@ def AddDanbooruArtists(url, danbooru_artists, db_boorus, db_artists):
         booru = next(filter(lambda x: x.danbooru_id == danbooru_artist['id'], db_boorus), None)
         if booru is None:
             booru = CreateBooruFromParameters({'danbooru_id': danbooru_artist['id'], 'current_name': danbooru_artist['name']})
-        booru.artists.append(db_artist)
-        SESSION.commit()
+        BooruAppendArtist(booru, artist)
 
 
 # #### Scheduled functions
@@ -237,7 +233,7 @@ def ExpireUploads():
     if len(expired_uploads):
         print("Found %d uploads to expire!" % len(expired_uploads))
     for upload in expired_uploads:
-        upload.status = "complete"
+        SetUploadStatus(upload, 'complete')
         database.local.CreateAndAppendError('worker.ExpireUploads', "Upload has expired.", upload)
 
 

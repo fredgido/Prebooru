@@ -230,6 +230,9 @@ def create_json():
 
 @bp.route('/uploads/all', methods=['GET'])
 def upload_all_html():
+    show_form = request.args.get('show_form', type=EvalBoolString)
+    if show_form:
+        return render_template("uploads/all.html", form=GetUploadForm(), upload=Upload())
     results = create(True)
     if results['error']:
         flash(results['message'], 'error')
@@ -243,6 +246,9 @@ def upload_all_html():
 
 @bp.route('/uploads/select', methods=['GET'])
 def upload_select_html():
+    show_form = request.args.get('show_form', type=EvalBoolString)
+    if show_form:
+        return render_template("uploads/select.html", illust_urls=None, form=GetUploadForm(), upload=Upload())
     results = upload_select()
     form = GetUploadForm(request_url=results['data']['request_url'])
     print("Results:", results)

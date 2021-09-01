@@ -32,6 +32,6 @@ class Notation(JsonModel):
 
     @property
     def append_type(self):
-        return self.append_item.__table__.name
+        return self.append_item.__table__.name if self.append_item is not None else None
 
     searchable_attributes = ['id', 'body', 'created', 'updated', 'artist', 'illust', 'post']

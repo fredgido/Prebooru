@@ -9,9 +9,8 @@ import datetime
 
 # ##LOCAL IMPORTS
 from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet, FixupCRLF, ProcessUTCTimestring
-from ..database.local import CreateError, IsError
+from ..database.error_db import CreateError, IsError
 from ..database.cache_db import GetApiArtist, GetApiIllust, GetApiData, SaveApiData
-from .. import database
 from ..config import PIXIV_PHPSESSID
 from ..sites import Site, GetSiteDomain, GetSiteId
 
@@ -306,7 +305,7 @@ def GetPixivIllust(illust_id):
     print("Getting pixiv #%d" % illust_id)
     data = PixivRequest("https://www.pixiv.net/ajax/illust/%d" % illust_id)
     if data['error']:
-        return database.local.CreateError('sources.pixiv.GetPixivIllust', data['message'])
+        return CreateError('sources.pixiv.GetPixivIllust', data['message'])
     return data['body']
 
 
@@ -314,14 +313,14 @@ def GetPixivArtist(artist_id):
     print("Getting Pixiv user data...")
     data = PixivRequest("https://www.pixiv.net/ajax/user/%d?full=1" % artist_id)
     if data['error']:
-        return database.local.CreateError('sources.pixiv.GetPixivArtist', data['message'])
+        return CreateError('sources.pixiv.GetPixivArtist', data['message'])
     return data['body']
 
 
 def GetAllPixivArtistIllusts(artist_id):
     data = PixivRequest('https://www.pixiv.net/ajax/user/%d/profile/all' % artist_id)
     if data['error']:
-        return database.local.CreateError('sources.pixiv.GetAllPixivArtistIllusts', data['message'])
+        return CreateError('sources.pixiv.GetAllPixivArtistIllusts', data['message'])
     ids = GetDataIllustIDs(data['body'], 'illusts')
     ids += GetDataIllustIDs(data['body'], 'manga')
     return ids

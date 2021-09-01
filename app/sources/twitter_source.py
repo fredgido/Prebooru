@@ -12,7 +12,7 @@ import datetime
 # ##LOCAL IMPORTS
 from ..logical.utility import GetCurrentTime, GetFileExtension, GetHTTPFilename, SafeGet, DecodeJSON, FixupCRLF
 from ..logical.file import LoadDefault, PutGetJSON
-from ..database.local import CreateError, IsError
+from ..database.error_db import CreateError, IsError
 from ..database.cache_db import GetApiArtist, GetApiIllust, SaveApiData
 from ..database.illust_db import GetSiteIllust
 from ..config import WORKING_DIRECTORY, DATA_FILEPATH

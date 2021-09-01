@@ -18,11 +18,6 @@ def CreateDirectory(filepath):
         os.makedirs(directory)
 
 
-def TouchFile(fname, times=None):
-    with open(fname, 'a'):
-        os.utime(fname, times)
-
-
 def PutGetRaw(filepath, optype, data=None, unicode=False):
     if filepath != os.devnull:
         CreateDirectory(filepath)

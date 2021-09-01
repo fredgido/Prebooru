@@ -7,7 +7,7 @@ import urllib
 from ..sites import GetSiteKey, GetSiteId, GetSiteDomain
 from ..sources import SOURCES, SOURCEDICT
 from ..logical.utility import GetHTTPFilename, GetFileExtension, SetError
-from ..database.local import IsError
+from ..database.error_db import IsError
 
 
 # ##GLOBAL VARIABLES

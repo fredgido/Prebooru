@@ -42,28 +42,6 @@ def ReferrerCheck(endpoint, request):
     return urllib.parse.urlparse(request.referrer).path == url_for(endpoint)
 
 
-def PutMethodCheck(request):
-    if request.method == 'POST' and request.values.get('_method', default='').upper() != 'PUT':
-        abort(405)
-
-
-def DeleteMethodCheck(request):
-    if request.method == 'POST' and request.values.get('_method', default='').upper() != 'DELETE':
-        abort(405)
-
-
-def GetMethodRedirect(request):
-    return request.values.get('_method', default='').upper() == 'GET'
-
-
-def PutMethodRedirect(request):
-    return request.values.get('_method', default='').upper() == 'PUT'
-
-
-def DeleteMethodRedirect(request):
-    return request.values.get('_method', default='').upper() == 'DELETE'
-
-
 def ShowJson(model, id):
     item = model.query.filter_by(id=id).first()
     return item.to_json() if item is not None else {}

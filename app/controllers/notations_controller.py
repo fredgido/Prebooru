@@ -18,15 +18,15 @@ from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestVa
 
 bp = Blueprint("notation", __name__)
 
+APPEND_KEYS = ['pool_id', 'artist_id', 'illust_id', 'post_id']
+
 CREATE_REQUIRED_PARAMS = ['body']
 VALUES_MAP = {
     **{k: k for k in Notation.__table__.columns.keys()},
+    **{k: k for k in APPEND_KEYS},
 }
 
 NOTATION_POOLS_SUBQUERY = Notation.query.join(PoolNotation, Notation._pool).filter(Notation.id == PoolNotation.notation_id).with_entities(Notation.id)
-
-APPEND_KEYS = ['pool_id', 'artist_id', 'illust_id', 'post_id']
-
 
 # Forms
 
@@ -93,7 +93,7 @@ def ConvertCreateParams(dataparams):
 
 def ConvertUpdateParams(dataparams):
     updateparams = ConvertDataParams(dataparams)
-    updatelist = [VALUES_MAP[key] for key in dataparams if key in VALUES_MAP]
+    updatelist = [VALUES_MAP[key] for key in dataparams if key in VALUES_MAP or key in APPEND_KEYS]
     updateparams = {k: v for (k, v) in updateparams.items() if k in updatelist}
     return updateparams
 
@@ -210,7 +210,8 @@ def edit_html(id):
         append_item = notation.append_item
         editparams[append_key] = append_item.id
     form = GetNotationForm(**editparams)
-    HideNonGeneralInputs(form, append_item)
+    if append_type is not None:
+        HideNonGeneralInputs(form, append_item)
     return render_template("notations/edit.html", form=form, notation=notation)
 
 

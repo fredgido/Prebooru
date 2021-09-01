@@ -81,7 +81,6 @@ def CreateIllustFromSource(site_illust_id, source):
         return
     artist = GetSiteArtist(createparams['site_artist_id'], source.SITE_ID)
     if artist is None:
-        print("CreateIllustFromSource", createparams['site_artist_id'], createparams)
         artist = CreateArtistFromSource(createparams['site_artist_id'], source)
         if artist is None:
             return

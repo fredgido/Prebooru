@@ -15,15 +15,6 @@ from ..database.error_db import CreateError, CreateAndAppendError, ExtendErrors,
 from .. import storage
 
 
-# ##GLOBAL VARIABLES
-
-FORMAT_EXT = {
-    'PNG': 'png',
-    'JPEG': 'jpg',
-    'GIF': 'gif',
-}
-
-
 # ##FUNCTIONS
 
 # #### Main execution functions

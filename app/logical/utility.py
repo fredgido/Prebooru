@@ -21,14 +21,6 @@ def SafePrint(*args, **kwargs):
     print(temp.encode('ascii', 'backslashreplace').decode(), **kwargs)
 
 
-def ProcessTimestamp(timestring):
-    """Get seconds from the Epoch for timestamps"""
-    try:
-        return round(iso8601.parse_date(timestring).timestamp())
-    except Exception:
-        pass
-
-
 def ProcessUTCTimestring(timestring):
     try:
         return iso8601.parse_date(timestring).replace(tzinfo=None)

@@ -91,7 +91,7 @@ def QueryUpdateBooru(booru):
     return {'error': False}
 
 
-# ###### Misc
+# ###### Misc routes
 
 def CheckArtistsBooru(booru):
     dirty = False
@@ -117,3 +117,9 @@ def CheckArtistsBooru(booru):
         booru.updated = GetCurrentTime()
         SESSION.commit()
     return {'error': False}
+
+# #### Misc functions
+
+def BooruAppendArtist(booru, artist):
+    booru.artists.append(artist)
+    SESSION.commit()

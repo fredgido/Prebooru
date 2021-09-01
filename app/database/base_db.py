@@ -8,17 +8,6 @@ from ..logical.utility import ProcessUTCTimestring, SafePrint
 
 # ##GLOBAL VARIABLES
 
-def SaveData(instance=None):
-    if instance is not None:
-        SESSION.add(instance)
-    SESSION.commit()
-
-
-def RemoveData(instance):
-    SESSION.delete(instance)
-    SESSION.commit()
-
-
 def SetTimesvalue(params, key):
     if key in params:
         if type(params[key]) is str:

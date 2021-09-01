@@ -65,15 +65,3 @@ def GetArtistsByMultipleUrls(url_list):
     for artist_url in data['json']:
         AddDictEntry(retdata, artist_url['url'], artist_url['artist'])
     return {'error': False, 'data': retdata}
-
-
-def GetArtistUrlsByArtistID(danbooru_id):
-    request_url = '/artist_urls.json'
-    params = {
-        'search[artist_id]': danbooru_id,
-        'limit': 1000,
-    }
-    data = DanbooruRequest(request_url, params)
-    if data['error']:
-        return data
-    return {'error': False, 'artist_urls': data['json']}
