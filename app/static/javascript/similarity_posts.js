@@ -5,4 +5,4 @@ SimilarityPosts.deleteElement = function(obj) {
         Prebooru.linkDelete(obj);
     }
     return false;
-}
+};

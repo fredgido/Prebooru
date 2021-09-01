@@ -40,7 +40,7 @@ def GetArtistByID(id, include_urls=False):
 def GetArtistsByUrl(url):
     request_url = '/artist_urls.json'
     params = {
-        'search[url]': url,
+        'search[normalized_url]': url,
         'only': 'url,artist',
         'limit': 1000,
     }
@@ -54,7 +54,7 @@ def GetArtistsByUrl(url):
 def GetArtistsByMultipleUrls(url_list):
     request_url = '/artist_urls.json'
     params = {
-        'search[url_space]': ' '.join(url_list),
+        'search[normalized_url_space]': ' '.join(url_list),
         'only': 'url,artist',
         'limit': 1000,
     }

@@ -120,7 +120,7 @@ def ArtistBookmarksUrl(artist):
 
 
 def ArtistBooruSearchUrl(artist):
-    return ARTIST_HREFURL % artist.site_artist_id
+    return 'http://www.pixiv.net/member.php?id=%d/' % artist.site_artist_id
 
 
 def GetDataIllustIDs(pixiv_data, type):

@@ -397,7 +397,7 @@ def ArtistProfileUrls(artist):
 
 
 def ArtistBooruSearchUrl(artist):
-    return 'https://twitter.com/intent/user?user_id=%d' % artist.site_artist_id
+    return 'http://twitter.com/intent/user?user_id=%d/' % artist.site_artist_id
 
 
 def IllustCommentaries(illust):
