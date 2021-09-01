@@ -1,6 +1,11 @@
 {% extends 'posts/_base.html' %}
 {% from 'posts/_macros.html' import post_preview %}
 
+{% block linkscript %}
+    {{ super() }}
+    <script src="{{ url_for('static', filename='javascript/similarity_posts.js') }}"></script>
+{% endblock %}
+
 {% block title %}Post # {{ post.id }}{% endblock %}
 
 {% block content %}

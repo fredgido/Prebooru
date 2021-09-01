@@ -41,6 +41,7 @@ def Main(args):
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
+    PREBOORU_APP.name = 'prebooru'
     if args.public:
         PREBOORU_APP.run(threaded=True, host="0.0.0.0")
     else:

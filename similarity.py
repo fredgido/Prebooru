@@ -420,6 +420,7 @@ def StartServer(args):
         SCHED = BackgroundScheduler(daemon=True)
         SCHED.add_job(ProcessSimilarity)
         SCHED.start()
+    PREBOORU_APP.name = 'similarity'
     PREBOORU_APP.run(threaded=True, port=SIMILARITY_PORT)
 
 

@@ -101,5 +101,5 @@ def SimilaritySiblingPoolLink(post_data):
 
 
 def DeleteSimilarityElementLink(element):
-    return GeneralLink("remove", element.delete_url, **{'onclick': 'return Posts.deleteSimilarPost(this)', 'class': 'warning-link'})
+    return GeneralLink("remove", element.delete_url, **{'onclick': 'return SimilarityPosts.deleteElement(this)', 'class': 'warning-link'})
 

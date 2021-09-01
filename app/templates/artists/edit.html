@@ -7,13 +7,11 @@
     <div class="form-heading heading">
         Edit: {{ artist.show_link }}</a>
     </div>
-    {% call render_form(form, 'POST', artist.create_url) %}
-        {% for field_name,field_input in helpers.base.FormIterator(form) %}
-            {% if field_name == 'profile' %}
-                {{ field_input(description="Text here will be appended to existing artist profiles.") }}
-            {% else %}
-                {{ field_input() }}
-            {% endif %}
-        {% endfor %}
+    {% call(field_name, field_input) render_form(form, 'PUT', artist.update_url) %}
+        {% if field_name == 'profile' %}
+            {{ field_input(description="Text here will be appended to existing artist profiles.") }}
+        {% else %}
+            {{ field_input() }}
+        {% endif %}
     {% endcall %}
 {% endblock %}
