@@ -65,7 +65,40 @@ Will go to a page with all of the preview images from the post displayed, allowi
 javascript:window.open('http://127.0.0.1:5000/uploads/select?upload[request_url]='+encodeURIComponent(location.href),'_blank');false;
 ```
 
-# Other
+# Database migrations
+
+As the application gets developed, the database schema may get adjusted as needed. When this occurs, the databases will need to go through a migration.
+
+1. Set the necessary environment variables
+
+    `set FLASK_APP=prebooru`
+    `set FLASK_ENV=development`
+
+    Setting these allows one to use the `flask` command with the application, which is how the database commands are accessed.
+
+2. Check the current migration status
+
+    `flask db current`
+
+    There will be a hexadecimal number displayed for all of the databases. If there is not a `(head)` next to this number, then that means that the databases are not current.
+
+3. Upgrade the databases
+
+    `flask db upgrade`
+
+    After this command executes, running `flask db current` again should show it at the latest version with `(head)` next to the number.
+
+# Batch files
+
+### `databasesave.bat`
+
+An example batch file is present under the **misc\\** folder for backing up the contents of the database directory (as determined by the Prebooru config file) to an external drive.
+
+### `initialize.bat`
+
+A batch file for quickly setting the environment variables necessary to use the `flask` command from the command line.
+
+# External resources
 
 ## Image server
 
@@ -80,7 +113,7 @@ HAS_EXTERNAL_IMAGE_SERVER = True
 - **Info:** http://nginx.org/en/docs/windows.html
 - **Downlad:** http://nginx.org/en/download.html
 
-An example configuration file (`nginx.conf`) is present under the **misc\\** folder. The **listen** line contains the port number, and by default it binds to **0.0.0.0**, so it will listen on all network adapters. The **root** line is the base directory where the images will reside as determined by the Prebooru config file, and the filepath needs to use Linux-style directory separators "/" instead of Windows-style "\\".
+An example configuration file (`nginx.conf`) is present under the **misc\\** folder. The **listen** line contains the port number, and by default it binds to **0.0.0.0**, so it will listen on all network adapters. The **root** line is the base directory where the images will reside (as determined by the Prebooru config file), and the filepath needs to use Linux-style directory separators "/" instead of Windows-style "\\".
 
 Additionally, there is also a `nginx.bat` batch file there which can be modified as necessary as an aid to quickly starting or stopping this service.
 
@@ -100,3 +133,27 @@ https://raw.githubusercontent.com/BrokenEagle/JavaScripts/ntisas-prebooru/New_Tw
 ### NPISAS
 
 (Under development)
+
+# To-Do
+
+1. Add usage wikis.
+2. Need to eventually add tests for the code.
+3. Pool reorder page.
+4. Add order filters to searchable.
+5. User tags for posts.
+6. Tag categories, and maybe illust/post count.
+7. Generalized query parameter which would use query arguments parameterized by logical operators instead of being hamstrung by URL arguments.
+8. Add automatic artist webpage URL unshortening.
+9. Pool elements, similarity pool elements, similarity pools, similarity data index page(s).
+10. Drop unused columns or those used mostly for testing.
+11. Server status page and ping functions.
+12. Network upload link for unuploaded illust URLs.
+13. Add series column and navigation to pools.
+14. Add full URL to illust URL JSON.
+15. Subscribe to artists.
+    - Mandator recheck interval.
+    - Optional expiration, with either hard deletion or archiving.
+    - Posts created with subscriptions will be segregated from those created via user interaction.
+16. Archive posts/illusts/artists.
+
+*And much, much, more...*

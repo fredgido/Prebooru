@@ -12,7 +12,7 @@ from app import PREBOORU_APP, DB
 from app import controllers
 from app import helpers
 from app.logical.file import LoadDefault, PutGetJSON
-from app.config import WORKING_DIRECTORY, DATA_FILEPATH
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH, PREBOORU_PORT
 
 # ## GLOBAL VARIABLES
 
@@ -53,9 +53,9 @@ def StartServer(args):
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
     PREBOORU_APP.name = 'prebooru'
     if args.public:
-        PREBOORU_APP.run(threaded=True, host="0.0.0.0")
+        PREBOORU_APP.run(threaded=True, port=PREBOORU_PORT, host="0.0.0.0")
     else:
-        PREBOORU_APP.run(threaded=True)
+        PREBOORU_APP.run(threaded=True, port=PREBOORU_PORT)
 
 
 def InitDB(args):

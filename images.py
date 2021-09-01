@@ -57,7 +57,10 @@ def StartServer(args):
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
-    IMAGES_APP.run(threaded=True, port=IMAGE_PORT)
+    if args.public:
+        PREBOORU_APP.run(threaded=True, port=IMAGE_PORT, host="0.0.0.0")
+    else:
+        IMAGES_APP.run(threaded=True, port=IMAGE_PORT)
 
 
 # ## EXECUTION START
@@ -65,5 +68,6 @@ def StartServer(args):
 if __name__ == "__main__":
     parser = ArgumentParser(description="Worker to process uploads.")
     parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")
+    parser.add_argument('--public', required=False, default=False, action="store_true", help="Makes the server visible to other computers.")
     args = parser.parse_args()
     StartServer(args)
