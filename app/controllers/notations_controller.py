@@ -3,6 +3,7 @@
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from sqlalchemy import not_
+from sqlalchemy.orm import selectinload
 from wtforms import TextAreaField, IntegerField
 from wtforms.validators import DataRequired
 
@@ -28,7 +29,20 @@ VALUES_MAP = {
 
 NOTATION_POOLS_SUBQUERY = Notation.query.join(PoolNotation, Notation._pool).filter(Notation.id == PoolNotation.notation_id).with_entities(Notation.id)
 
-# Forms
+APPEND_KEYS = ['pool_id', 'artist_id', 'illust_id', 'post_id']
+
+
+# #### Load options
+
+SHOW_HTML_OPTIONS = (
+    selectinload(Notation._pool).selectinload(PoolNotation.pool),
+    selectinload(Notation.artist),
+    selectinload(Notation.illust),
+    selectinload(Notation.post),
+)
+
+
+# ####Forms
 
 def GetNotationForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -145,7 +159,7 @@ def show_json(id):
 
 @bp.route('/notations/<int:id>', methods=['GET'])
 def show_html(id):
-    notation = GetOrAbort(Notation, id)
+    notation = GetOrAbort(Notation, id, options=SHOW_HTML_OPTIONS)
     return render_template("notations/show.html", notation=notation)
 
 

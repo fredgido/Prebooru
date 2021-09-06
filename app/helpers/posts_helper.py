@@ -83,6 +83,10 @@ def FileLink(post):
     return GeneralLink("Copy file link", "#", **{'onclick': 'return Posts.copyFileLink(this)', 'data-file-path': post.file_path})
 
 
+def AddNotationLink(post):
+    return GeneralLink("Add notation", url_for('notation.new_html', post_id=post.id))
+
+
 def AddToPoolLink(post):
     return GeneralLink("Add to pool", url_for('pool_element.create_html'), **{'onclick': "return Prebooru.createPool(this, 'post')", 'data-post-id': post.id})
 

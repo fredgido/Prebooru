@@ -29,14 +29,18 @@ class SimilarityPool(JsonModel):
     total_results = DB.Column(DB.Integer, nullable=False)
     calculation_time = DB.Column(DB.Float, nullable=False)
     elements = DB.relationship(SimilarityPoolElement, lazy=True, backref=DB.backref('pool', lazy=True, uselist=False), cascade="all, delete")
+    element_count = DB.Column(DB.Integer, nullable=True)
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
+    @property
+    def _element_query(self):
+        return SimilarityPoolElement.query.filter_by(pool_id=self.id)
+
     def element_paginate(self, page=None, per_page=None, post_options=lazyload('*')):
         from ..models import Post
-        q = SimilarityPoolElement.query
+        q = self._element_query
         q = q.options(selectinload(SimilarityPoolElement.sibling))
-        q = q.filter_by(pool_id=self.id)
         q = q.order_by(SimilarityPoolElement.score.desc())
         page = q.paginate(per_page=per_page, page=page)
         post_ids = [element.post_id for element in page.items]
@@ -56,6 +60,9 @@ class SimilarityPool(JsonModel):
         for result in results:
             self._create_or_update_element(**result)
         DB.session.commit()
+
+    def _get_element_count(self):
+        return self._element_query.get_count()
 
     def _create_or_update_element(self, post_id, score):
         element = next(filter(lambda x: x.post_id == post_id, self.elements), None)

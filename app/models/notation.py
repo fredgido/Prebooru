@@ -15,16 +15,30 @@ from .pool_element import PoolNotation
 
 @dataclass
 class Notation(JsonModel):
+    # ## Declarations
+
+    # #### JSON format
     id: int
     body: str
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
+
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     body = DB.Column(DB.UnicodeText, nullable=False)
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
+
+    # #### Relationships
     _pool = DB.relationship(PoolNotation, lazy=True, uselist=False, cascade='all,delete', backref=DB.backref('item', lazy=True, uselist=False))
+    # artist <- Artist (MtO)
+    # illust <- Illust (MtO)
+    # post <- Post (MtO)
+
+    # #### Association proxies
     pool = association_proxy('_pool', 'pool')
+
+    # ## Property methods
 
     @property
     def append_item(self):
@@ -33,5 +47,7 @@ class Notation(JsonModel):
     @property
     def append_type(self):
         return self.append_item.__table__.name if self.append_item is not None else None
+
+    # ## Class properties
 
     searchable_attributes = ['id', 'body', 'created', 'updated', 'artist', 'illust', 'post']

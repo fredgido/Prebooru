@@ -20,29 +20,37 @@ from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation, pool_
 
 @dataclass
 class Pool(JsonModel):
+    # ## Declarations
+
+    # #### JSON format
     id: int
     name: str
     element_count: int
     created: DateTimeOrNull
     updated: DateTimeOrNull
+
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     name = DB.Column(DB.String(255), nullable=False)
-    _elements = DB.relationship(PoolElement, backref='pool', order_by=PoolElement.position, collection_class=ordering_list('position'), cascade='all,delete', lazy=True)
-    elements = association_proxy('_elements', 'item', creator=lambda item: pool_element_create(item))
+    element_count = DB.Column(DB.Integer, nullable=False)
     created = DB.Column(DB.DateTime(timezone=False), nullable=True)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=True)
 
-    @property
-    def element_count(self):
-        return self._element_query.get_count()
+    # #### Relationships
+    _elements = DB.relationship(PoolElement, backref='pool', order_by=PoolElement.position, collection_class=ordering_list('position'), cascade='all,delete', lazy=True)
+
+    # #### Association proxies
+    elements = association_proxy('_elements', 'item', creator=lambda item: pool_element_create(item))
+
+    # ## Property methods
+
+    # #### Private
 
     @property
     def _element_query(self):
         return PoolElement.query.filter_by(pool_id=self.id)
 
-    @property
-    def show_url(self):
-        return url_for("pool.show_html", id=self.id)
+    # ## Methods
 
     def remove(self, item):
         pool_element_delete(self.id, item)
@@ -52,16 +60,9 @@ class Pool(JsonModel):
         element_position = pool_element.position
         self.elements.insert(element_position, insert_item)
 
-    def _get_mark_element(self, mark_item):
-        pool_element = next(filter(lambda x: x.pool_id == self.id, mark_item._pools), None)
-        if pool_element is None:
-            raise Exception("Could not find mark item %s #%d in pool #%d")
-        return pool_element
-
     def element_paginate(self, page=None, per_page=None, post_options=lazyload('*'), illust_options=lazyload('*'), notation_options=lazyload('*')):
-        q = PoolElement.query
+        q = self._element_query
         q = q.options(selectin_polymorphic(PoolElement, [PoolIllust, PoolPost, PoolNotation]))
-        q = q.filter_by(pool_id=self.id)
         q = q.order_by(PoolElement.position)
         page = q.paginate(per_page=per_page, page=page)
         post_ids = [element.post_id for element in page.items if element.type == 'pool_post']
@@ -82,5 +83,18 @@ class Pool(JsonModel):
             elif page_item.type == 'pool_notation':
                 page.items[i] = next(filter(lambda x: x.id == page_item.notation_id, notations))
         return page
+
+    # #### Private
+
+    def _get_element_count(self):
+        return self._element_query.get_count()
+
+    def _get_mark_element(self, mark_item):
+        pool_element = next(filter(lambda x: x.pool_id == self.id, mark_item._pools), None)
+        if pool_element is None:
+            raise Exception("Could not find mark item %s #%d in pool #%d")
+        return pool_element
+
+    # ## Class properties
 
     searchable_attributes = ['id', 'name', 'created', 'updated']

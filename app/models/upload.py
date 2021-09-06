@@ -4,6 +4,8 @@
 import datetime
 from typing import List
 from dataclasses import dataclass
+from sqlalchemy.util import memoized_property
+from sqlalchemy.ext.associationproxy import association_proxy
 from flask import url_for
 
 # ##LOCAL IMPORTS
@@ -40,6 +42,9 @@ UploadPosts = DB.Table(
 
 @dataclass
 class Upload(JsonModel):
+    # ## Declarations
+
+    # #### JSON format
     id: int
     subscription_id: IntOrNone
     request_url: StrOrNone
@@ -51,10 +56,11 @@ class Upload(JsonModel):
     successes: int
     failures: int
     image_urls: List
-    post_ids: lambda x: x
+    post_ids: List[int]
     errors: List
     created: datetime.datetime.isoformat
 
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     request_url = DB.Column(DB.String(255), nullable=True)
     successes = DB.Column(DB.Integer, nullable=False)
@@ -65,24 +71,23 @@ class Upload(JsonModel):
     sample_filepath = DB.Column(DB.String(255), nullable=True)
     illust_url_id = DB.Column(DB.Integer, DB.ForeignKey('illust_url.id'), nullable=True)
     subscription_id = DB.Column(DB.Integer, DB.ForeignKey('subscription.id'), nullable=True)
-    image_urls = DB.relationship(UploadUrl, secondary=UploadUrls, lazy='subquery', uselist=True, backref=DB.backref('upload', lazy=True, uselist=False), cascade='all,delete')
-    posts = DB.relationship(Post, secondary=UploadPosts, backref=DB.backref('uploads', lazy=True), lazy=True)
-    errors = DB.relationship(Error, secondary=UploadErrors, lazy=True, cascade='all,delete')
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
-    @property
-    def post_ids(self):
-        return [post.id for post in self.posts]
+    # #### Relationships
+    image_urls = DB.relationship(UploadUrl, secondary=UploadUrls, lazy=True, uselist=True, backref=DB.backref('upload', lazy=True, uselist=False), cascade='all,delete')
+    posts = DB.relationship(Post, secondary=UploadPosts, backref=DB.backref('uploads', lazy=True), lazy=True)
+    errors = DB.relationship(Error, secondary=UploadErrors, lazy=True, cascade='all,delete')
 
-    @property
-    def show_url(self):
-        return url_for("upload.show_html", id=self.id)
+    # #### Association proxies
+    post_ids = association_proxy('posts', 'id')
+
+    # ## Property methods
 
     @property
     def site_id(self):
         return self._source.SITE_ID
 
-    @property
+    @memoized_property
     def site_illust_id(self):
         if self.request_url:
             return self._source.GetIllustId(self.request_url)
@@ -90,20 +95,20 @@ class Upload(JsonModel):
             return self.illust_url.illust.site_illust_id
         raise Exception("Unable to find site illust ID for upload #%d" % self.id)
 
-    @property
+    @memoized_property
     def illust(self):
-        if self._illust is None:
-            if len(self.posts) == 0:
-                return None
-            illusts = UniqueObjects(sum([post.illusts for post in self.posts], []))
-            self._illust = next(filter(lambda x: (x.site_id == self.site_id) and (x.site_illust_id == self.site_illust_id), illusts), None)
-        return self._illust
+        if len(self.posts) == 0:
+            return None
+        illusts = UniqueObjects(sum([post.illusts for post in self.posts], []))
+        return next(filter(lambda x: (x.site_id == self.site_id) and (x.site_illust_id == self.site_illust_id), illusts), None)
 
-    @property
+    @memoized_property
     def artist(self):
         return self.illust.artist if self.illust is not None else None
 
-    @property
+    # #### Private
+
+    @memoized_property
     def _source(self):
         from ..sources.base_source import GetPostSource, GetSourceById
         if self.request_url:
@@ -112,8 +117,7 @@ class Upload(JsonModel):
             return GetSourceById(self.illust_url.site_id)
         raise Exception("Unable to find source for upload #%d" % self.id)
 
-    # Stored properties
-    _illust = None
+    # ## Class properties
 
     basic_attributes = ['id', 'successes', 'failures', 'subscription_id', 'illust_url_id', 'request_url', 'type', 'status', 'media_filepath', 'sample_filepath', 'created']
     relation_attributes = ['image_urls', 'posts', 'errors']

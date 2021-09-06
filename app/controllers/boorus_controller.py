@@ -26,7 +26,24 @@ VALUES_MAP = {
 }
 
 
-# Forms
+# #### Load options
+
+SHOW_HTML_OPTIONS = (
+    selectinload(Booru.names),
+    selectinload(Booru.artists),
+)
+
+INDEX_HTML_OPTIONS = (
+    selectinload(Booru.names),
+)
+
+JSON_OPTIONS = (
+    selectinload(Booru.names),
+    selectinload(Booru.artists),
+)
+
+
+# #### Forms
 
 def GetBooruForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -72,7 +89,6 @@ def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
     q = Booru.query
-    q = q.options(selectinload(Booru.names))
     q = SearchFilter(q, search)
     q = DefaultOrder(q, search)
     return q
@@ -126,13 +142,12 @@ def query_create():
 
 @bp.route('/boorus/<int:id>.json', methods=['GET'])
 def show_json(id):
-    return ShowJson(Booru, id)
+    return ShowJson(Booru, id, options=SHOW_HTML_OPTIONS)
 
 
 @bp.route('/boorus/<int:id>', methods=['GET'])
 def show_html(id):
-    options = (selectinload(Booru.names), selectinload(Booru.artists).lazyload('*'))
-    booru = GetOrAbort(Booru, id, options=options)
+    booru = GetOrAbort(Booru, id, options=SHOW_HTML_OPTIONS)
     return render_template("boorus/show.html", booru=booru)
 
 
@@ -141,12 +156,14 @@ def show_html(id):
 @bp.route('/boorus.json', methods=['GET'])
 def index_json():
     q = index()
+    q = q.options(JSON_OPTIONS)
     return IndexJson(q, request)
 
 
 @bp.route('/boorus', methods=['GET'])
 def index_html():
     q = index()
+    q = q.options(INDEX_HTML_OPTIONS)
     boorus = Paginate(q, request)
     return render_template("boorus/index.html", boorus=boorus, booru=Booru())
 

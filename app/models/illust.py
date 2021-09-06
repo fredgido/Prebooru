@@ -5,6 +5,7 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from flask import url_for
+from sqlalchemy.util import memoized_property
 from sqlalchemy.ext.associationproxy import association_proxy
 
 # ##LOCAL IMPORTS
@@ -46,6 +47,9 @@ IllustNotations = DB.Table(
 
 @dataclass
 class Illust(JsonModel):
+    # ## Declarations
+
+    # #### JSON format
     id: int
     site_id: int
     site_illust_id: int
@@ -62,26 +66,29 @@ class Illust(JsonModel):
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
 
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     site_id = DB.Column(DB.Integer, nullable=False)
     site_illust_id = DB.Column(DB.Integer, nullable=False)
     site_created = DB.Column(DB.DateTime(timezone=False), nullable=True)
-    commentaries = DB.relationship(Description, secondary=IllustCommentaries, lazy='subquery', backref=DB.backref('illusts', lazy=True))
-    tags = DB.relationship(Tag, secondary=IllustTags, lazy='subquery', backref=DB.backref('illusts', lazy=True))
-    urls = DB.relationship(IllustUrl, backref=DB.backref('illust', lazy=True, uselist=False), lazy=True, cascade="all, delete")
     artist_id = DB.Column(DB.Integer, DB.ForeignKey('artist.id'), nullable=False)
     pages = DB.Column(DB.Integer, nullable=True)
     score = DB.Column(DB.Integer, nullable=True)
-    site_data = DB.relationship(SiteData, backref='illust', lazy=True, uselist=False, cascade="all, delete")
-    notations = DB.relationship(Notation, secondary=IllustNotations, lazy=True, backref=DB.backref('illust', uselist=False, lazy=True), cascade='all,delete')
-    _pools = DB.relationship(PoolIllust, backref='item', lazy=True, cascade='all,delete')
     active = DB.Column(DB.Boolean, nullable=True)
     requery = DB.Column(DB.DateTime(timezone=False), nullable=True)
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
-    # Association proxies
+    # #### Relationships
+    commentaries = DB.relationship(Description, secondary=IllustCommentaries, lazy=True, backref=DB.backref('illusts', lazy=True))
+    tags = DB.relationship(Tag, secondary=IllustTags, lazy=True, backref=DB.backref('illusts', lazy=True))
+    urls = DB.relationship(IllustUrl, backref=DB.backref('illust', lazy=True, uselist=False), lazy=True, cascade="all, delete")
+    site_data = DB.relationship(SiteData, lazy=True, uselist=False, cascade="all, delete")
+    notations = DB.relationship(Notation, secondary=IllustNotations, lazy=True, backref=DB.backref('illust', uselist=False, lazy=True), cascade='all,delete')
+    _pools = DB.relationship(PoolIllust, lazy=True, backref=DB.backref('item', lazy=True, uselist=False), cascade='all,delete')
+    # artist <- Artist (OtO)
 
+    # #### Association proxies
     pools = association_proxy('_pools', 'pool')
     _posts = association_proxy('urls', 'post')
     boorus = association_proxy('artist', 'boorus')
@@ -93,16 +100,13 @@ class Illust(JsonModel):
     site_updated = association_proxy('site_data', 'site_updated', getset_factory=PolymorphicAccessorFactory)
     site_uploaded = association_proxy('site_data', 'site_uploaded', getset_factory=PolymorphicAccessorFactory)
 
-    # Instance properties
+    # ## Property methods
 
-    @property
+    @memoized_property
     def ordered_urls(self):
-        if not hasattr(self, '_ordered_urls'):
-            sorted_urls = sorted(self.urls, key=lambda x: x.order)
-            setattr(self, '_ordered_urls', sorted_urls)
-        return self._ordered_urls
+        return sorted(self.urls, key=lambda x: x.order)
 
-    @property
+    @memoized_property
     def posts(self):
         return [post for post in self._posts if post is not None]
 
@@ -110,42 +114,32 @@ class Illust(JsonModel):
     def site_domain(self):
         return GetSiteDomain(self.site_id)
 
-    @property
-    def show_url(self):
-        return url_for("illust.show_html", id=self.id)
-
-    @property
+    @memoized_property
     def type(self):
-        if not hasattr(self, '__type'):
-            if self._source.IllustHasVideos(self):
-                self.__type = 'video'
-            elif self._source.IllustHasImages(self):
-                self.__type = 'image'
-            else:
-                self.__type = 'unknown'
-        return self.__type
+        if self._source.IllustHasVideos(self):
+            return 'video'
+        elif self._source.IllustHasImages(self):
+            return 'image'
+        else:
+            return 'unknown'
 
-    @property
+    @memoized_property
     def video_illust_url(self):
-        if not hasattr(self, '__video_illust_url'):
-            self.__video_illust_url = self._source.VideoIllustVideoUrl(self) if self.type == 'video' else None
-        return self.__video_illust_url
+        return self._source.VideoIllustVideoUrl(self) if self.type == 'video' else None
 
-    @property
+    @memoized_property
     def thumb_illust_url(self):
-        if not hasattr(self, '__thumb_illust_url'):
-            self.__thumb_illust_url = self._source.VideoIllustThumbUrl(self) if self.type == 'video' else None
-        return self.__thumb_illust_url
+        return self._source.VideoIllustThumbUrl(self) if self.type == 'video' else None
 
-    @property
+    # ###### Private
+
+    @memoized_property
     def _source(self):
-        if not hasattr(self, '__source'):
-            from ..sources import SOURCEDICT
-            site_key = GetSiteKey(self.site_id)
-            self.__source = SOURCEDICT[site_key]
-        return self.__source
+        from ..sources import SOURCEDICT
+        site_key = GetSiteKey(self.site_id)
+        return SOURCEDICT[site_key]
 
-    # Instance methods
+    # ## methods
 
     def delete(self):
         pools = [pool for pool in self.pools]
@@ -156,7 +150,7 @@ class Illust(JsonModel):
                 pool._elements.reorder()
             DB.session.commit()
 
-    # Class variables
+    # ## Class properties
 
     basic_attributes = ['id', 'site_id', 'site_illust_id', 'site_created', 'artist_id', 'pages', 'score', 'active', 'created', 'updated', 'requery']
     relation_attributes = ['artist', 'urls', 'tags', 'commentaries', 'notations']

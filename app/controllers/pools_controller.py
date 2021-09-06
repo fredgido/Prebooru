@@ -25,8 +25,20 @@ VALUES_MAP = {
     **{k: k for k in Pool.__table__.columns.keys()},
 }
 
+# #### Load options
 
-# Forms
+SHOW_HTML_ILLUST_OPTIONS = (
+    selectinload(Illust.urls).selectinload(IllustUrl.post),
+    selectinload(Illust.notations),
+)
+
+SHOW_HTML_POST_OPTIONS = (
+    selectinload(Post.notations),
+    selectinload(Post.illust_urls).selectinload(IllustUrl.illust),
+)
+
+
+# #### Forms
 
 def GetPoolForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -127,9 +139,7 @@ def show_json(id):
 @bp.route('/pools/<int:id>', methods=['GET'])
 def show_html(id):
     pool = GetOrAbort(Pool, id)
-    illust_options = (selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'), selectinload(Illust.notations))
-    post_options = (selectinload(Post.notations), selectinload(Post.illust_urls).selectinload(IllustUrl.illust).lazyload('*'), lazyload('*'))
-    elements = pool.element_paginate(page=GetPage(request), per_page=GetLimit(request), illust_options=illust_options, post_options=post_options)
+    elements = pool.element_paginate(page=GetPage(request), per_page=GetLimit(request), illust_options=SHOW_HTML_ILLUST_OPTIONS, post_options=SHOW_HTML_POST_OPTIONS)
     return render_template("pools/show.html", pool=pool, elements=elements)
 
 

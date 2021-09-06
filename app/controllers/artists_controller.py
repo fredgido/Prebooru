@@ -36,7 +36,33 @@ VALUES_MAP = {
 }
 
 
-# Forms
+# #### Load options
+
+SHOW_HTML_OPTIONS = (
+    selectinload(Artist.site_accounts),
+    selectinload(Artist.names),
+    selectinload(Artist.profiles),
+    selectinload(Artist.webpages),
+    selectinload(Artist.notations),
+    selectinload(Artist.boorus),
+)
+
+INDEX_HTML_OPTIONS = (
+    selectinload(Artist.site_accounts),
+    selectinload(Artist.names),
+    selectinload(Artist.webpages),
+    selectinload(Artist.notations),
+)
+
+JSON_OPTIONS = (
+    selectinload(Artist.site_accounts),
+    selectinload(Artist.names),
+    selectinload(Artist.profiles),
+    selectinload(Artist.webpages),
+)
+
+
+# #### Forms
 
 def GetArtistForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -94,7 +120,6 @@ def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
     q = Artist.query
-    q = q.options(selectinload(Artist.names), selectinload(Artist.site_accounts), selectinload(Artist.webpages), lazyload(Artist.profiles))
     q = SearchFilter(q, search)
     q = DefaultOrder(q, search)
     return q
@@ -180,12 +205,12 @@ def delete_profile(artist):
 
 @bp.route('/artists/<int:id>.json', methods=['GET'])
 def show_json(id):
-    return ShowJson(Artist, id)
+    return ShowJson(Artist, id, options=JSON_OPTIONS)
 
 
 @bp.route('/artists/<int:id>', methods=['GET'])
 def show_html(id):
-    artist = GetOrAbort(Artist, id)
+    artist = GetOrAbort(Artist, id, options=SHOW_HTML_OPTIONS)
     return render_template("artists/show.html", artist=artist)
 
 
@@ -194,12 +219,14 @@ def show_html(id):
 @bp.route('/artists.json', methods=['GET'])
 def index_json():
     q = index()
+    q = q.options(JSON_OPTIONS)
     return IndexJson(q, request)
 
 
 @bp.route('/artists', methods=['GET'])
 def index_html():
     q = index()
+    q = q.options(INDEX_HTML_OPTIONS)
     artists = Paginate(q, request)
     return render_template("artists/index.html", artists=artists, artist=Artist())
 

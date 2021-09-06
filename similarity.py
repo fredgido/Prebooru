@@ -234,7 +234,7 @@ def CreateSimilarityPools(post_id, score_results, total_results, calculation_tim
     current_time = GetCurrentTime()
     main_pool = SimilarityPool.query.filter_by(post_id=post_id).first()
     if main_pool is None:
-        main_pool = SimilarityPool(post_id=post_id, created=current_time)
+        main_pool = SimilarityPool(post_id=post_id, created=current_time, element_count=0)
         SESSION.add(main_pool)
     main_pool.total_results = total_results
     main_pool.calculation_time = calculation_time
@@ -271,14 +271,18 @@ def CreateSimilarityPairings(post_id, score_results, main_pool, sibling_pools, i
             spe1 = SimilarityPoolElement(pool_id=main_pool.id, **result)
             SESSION.add(spe1)
             SESSION.commit()
+            main_pool.element_count = main_pool._get_element_count()
+            SESSION.commit()
         sibling_pool_post_ids = INDEX_POST_IDS_BY_POST_ID[result['post_id']] if result['post_id'] in INDEX_POST_IDS_BY_POST_ID else []
         if post_id in sibling_pool_post_ids:
             sibling_pool = INDEX_POOL_BY_POST_ID[result['post_id']]
             spe2 = next(filter(lambda x: x.post_id == post_id, sibling_pool.elements))
         else:
-            sibling_pool_id = INDEX_POOL_BY_POST_ID[result['post_id']].id
-            spe2 = SimilarityPoolElement(pool_id=sibling_pool_id, post_id=post_id, score=result['score'])
+            sibling_pool = INDEX_POOL_BY_POST_ID[result['post_id']]
+            spe2 = SimilarityPoolElement(pool_id=sibling_pool.id, post_id=post_id, score=result['score'])
             SESSION.add(spe2)
+            SESSION.commit()
+            sibling_pool.element_count = sibling_pool._get_element_count()
             SESSION.commit()
         spe1.sibling_id = spe2.id
         spe2.sibling_id = spe1.id
