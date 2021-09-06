@@ -55,7 +55,7 @@ def GetArtistsByMultipleUrls(url_list):
     request_url = '/artist_urls.json'
     params = {
         'search[normalized_url_space]': ' '.join(url_list),
-        'only': 'url,artist',
+        'only': 'normalized_url,artist',
         'limit': 1000,
     }
     data = DanbooruRequest(request_url, params)
@@ -63,7 +63,7 @@ def GetArtistsByMultipleUrls(url_list):
         return data
     retdata = {}
     for artist_url in data['json']:
-        AddDictEntry(retdata, artist_url['url'], artist_url['artist'])
+        AddDictEntry(retdata, artist_url['normalized_url'], artist_url['artist'])
     return {'error': False, 'data': retdata}
 
 

@@ -3,12 +3,12 @@
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from sqlalchemy import not_, or_
-from sqlalchemy.orm import selectinload, lazyload
+from sqlalchemy.orm import selectinload, lazyload, selectin_polymorphic
 from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
 from wtforms.validators import DataRequired
 
 # ## LOCAL IMPORTS
-from ..models import Illust, IllustUrl, SiteData, Artist, Post, PoolIllust, PoolPost
+from ..models import Illust, IllustUrl, SiteData, Artist, Post, PoolIllust, PoolPost, TwitterData, PixivData
 from ..logical.utility import EvalBoolString, IsFalsey
 from ..sources.base_source import GetSourceById, GetIllustRequiredParams
 from ..database.illust_db import CreateIllustFromParameters, UpdateIllustFromParameters, UpdateIllustFromSource,\
@@ -36,8 +36,34 @@ POST_POOLS_SUBQUERY = Illust.query.join(IllustUrl, Illust.urls).join(Post, Illus
 
 POOL_SEARCH_KEYS = ['has_pools', 'has_post_pools', 'has_illust_pools']
 
+# #### Load options
 
-# Forms
+SHOW_HTML_OPTIONS = (
+    selectinload(Illust.site_data),
+    selectinload(Illust.tags),
+    selectinload(Illust.commentaries),
+    selectinload(Illust.artist).selectinload(Artist.boorus),
+    selectinload(Illust.notations),
+    selectinload(Illust._pools).selectinload(PoolIllust.pool),
+    selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'),
+    selectin_polymorphic(Illust.site_data, [TwitterData, PixivData]),
+)
+
+INDEX_HTML_OPTIONS = (
+    selectinload(Illust.tags),
+    selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'),
+)
+
+JSON_OPTIONS = (
+    selectinload(Illust.site_data),  # Must be included separately, otherwise the selectin polymorphic doesn't work for some reason
+    selectinload(Illust.tags),
+    selectinload(Illust.commentaries),
+    selectin_polymorphic(Illust.site_data, [TwitterData, PixivData]),
+    selectinload(Illust.urls).lazyload('*'),
+)
+
+
+# #### Forms
 
 def GetIllustForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -122,7 +148,8 @@ def index():
     search = GetParamsValue(params, 'search', True)
     negative_search = GetParamsValue(params, 'not', True)
     q = Illust.query
-    q = q.options(selectinload(Illust.site_data), selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'), lazyload('*'))
+    #q = q.options(selectinload(Illust.site_data), selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'), lazyload('*'))
+    #q = q.options(selectinload(Illust.site_data))
     q = SearchFilter(q, search, negative_search)
     q = PoolFilter(q, search)
     if 'has_illust_urls2' in search:
@@ -208,12 +235,12 @@ def delete_commentary(illust):
 
 @bp.route('/illusts/<int:id>.json', methods=['GET'])
 def show_json(id):
-    return ShowJson(Illust, id)
+    return ShowJson(Illust, id, options=JSON_OPTIONS)
 
 
 @bp.route('/illusts/<int:id>', methods=['GET'])
 def show_html(id):
-    illust = GetOrAbort(Illust, id)
+    illust = GetOrAbort(Illust, id, options=SHOW_HTML_OPTIONS)
     return render_template("illusts/show.html", illust=illust)
 
 
@@ -222,12 +249,14 @@ def show_html(id):
 @bp.route('/illusts.json', methods=['GET'])
 def index_json():
     q = index()
+    q = q.options(JSON_OPTIONS)
     return IndexJson(q, request)
 
 
 @bp.route('/illusts', methods=['GET'])
 def index_html():
     q = index()
+    q = q.options(INDEX_HTML_OPTIONS)
     illusts = Paginate(q, request)
     return render_template("illusts/index.html", illusts=illusts, illust=Illust())
 

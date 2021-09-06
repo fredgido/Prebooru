@@ -4,6 +4,8 @@
 import datetime
 from typing import List
 from dataclasses import dataclass
+from sqlalchemy.util import memoized_property
+from sqlalchemy.ext.associationproxy import association_proxy
 from flask import url_for
 
 # ##LOCAL IMPORTS
@@ -50,6 +52,9 @@ ArtistNotations = DB.Table(
 
 @dataclass
 class Artist(JsonModel):
+    # ## Declarations
+
+    # #### JSON format
     id: int
     site_id: int
     site_artist_id: IntOrNone
@@ -63,30 +68,38 @@ class Artist(JsonModel):
     requery: DateTimeOrNull
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
+
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     site_id = DB.Column(DB.Integer, nullable=False)
     site_artist_id = DB.Column(DB.Integer, nullable=True)
     current_site_account = DB.Column(DB.String(255), nullable=True)
     site_created = DB.Column(DB.DateTime(timezone=False), nullable=True)
-    site_accounts = DB.relationship(Label, secondary=ArtistSiteAccounts, lazy='subquery', backref=DB.backref('account_artists', lazy=True))
-    names = DB.relationship(Label, secondary=ArtistNames, lazy='subquery', backref=DB.backref('name_artists', lazy=True))
-    profiles = DB.relationship(Description, secondary=ArtistProfiles, lazy='subquery', backref=DB.backref('artists', lazy=True))
-    illusts = DB.relationship(Illust, lazy=True, backref=DB.backref('artist', lazy=True), cascade="all, delete")
-    webpages = DB.relationship(ArtistUrl, backref='artist', lazy=True, cascade="all, delete")
-    notations = DB.relationship(Notation, secondary=ArtistNotations, lazy=True, backref=DB.backref('artist', uselist=False, lazy=True))
     active = DB.Column(DB.Boolean, nullable=True)
     requery = DB.Column(DB.DateTime(timezone=False), nullable=True)
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
 
-    @property
+    # #### Relationships
+    site_accounts = DB.relationship(Label, secondary=ArtistSiteAccounts, lazy=True)
+    names = DB.relationship(Label, secondary=ArtistNames, lazy=True)
+    profiles = DB.relationship(Description, secondary=ArtistProfiles, lazy=True)
+    illusts = DB.relationship(Illust, lazy=True, backref=DB.backref('artist', lazy=True), cascade="all, delete")
+    webpages = DB.relationship(ArtistUrl, backref='artist', lazy=True, cascade="all, delete")
+    notations = DB.relationship(Notation, secondary=ArtistNotations, lazy=True, backref=DB.backref('artist', uselist=False, lazy=True))
+    # boorus <- Booru (MtM)
+
+    # #### Association proxies
+    # TO-DO: Add names, site accounts, and profiles
+
+    # ## Property methods
+
+    @memoized_property
     def recent_posts(self):
-        if not hasattr(self, '_recent_posts'):
-            q = self._post_query
-            q = q.order_by(Post.id.desc())
-            q = q.limit(10)
-            self._recent_posts = q.all()
-        return self._recent_posts
+        q = self._post_query
+        q = q.order_by(Post.id.desc())
+        q = q.limit(10)
+        return q.all()
 
     @property
     def booru_count(self):
@@ -109,19 +122,10 @@ class Artist(JsonModel):
         return self._source.ArtistBooruSearchUrl(self)
 
     @property
-    def show_url(self):
-        return url_for('artist.show_html', id=self.id)
-
-    @property
     def illust_search(self):
         return url_for('illust.index_html', **{'search[artist_id]': self.id})
 
-    def delete(self):
-        self.names.clear()
-        self.profiles.clear()
-        self.site_accounts.clear()
-        DB.session.delete(self)
-        DB.session.commit()
+    # ###### Private
 
     @property
     def _booru_query(self):
@@ -134,15 +138,24 @@ class Artist(JsonModel):
 
     @property
     def _post_query(self):
-        return Post.query.join(IllustUrl, Post.illust_urls).join(Illust).join(Artist).filter(Artist.id == self.id)
+        return Post.query.join(IllustUrl, Post.illust_urls).join(Illust, IllustUrl.illust).filter(Illust.artist_id == self.id)
 
-    @property
+    @memoized_property
     def _source(self):
-        if not hasattr(self, '__source'):
-            from ..sources import SOURCEDICT
-            site_key = GetSiteKey(self.site_id)
-            self.__source = SOURCEDICT[site_key]
-        return self.__source
+        from ..sources import SOURCEDICT
+        site_key = GetSiteKey(self.site_id)
+        return SOURCEDICT[site_key]
+
+    # ## Methods
+
+    def delete(self):
+        self.names.clear()
+        self.profiles.clear()
+        self.site_accounts.clear()
+        DB.session.delete(self)
+        DB.session.commit()
+
+    # ## Class properties
 
     basic_attributes = ['id', 'site_id', 'site_artist_id', 'site_created', 'current_site_account', 'active', 'created', 'updated', 'requery']
     relation_attributes = ['names', 'site_accounts', 'profiles', 'webpages', 'illusts', 'boorus']

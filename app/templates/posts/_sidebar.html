@@ -33,9 +33,9 @@
         <ul>
             <li>{{ helpers.base.GeneralLink("Original file", post.file_url) }}</li>
             <li>{{ helpers.post.FileLink(post) }}</li>
-            <li>{{ helpers.post.RegenerateSimilarityLink(post) }}</li>
             <li>{{ helpers.post.AddToPoolLink(post) }}</li>
-            <li>{{ helpers.base.GeneralLink("Add notation", url_for('notation.new_html', post_id=post.id)) }}</li>
+            <li>{{ helpers.post.AddNotationLink(post) }}</li>
+            <li>{{ helpers.post.RegenerateSimilarityLink(post) }}</li>
         </ul>
     </section>
 </aside>

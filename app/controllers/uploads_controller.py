@@ -7,7 +7,7 @@ from wtforms import StringField, IntegerField, TextAreaField
 
 # ## LOCAL IMPORTS
 from ..logical.utility import EvalBoolString
-from ..models import Upload, Post, IllustUrl
+from ..models import Upload, Post, IllustUrl, Illust, Artist
 from ..sources.base_source import GetPostSource, GetPreviewUrl
 from ..sources.local_source import WorkerCheckUploads
 from ..database.upload_db import CreateUploadFromParameters
@@ -22,7 +22,32 @@ from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestVa
 bp = Blueprint("upload", __name__)
 
 
-# Forms
+# #### Load options
+
+SHOW_HTML_OPTIONS = (
+    selectinload(Upload.posts).selectinload(Post.illust_urls).selectinload(IllustUrl.illust).
+        options(
+            selectinload(Illust.tags),
+            selectinload(Illust.artist),
+        ),
+    selectinload(Upload.image_urls),
+    selectinload(Upload.errors),
+)
+
+INDEX_HTML_OPTIONS = (
+    selectinload(Upload.posts),
+    selectinload(Upload.image_urls),
+    selectinload(Upload.errors),
+)
+
+JSON_OPTIONS = (
+    selectinload(Upload.posts),
+    selectinload(Upload.image_urls),
+    selectinload(Upload.errors),
+)
+
+
+# #### Forms
 
 def GetUploadForm(**kwargs):
     # Class has to be declared every time because the custom_name isn't persistent accross page refreshes
@@ -85,7 +110,6 @@ def index():
     params = ProcessRequestValues(request.values)
     search = GetParamsValue(params, 'search', True)
     q = Upload.query
-    q = q.options(selectinload(Upload.image_urls), selectinload(Upload.posts).lazyload(Post.illust_urls), selectinload(Upload.errors))
     q = SearchFilter(q, search)
     q = DefaultOrder(q, search)
     return q
@@ -154,12 +178,12 @@ def upload_select():
 
 @bp.route('/uploads/<int:id>.json')
 def show_json(id):
-    return ShowJson(Upload, id)
+    return ShowJson(Upload, id, options=JSON_OPTIONS)
 
 
 @bp.route('/uploads/<int:id>')
 def show_html(id):
-    upload = GetOrAbort(Upload, id)
+    upload = GetOrAbort(Upload, id, options=SHOW_HTML_OPTIONS)
     return render_template("uploads/show.html", upload=upload)
 
 
@@ -168,12 +192,14 @@ def show_html(id):
 @bp.route('/uploads.json', methods=['GET'])
 def index_json():
     q = index()
+    q = q.options(JSON_OPTIONS)
     return IndexJson(q, request)
 
 
 @bp.route('/uploads', methods=['GET'])
 def index_html():
     q = index()
+    q = q.options(INDEX_HTML_OPTIONS)
     uploads = Paginate(q, request)
     return render_template("uploads/index.html", uploads=uploads, upload=Upload())
 

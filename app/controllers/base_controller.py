@@ -64,9 +64,9 @@ def DeleteMethodRedirect(request):
     return request.values.get('_method', default='').upper() == 'DELETE'
 
 
-def ShowJson(model, id):
-    item = model.query.filter_by(id=id).first()
-    return item.to_json() if item is not None else {}
+def ShowJson(model, id, options=None):
+    results = GetOrError(model, id, options)
+    return results.to_json() if type(results) is not dict else results
 
 
 def IndexJson(query, request):
@@ -100,7 +100,7 @@ def DefaultOrder(query, search):
 
 
 def Paginate(query, request):
-    return query.paginate(page=GetPage(request), per_page=GetLimit(request))
+    return query.count_paginate(page=GetPage(request), per_page=GetLimit(request))
 
 
 # #### ID helpers
@@ -117,8 +117,12 @@ def GetOrAbort(model, id, options=None):
     return item
 
 
-def GetOrError(model, id):
-    item = model.find(id)
+def GetOrError(model, id, options=None):
+    options = options if options is not None else {}
+    if len(options):
+        item = model.query.options(*options).filter_by(id=id).first()
+    else:
+        item = model.find(id)
     if item is None:
         return {'error': True, 'message': "%s not found." % model.__name__}
     return item

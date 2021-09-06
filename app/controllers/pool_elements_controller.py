@@ -107,10 +107,7 @@ def create_html():
     result = create()
     if result['error']:
         flash(result['message'], 'error')
-        if ReferrerCheck('pool_element.new_html', request):
-            return redirect(url_for('pool_element.new_html', **result['dataparams']))
-        else:
-            return redirect(request.referrer)
+        return redirect(request.referrer)
     flash("Added to pool.")
     return redirect(url_for('%s.show_html' % result['type'], id=result['item']['id']))
 

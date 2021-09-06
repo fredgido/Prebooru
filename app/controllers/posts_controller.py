@@ -3,10 +3,10 @@
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from sqlalchemy import not_, or_
-from sqlalchemy.orm import lazyload
+from sqlalchemy.orm import lazyload, selectinload
 
 # ## LOCAL IMPORTS
-from ..models import Post, Illust, IllustUrl, PoolPost, PoolIllust
+from ..models import Post, Illust, IllustUrl, Artist, PoolPost, PoolIllust
 from ..logical.utility import EvalBoolString, IsFalsey
 from ..sources.local_source import SimilarityRegeneratePost
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
@@ -21,6 +21,30 @@ POST_POOLS_SUBQUERY = Post.query.join(PoolPost, Post._pools).filter(Post.id == P
 ILLUST_POOLS_SUBQUERY = Post.query.join(IllustUrl, Post.illust_urls).join(Illust, IllustUrl.illust).join(PoolIllust, Illust._pools).filter(Illust.id == PoolIllust.illust_id).with_entities(Post.id)
 
 POOL_SEARCH_KEYS = ['has_pools', 'has_post_pools', 'has_illust_pools']
+
+# #### Load options
+
+SHOW_HTML_OPTIONS = (
+    selectinload(Post.illust_urls).selectinload(IllustUrl.illust).
+        options(
+            selectinload(Illust.tags),
+            selectinload(Illust.commentaries),
+            selectinload(Illust.artist).selectinload(Artist.boorus),
+            selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'),  # Eager load all posts underneath the same illust(s)
+        ),
+    selectinload(Post.notations),
+    selectinload(Post.errors),
+    selectinload(Post._pools).selectinload(PoolPost.pool),
+)
+
+INDEX_HTML_OPTIONS = (
+    lazyload('*'),
+)
+
+JSON_OPTIONS = (
+    selectinload(Post.illust_urls),
+    selectinload(Post.errors),
+)
 
 
 # ## FUNCTIONS
@@ -51,7 +75,6 @@ def index():
     search = GetParamsValue(params, 'search', True)
     negative_search = GetParamsValue(params, 'not', True)
     q = Post.query
-    q = q.options(lazyload('*'))
     q = SearchFilter(q, search, negative_search)
     q = PoolFilter(q, search)
     q = DefaultOrder(q, search)
@@ -64,12 +87,12 @@ def index():
 
 @bp.route('/posts/<int:id>.json', methods=['GET'])
 def show_json(id):
-    return ShowJson(Post, id)
+    return ShowJson(Post, id, JSON_OPTIONS)
 
 
 @bp.route('/posts/<int:id>', methods=['GET'])
 def show_html(id):
-    post = GetOrAbort(Post, id)
+    post = GetOrAbort(Post, id, options=SHOW_HTML_OPTIONS)
     return render_template("posts/show.html", post=post)
 
 
@@ -78,6 +101,7 @@ def show_html(id):
 @bp.route('/posts.json', methods=['GET'])
 def index_json():
     q = index()
+    q = q.options(JSON_OPTIONS)
     return IndexJson(q, request)
 
 
@@ -85,6 +109,7 @@ def index_json():
 @bp.route('/posts', methods=['GET'])
 def index_html():
     q = index()
+    q = q.options(INDEX_HTML_OPTIONS)
     posts = Paginate(q, request)
     return render_template("posts/index.html", posts=posts, post=Post())
 

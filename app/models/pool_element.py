@@ -39,16 +39,25 @@ def pool_element_delete(pool_id, item):
 
 @dataclass
 class PoolElement(JsonModel):
-    __tablename__ = 'pool_element'
+    # ## Declarations
 
+    # #### JSON format
     id: int
     pool_id: int
     position: int
     type: str
+
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     pool_id = DB.Column(DB.Integer, DB.ForeignKey('pool.id'), nullable=False)
     position = DB.Column(DB.Integer, nullable=False)
     type = DB.Column(DB.String(50))
+
+    # ## Relationships
+    # pool <- Pool (MtO)
+    
+
+    # ## Property methods
 
     @property
     def position1(self):
@@ -60,8 +69,12 @@ class PoolElement(JsonModel):
         page = math.ceil(self.position1 / 20)
         return url_for('pool.show_html', id=self.pool_id, page=page)
 
+    # ## Class properties
+
     searchable_attributes = ['id', 'pool_id', 'position', 'type', 'post_id', 'illust_id', 'notation_id']
 
+    # #### Private
+    __tablename__ = 'pool_element'
     __mapper_args__ = {
         'polymorphic_identity': 'pool_element',
         "polymorphic_on": type
@@ -70,11 +83,21 @@ class PoolElement(JsonModel):
 
 @dataclass
 class PoolPost(PoolElement):
-    __tablename__ = 'pool_post'
+    # ## Declarations
 
+    # #### JSON format
     post_id: IntOrNone
+
+    # #### Columns
     post_id = DB.Column(DB.Integer, DB.ForeignKey('post.id'), nullable=True)
 
+    # ## Relationships
+    # item <- Post (MtO)
+
+    # ## Class properties
+
+    # #### Private
+    __tablename__ = 'pool_post'
     __mapper_args__ = {
         'polymorphic_identity': 'pool_post',
     }
@@ -82,11 +105,21 @@ class PoolPost(PoolElement):
 
 @dataclass
 class PoolIllust(PoolElement):
-    __tablename__ = 'pool_illust'
+    # ## Declarations
 
+    # #### JSON format
     illust_id: IntOrNone
+
+    # #### Columns
     illust_id = DB.Column(DB.Integer, DB.ForeignKey('illust.id'), nullable=True)
 
+    # ## Relationships
+    # item <- Illust (MtO)
+
+    # ## Class properties
+
+    # #### Private
+    __tablename__ = 'pool_illust'
     __mapper_args__ = {
         'polymorphic_identity': 'pool_illust',
     }
@@ -94,11 +127,21 @@ class PoolIllust(PoolElement):
 
 @dataclass
 class PoolNotation(PoolElement):
-    __tablename__ = 'pool_notation'
+    # ## Declarations
 
+    # #### JSON format
     notation_id: IntOrNone
+
+    # #### Columns
     notation_id = DB.Column(DB.Integer, DB.ForeignKey('notation.id'), nullable=True)
 
+    # ## Relationships
+    # item <- Notation (OtO)
+
+    # ## Class properties
+
+    # #### Private
+    __tablename__ = 'pool_notation'
     __mapper_args__ = {
         'polymorphic_identity': 'pool_notation',
     }

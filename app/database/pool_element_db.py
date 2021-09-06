@@ -38,6 +38,8 @@ def DeletePoolElement(pool_element):
     SESSION.delete(pool_element)
     pool._elements.reorder()
     SESSION.commit()
+    pool.element_count = pool._get_element_count()
+    SESSION.commit()
 
 
 # #### Misc
@@ -54,6 +56,8 @@ def AddTypeElement(pool, id_key, dataparams):
         return {'error': True, 'message': "%s #%d already added to pool #%d." % (itemtype, item.id, pool.id), 'dataparams': dataparams}
     pool.updated = GetCurrentTime()
     pool.elements.append(item)
+    SESSION.commit()
+    pool.element_count = pool._get_element_count()
     SESSION.commit()
     pool_ids += [pool.id]
     return {'error': False, 'pool': pool.to_json(), 'type': itemtype, 'item': item.to_json(), 'data': pool_ids, 'dataparams': dataparams}

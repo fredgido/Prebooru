@@ -23,7 +23,7 @@ def DanbooruPageUrl(booru):
 
 
 def DanbooruPostSearch(booru):
-    return DANBOORU_HOSTNAME + '/posts?' + urllib.parse.urlencode({'tags': booru.current_name})
+    return DANBOORU_HOSTNAME + '/posts?' + urllib.parse.urlencode({'tags': booru.current_name + ' status:any'})
 
 
 # #### Link functions

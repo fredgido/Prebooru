@@ -16,7 +16,7 @@ UPDATE_SCALAR_RELATIONSHIPS = [('names', 'name', models.Label)]
 APPEND_SCALAR_RELATIONSHIPS = []
 
 CREATE_ALLOWED_ATTRIBUTES = ['danbooru_id', 'current_name', 'names']
-UPDATE_ALLOWED_ATTRIBUTES = ['danbooru_id', 'current_name', 'names']
+UPDATE_ALLOWED_ATTRIBUTES = ['current_name', 'names']
 
 
 # ## FUNCTIONS
@@ -87,7 +87,7 @@ def QueryUpdateBooru(booru):
     updateparams = {
         'current_name': booru_data['artist']['name'],
     }
-    UpdateBooruFromParameters(booru, updateparams, ['current_name'])
+    UpdateBooruFromParameters(booru, updateparams)
     return {'error': False}
 
 

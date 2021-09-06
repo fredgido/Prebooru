@@ -108,7 +108,7 @@ class JsonModel(DB.Model):
                 data[key] = [t.to_json() for t in value]
             elif isinstance(type_func, _GenericAlias):
                 subtype_func = type_func.__args__[0]
-                data[key] = [subtype_func(t.to_json()) for t in value]
+                data[key] = [(subtype_func(t.to_json()) if 'to_json' in dir(t) else subtype_func(t)) for t in value]
             else:
                 data[key] = type_func(value)
         return data
