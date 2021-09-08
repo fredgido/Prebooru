@@ -1,4 +1,4 @@
-# APP\CONTROLLERS\ILLUSTS.PY
+# APP\CONTROLLERS\TAGS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template

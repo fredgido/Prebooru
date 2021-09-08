@@ -122,3 +122,23 @@ def delete_json(id):
     if type(pool_element) is dict:
         return pool_element
     return {'error': False}
+
+
+# ###### MISC
+
+@bp.route('/pool_elements/<int:id>/previous', methods=['GET'])
+def previous_html(id):
+    pool_element = GetOrAbort(PoolElement, id)
+    previous_element = PoolElement.query.filter(PoolElement.pool_id == pool_element.pool_id, PoolElement.position < pool_element.position).order_by(PoolElement.position.desc()).first()
+    if previous_element is None:
+        return redirect(request.referrer)
+    return redirect(previous_element.item.show_url)
+
+
+@bp.route('/pool_elements/<int:id>/next', methods=['GET'])
+def next_html(id):
+    pool_element = GetOrAbort(PoolElement, id)
+    next_element = PoolElement.query.filter(PoolElement.pool_id == pool_element.pool_id, PoolElement.position > pool_element.position).order_by(PoolElement.position.asc()).first()
+    if next_element is None:
+        return redirect(request.referrer)
+    return redirect(next_element.item.show_url)

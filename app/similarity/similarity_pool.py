@@ -16,33 +16,44 @@ from .similarity_pool_element import SimilarityPoolElement
 
 @dataclass
 class SimilarityPool(JsonModel):
+    # ## Declarations
+
+    # #### SqlAlchemy
     __bind_key__ = 'similarity'
 
+    # #### JSON format
     id: int
     post_id: int
-    total_results: int
-    calculation_time: float
+    element_count: int
     created: datetime.datetime.isoformat
     updated: datetime.datetime.isoformat
+
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     post_id = DB.Column(DB.Integer, nullable=False)
-    total_results = DB.Column(DB.Integer, nullable=False)
-    calculation_time = DB.Column(DB.Float, nullable=False)
-    elements = DB.relationship(SimilarityPoolElement, lazy=True, backref=DB.backref('pool', lazy=True, uselist=False), cascade="all, delete")
-    element_count = DB.Column(DB.Integer, nullable=True)
+    element_count = DB.Column(DB.Integer, nullable=False)
     created = DB.Column(DB.DateTime(timezone=False), nullable=False)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=False)
+
+    # #### Relationships
+    elements = DB.relationship(SimilarityPoolElement, lazy=True, backref=DB.backref('pool', lazy=True, uselist=False), cascade="all, delete")
+
+    # ## Property methods
+
+    # #### Private
 
     @property
     def _element_query(self):
         return SimilarityPoolElement.query.filter_by(pool_id=self.id)
+
+    # ## Methods
 
     def element_paginate(self, page=None, per_page=None, post_options=lazyload('*')):
         from ..models import Post
         q = self._element_query
         q = q.options(selectinload(SimilarityPoolElement.sibling))
         q = q.order_by(SimilarityPoolElement.score.desc())
-        page = q.paginate(per_page=per_page, page=page)
+        page = q.count_paginate(per_page=per_page, page=page)
         post_ids = [element.post_id for element in page.items]
         post_options = post_options if type(post_options) is tuple else (post_options,)
         posts = Post.query.options(*post_options).filter(Post.id.in_(post_ids)).all() if len(post_ids) else []
@@ -60,6 +71,8 @@ class SimilarityPool(JsonModel):
         for result in results:
             self._create_or_update_element(**result)
         DB.session.commit()
+
+    # #### Private
 
     def _get_element_count(self):
         return self._element_query.get_count()

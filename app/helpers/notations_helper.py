@@ -92,4 +92,4 @@ def HasAppendItem(notation):
 
 
 def AppendKey(notation):
-    return next((key, getattr(notation, key)) for (attr, key) in APPEND_KEY_DICT.items() if (getattr(notation, attr) is not None))
+    return next((key, getattr(notation, attr)) for (attr, key) in APPEND_KEY_DICT.items() if (getattr(notation, attr) is not None))

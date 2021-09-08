@@ -37,23 +37,20 @@ def HexChunk(hashstr, index):
     return hashstr[strindex: strindex + CHARACTERS_PER_CHUNK]
 
 
-# ##CLASS
+# ##CLASSES
 
-# RENAME THIS TO SimilarityData
 class SimilarityData(DB.Model):
+    # ## Declarations
+
+    # #### SqlAlchemy
     __bind_key__ = 'similarity'
 
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     post_id = DB.Column(DB.Integer, nullable=False)
     ratio = DB.Column(DB.Float, nullable=True)
 
-    # Initialize chunk attributes
-    chunk_columns = {}
-    for i in range(0, NUM_CHUNKS):
-        key = ChunkKey(i)
-        chunk_columns[key] = DB.Column(DB.String(2), nullable=False)
-    locals().update(chunk_columns)
-    del chunk_columns, i, key
+    # ## Property methods
 
     @property
     def image_hash(self):
@@ -66,6 +63,8 @@ class SimilarityData(DB.Model):
     def image_hash(self, image_hash):
         for i in range(0, NUM_CHUNKS):
             setattr(self, ChunkKey(i), HexChunk(image_hash, i))
+
+    # ## Class methods
 
     @classmethod
     def ratio_clause(cls, ratio):
@@ -145,3 +144,11 @@ class SimilarityData(DB.Model):
             groupclause = subclause.self_group()
             clause = clause | groupclause if clause is not None else groupclause
         return clause
+
+
+# ## INITIALIZATION
+
+# Initialize chunk attributes, CHUNK00 - CHUNKXX
+for i in range(0, NUM_CHUNKS):
+    key = ChunkKey(i)
+    setattr(SimilarityData, key, DB.Column(DB.String(2), nullable=False))

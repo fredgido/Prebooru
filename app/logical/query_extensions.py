@@ -14,7 +14,7 @@ class CountPaginate():
     def __init__(self, query=None, page=1, per_page=20):
         self.query = query
         self.per_page = per_page
-        self.page = page
+        self.page = max(page, 1)
         self.offset = (page - 1) * per_page
         self.items = self._GetItems()
         self.count = self._GetCount()
@@ -34,7 +34,7 @@ class CountPaginate():
 
     @property
     def prev_num(self):
-        return self.page - 1 if self.has_next else None
+        return self.page - 1 if self.has_prev else None
 
     def next(self):
         return CountPaginate(query=self.query, page=self.page + 1, per_page=self.per_page) if self.has_next else None

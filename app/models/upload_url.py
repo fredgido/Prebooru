@@ -1,21 +1,27 @@
 # APP/MODELS/UPLOAD_URL.PY
 
-# ##PYTHON IMPORTS
+# ## PYTHON IMPORTS
 from dataclasses import dataclass
 
-# ##LOCAL IMPORTS
+# ## LOCAL IMPORTS
 from .. import DB
 from ..base_model import JsonModel
 
 
-# ##GLOBAL VARIABLES
-
+# ## CLASSES
 
 @dataclass
 class UploadUrl(JsonModel):
+    # ## Declarations
+
+    # #### JSON format
     id: int
     url: str
+
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     url = DB.Column(DB.String(255), nullable=False)
+
+    # ## Class properties
 
     searchable_attributes = ['id', 'url']

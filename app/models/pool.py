@@ -26,6 +26,7 @@ class Pool(JsonModel):
     id: int
     name: str
     element_count: int
+    series: bool
     created: DateTimeOrNull
     updated: DateTimeOrNull
 
@@ -33,6 +34,7 @@ class Pool(JsonModel):
     id = DB.Column(DB.Integer, primary_key=True)
     name = DB.Column(DB.String(255), nullable=False)
     element_count = DB.Column(DB.Integer, nullable=False)
+    series = DB.Column(DB.Boolean, nullable=False)
     created = DB.Column(DB.DateTime(timezone=False), nullable=True)
     updated = DB.Column(DB.DateTime(timezone=False), nullable=True)
 
@@ -64,7 +66,7 @@ class Pool(JsonModel):
         q = self._element_query
         q = q.options(selectin_polymorphic(PoolElement, [PoolIllust, PoolPost, PoolNotation]))
         q = q.order_by(PoolElement.position)
-        page = q.paginate(per_page=per_page, page=page)
+        page = q.count_paginate(per_page=per_page, page=page)
         post_ids = [element.post_id for element in page.items if element.type == 'pool_post']
         illust_ids = [element.illust_id for element in page.items if element.type == 'pool_illust']
         notation_ids = [element.notation_id for element in page.items if element.type == 'pool_notation']

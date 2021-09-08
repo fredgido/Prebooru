@@ -8,10 +8,10 @@ from .base_db import UpdateColumnAttributes
 
 # ##GLOBAL VARIABLES
 
-COLUMN_ATTRIBUTES = ['name']
+COLUMN_ATTRIBUTES = ['name', 'series']
 
-CREATE_ALLOWED_ATTRIBUTES = ['name']
-UPDATE_ALLOWED_ATTRIBUTES = ['name']
+CREATE_ALLOWED_ATTRIBUTES = ['name', 'series']
+UPDATE_ALLOWED_ATTRIBUTES = ['name', 'series']
 
 
 # ## FUNCTIONS
@@ -22,7 +22,7 @@ UPDATE_ALLOWED_ATTRIBUTES = ['name']
 
 def CreatePoolFromParameters(createparams):
     current_time = GetCurrentTime()
-    pool = models.Pool(created=current_time, updated=current_time)
+    pool = models.Pool(created=current_time, updated=current_time, element_count=0)
     settable_keylist = set(createparams.keys()).intersection(CREATE_ALLOWED_ATTRIBUTES)
     update_columns = settable_keylist.intersection(COLUMN_ATTRIBUTES)
     UpdateColumnAttributes(pool, update_columns, createparams)

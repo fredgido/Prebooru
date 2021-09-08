@@ -48,6 +48,12 @@ class Notation(JsonModel):
     def append_type(self):
         return self.append_item.__table__.name if self.append_item is not None else None
 
+    # #### Private
+
+    @property
+    def _pools(self):
+        return [self._pool]
+
     # ## Class properties
 
     searchable_attributes = ['id', 'body', 'created', 'updated', 'artist', 'illust', 'post']

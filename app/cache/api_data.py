@@ -1,13 +1,18 @@
 # APP/CACHE/API_DATA.PY
 
-# ##LOCAL IMPORTS
+# ## LOCAL IMPORTS
 from .. import DB
 
 
-# ##GLOBAL VARIABLES
+# ## CLASSES
 
 class ApiData(DB.Model):
+    # ## Declarations
+
+    # #### SqlAlchemy
     __bind_key__ = 'cache'
+
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     type = DB.Column(DB.String(255), nullable=False)
     site_id = DB.Column(DB.Integer, nullable=False)
