@@ -20,7 +20,7 @@ from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestVa
 
 bp = Blueprint("pool", __name__)
 
-CREATE_REQUIRED_PARAMS = ['name']
+CREATE_REQUIRED_PARAMS = ['name', 'series']
 VALUES_MAP = {
     **{k: k for k in Pool.__table__.columns.keys()},
 }
@@ -94,7 +94,10 @@ def index():
     elif 'notation_id' in search:
         q = q.unique_join(PoolNotation, Pool._elements)
         q = q.filter(NumericMatching(PoolNotation, 'notation_id', search['notation_id']))
-    q = DefaultOrder(q, search)
+    if 'order' in search and search['order'] in ['updated']:
+        q = q.order_by(Pool.updated.desc())
+    else:
+        q = DefaultOrder(q, search)
     return q
 
 

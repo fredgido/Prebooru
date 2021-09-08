@@ -56,23 +56,37 @@
     </div>
 {%- endmacro %}
 
-{% macro pools_section(item, section_id) -%}
-    {% if item.pools | length > 0 %}
-        <section id="{{ section_id }}">
-            <h4>Pools</h4>
-            <ul>
-                {% for pool_element in item._pools %}
-                    <li>
-                        <strong>
-                            {{ helpers.base.GeneralLink(pool_element.pool.name, pool_element.pool.show_url) }}
-                            [{{ helpers.base.GeneralLink("%d/%d"|format(pool_element.position1, pool_element.pool.element_count), pool_element.page_url) }}]
-                        </strong>
-                        <span class="delete-control">
-                            ( <a href="{{ pool_element.delete_url }}" onclick="return Prebooru.deletePool(this)">remove</a> )
-                        </span>
-                    </li>
-                {% endfor %}
-            </ul>
-        </section>
+{% macro pools_section(pool_elements, section_id) -%}
+    {% if pool_elements is not none %}
+        {% if pool_elements is not iterable %}
+            {% set pool_elements = [pool_elements] %}
+            {% set singular = True %}
+        {% else %}
+            {% set singular = False %}
+        {% endif %}
+        {% if pool_elements | length > 0 %}
+            <section id="{{ section_id }}">
+                <h4>{{ "Pool" if singular else "Pools" }}</h4>
+                <ul>
+                    {% for pool_element in pool_elements %}
+                        <li class="{{ 'listless-item' if pool_element.pool.series else '' }}">
+                            <strong>
+                                {% if pool_element.pool.series %}
+                                    {{ helpers.base.GeneralLink('&laquo;', url_for('pool_element.previous_html', id=pool_element.id)) }}
+                                {% endif %}
+                                {{ helpers.base.GeneralLink(pool_element.pool.name, pool_element.pool.show_url) }}
+                                {% if pool_element.pool.series %}
+                                    {{ helpers.base.GeneralLink('&raquo;', url_for('pool_element.next_html', id=pool_element.id)) }}
+                                {% endif %}
+                                [{{ helpers.base.GeneralLink("%d/%d"|format(pool_element.position1, pool_element.pool.element_count), pool_element.page_url) }}]
+                            </strong>
+                            <span class="delete-control">
+                                ( <a href="{{ pool_element.delete_url }}" onclick="return Prebooru.deletePool(this)">remove</a> )
+                            </span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        {% endif %}
     {% endif %}
 {%- endmacro %}

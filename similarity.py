@@ -210,14 +210,10 @@ def PopulateSimilarityPools(sdata_items):
     print("PopulateSimilarityPools")
     total_matches = []
     score_results = []
-    start_time = time.time()
     for sdata in sdata_items:
         smatches = SimilarityData.query.filter(SimilarityData.ratio_clause(sdata.ratio), SimilarityData.cross_similarity_clause2(sdata.image_hash), SimilarityData.post_id != sdata.post_id).all()
         score_results += CheckSimilarMatchScores(smatches, sdata.image_hash, 90.0)
         total_matches += smatches
-    end_time = time.time()
-    total_results = len(total_matches)
-    calculation_time = round((end_time - start_time) / len(sdata_items), 2)
     sibling_post_ids = set(result['post_id'] for result in score_results)
     sibling_pools = SimilarityPool.query.options(selectinload(SimilarityPool.elements)).filter(SimilarityPool.post_id.in_(sibling_post_ids)).all()
     final_results = []
@@ -225,19 +221,17 @@ def PopulateSimilarityPools(sdata_items):
         post_results = [result for result in score_results if result['post_id'] == post_id]
         post_result = sorted(post_results, key=lambda x: x['score'], reverse=True)[0]
         final_results.append(post_result)
-    main_pool, index = CreateSimilarityPools(sdata.post_id, final_results, total_results, calculation_time, sibling_pools)
+    main_pool, index = CreateSimilarityPools(sdata.post_id, final_results, sibling_pools)
     if index is not None:
         CreateSimilarityPairings(sdata.post_id, final_results, main_pool, sibling_pools, index)
 
 
-def CreateSimilarityPools(post_id, score_results, total_results, calculation_time, sibling_pools):
+def CreateSimilarityPools(post_id, score_results, sibling_pools):
     current_time = GetCurrentTime()
     main_pool = SimilarityPool.query.filter_by(post_id=post_id).first()
     if main_pool is None:
         main_pool = SimilarityPool(post_id=post_id, created=current_time, element_count=0)
         SESSION.add(main_pool)
-    main_pool.total_results = total_results
-    main_pool.calculation_time = calculation_time
     main_pool.updated = current_time
     SESSION.commit()
     if len(score_results) == 0:
@@ -249,7 +243,7 @@ def CreateSimilarityPools(post_id, score_results, total_results, calculation_tim
     add_pools = []
     for post_id in sibling_post_ids:
         if post_id not in INDEX_POOL_BY_POST_ID:
-            pool = SimilarityPool(post_id=post_id, created=current_time, updated=current_time, calculation_time=0.0, total_results=0)
+            pool = SimilarityPool(post_id=post_id, created=current_time, updated=current_time)
             add_pools.append(pool)
             INDEX_POOL_BY_POST_ID[post_id] = pool
     if len(add_pools) > 0:

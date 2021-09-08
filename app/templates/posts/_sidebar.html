@@ -10,7 +10,7 @@
     {{ boorus_section(post.boorus, 'booru-info') }}
     {{ artists_section(post.artists, 'artist-info') }}
     {{ illusts_section(post.illusts, 'illust-info') }}
-    {{ pools_section(post, 'pool-list') }}
+    {{ pools_section(post._pools, 'pool-list') }}
     {{ notations_section(post.notations, 'notation-list') }}
     {{ errors_section(post.errors, 'error-list') }}
     <section id="post-image-search">

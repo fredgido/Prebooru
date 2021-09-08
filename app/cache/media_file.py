@@ -1,19 +1,26 @@
-# APP/CACHE/API_DATA.PY
+# APP/CACHE/MEDIA_FILE.PY
 
-# ##LOCAL IMPORTS
+# ## LOCAL IMPORTS
 from .. import DB
 from ..storage import CACHE_DATA_DIRECTORY, CacheNetworkUrlpath
 
 
-# ##GLOBAL VARIABLES
+# ## CLASSES
 
 class MediaFile(DB.Model):
+    # ## Declarations
+
+    # #### SqlAlchemy
     __bind_key__ = 'cache'
+
+    # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
     md5 = DB.Column(DB.String(255), nullable=False)
     file_ext = DB.Column(DB.String(255), nullable=False)
     media_url = DB.Column(DB.String(255), nullable=False)
     expires = DB.Column(DB.DateTime(timezone=False), nullable=False)
+
+    # ## Property methods
 
     @property
     def file_url(self):

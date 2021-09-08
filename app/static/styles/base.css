@@ -128,6 +128,10 @@ form input[type=submit] {
 ul {
     margin-left: 1.25em;
 }
+li.listless-item {
+    list-style-type: none;
+    margin-left: -1.05em;
+}
 div#notice {
     position: fixed;
     top: 1em;

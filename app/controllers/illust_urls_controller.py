@@ -1,6 +1,7 @@
 # APP\CONTROLLERS\ILLUST_URLS_CONTROLLER.PY
 
 # ## PYTHON IMPORTS
+from sqlalchemy.orm import selectinload
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from wtforms import IntegerField, BooleanField, StringField
 from wtforms.validators import DataRequired
@@ -22,6 +23,17 @@ CREATE_REQUIRED_PARAMS = ['illust_id', 'url']
 VALUES_MAP = {
     **{k: k for k in IllustUrl.__table__.columns.keys()},
 }
+
+
+# #### Load options
+
+SHOW_HTML_OPTIONS = (
+    selectinload(IllustUrl.post),
+)
+
+INDEX_HTML_OPTIONS = (
+    selectinload(IllustUrl.post),
+)
 
 
 # Forms
@@ -138,7 +150,7 @@ def show_json(id):
 
 @bp.route('/illust_urls/<int:id>', methods=['GET'])
 def show_html(id):
-    illust_url = GetOrAbort(IllustUrl, id)
+    illust_url = GetOrAbort(IllustUrl, id, options=SHOW_HTML_OPTIONS)
     return render_template("illust_urls/show.html", illust_url=illust_url)
 
 
@@ -153,6 +165,7 @@ def index_json():
 @bp.route('/illust_urls', methods=['GET'])
 def index_html():
     q = index()
+    q = q.options(INDEX_HTML_OPTIONS)
     illust_urls = Paginate(q, request)
     return render_template("illust_urls/index.html", illust_urls=illust_urls, illust_url=IllustUrl())
 
