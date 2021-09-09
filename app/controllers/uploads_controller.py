@@ -7,7 +7,7 @@ from wtforms import StringField, IntegerField, TextAreaField
 
 # ## LOCAL IMPORTS
 from ..logical.utility import EvalBoolString
-from ..models import Upload, Post, IllustUrl, Illust, Artist
+from ..models import Upload, Post, IllustUrl, Illust
 from ..sources.base_source import GetPostSource, GetPreviewUrl
 from ..sources.local_source import WorkerCheckUploads
 from ..database.upload_db import CreateUploadFromParameters
@@ -25,11 +25,10 @@ bp = Blueprint("upload", __name__)
 # #### Load options
 
 SHOW_HTML_OPTIONS = (
-    selectinload(Upload.posts).selectinload(Post.illust_urls).selectinload(IllustUrl.illust).
-        options(
-            selectinload(Illust.tags),
-            selectinload(Illust.artist),
-        ),
+    selectinload(Upload.posts).selectinload(Post.illust_urls).selectinload(IllustUrl.illust).options(
+        selectinload(Illust.tags),
+        selectinload(Illust.artist),
+    ),
     selectinload(Upload.image_urls),
     selectinload(Upload.errors),
 )
@@ -277,7 +276,6 @@ def upload_select_html():
         return render_template("uploads/select.html", illust_urls=None, form=GetUploadForm(), upload=Upload())
     results = upload_select()
     form = GetUploadForm(request_url=results['data']['request_url'])
-    print("Results:", results)
     if results['error']:
         flash(results['message'], 'error')
         return render_template("uploads/select.html", illust_urls=None, form=form, upload=Upload())

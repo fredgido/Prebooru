@@ -2,7 +2,7 @@
 
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, redirect, url_for, flash
-from sqlalchemy.orm import selectinload, lazyload
+from sqlalchemy.orm import selectinload
 from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
 from wtforms.validators import DataRequired
 

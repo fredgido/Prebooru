@@ -1,13 +1,12 @@
 # APP/MODELS/POOL.PY
 
-# ##PYTHON IMPORTS
+# ## PYTHON IMPORTS
 from dataclasses import dataclass
 from sqlalchemy.ext.orderinglist import ordering_list
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.orm import lazyload, selectin_polymorphic
-from flask import url_for
 
-# ##LOCAL IMPORTS
+# ## LOCAL IMPORTS
 from .. import DB
 from ..base_model import JsonModel, DateTimeOrNull
 from .post import Post
@@ -16,7 +15,7 @@ from .notation import Notation
 from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation, pool_element_create, pool_element_delete
 
 
-# ##CLASSES
+# ## CLASSES
 
 @dataclass
 class Pool(JsonModel):

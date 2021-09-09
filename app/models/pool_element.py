@@ -1,16 +1,16 @@
 # APP/MODELS/POOL_ELEMENT.PY
 
-# ##PYTHON IMPORTS
+# ## PYTHON IMPORTS
 import math
 from flask import url_for
 from dataclasses import dataclass
 
-# ##LOCAL IMPORTS
+# ## LOCAL IMPORTS
 from .. import DB, SESSION
 from ..base_model import JsonModel, IntOrNone
 
 
-# ##FUNCTIONS
+# ## FUNCTIONS
 
 def pool_element_create(item):
     if item.__table__.name == 'post':
@@ -35,7 +35,7 @@ def pool_element_delete(pool_id, item):
     SESSION.delete(element)
 
 
-# ##CLASSES
+# ## CLASSES
 
 @dataclass
 class PoolElement(JsonModel):
@@ -55,7 +55,6 @@ class PoolElement(JsonModel):
 
     # ## Relationships
     # pool <- Pool (MtO)
-    
 
     # ## Property methods
 

@@ -152,7 +152,7 @@ def ProcessFileUpload(upload):
 # #### Booru functions
 
 def AddDanbooruArtists(url, danbooru_artists, db_boorus, db_artists):
-    db_artist = next(filter(lambda x: x.booru_search_url == url, db_artists))
+    artist = next(filter(lambda x: x.booru_search_url == url, db_artists))
     for danbooru_artist in danbooru_artists:
         booru = next(filter(lambda x: x.danbooru_id == danbooru_artist['id'], db_boorus), None)
         if booru is None:

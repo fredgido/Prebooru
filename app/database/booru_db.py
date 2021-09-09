@@ -118,6 +118,7 @@ def CheckArtistsBooru(booru):
         SESSION.commit()
     return {'error': False}
 
+
 # #### Misc functions
 
 def BooruAppendArtist(booru, artist):

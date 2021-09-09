@@ -6,8 +6,7 @@ import datetime
 from types import SimpleNamespace
 from typing import List
 from dataclasses import dataclass
-from flask import url_for
-from sqlalchemy.orm import lazyload, selectinload
+from sqlalchemy.orm import selectinload
 from sqlalchemy.util import memoized_property
 from sqlalchemy.ext.associationproxy import association_proxy
 

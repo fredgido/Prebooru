@@ -35,14 +35,12 @@ def _CORS_JSON(json):
 
 
 def ErrorResp(message):
-    print("ErrorResp:", message)
     return _CORS_JSON({'error': True, 'message': message})
 
 
 # #### Auxiliary functions
 
 def CheckPreprocess(post):
-    print("CheckPreprocess")
     params = {
         'search[uploader_name]': DANBOORU_USERNAME,
         'search[md5]': post.md5,
@@ -51,12 +49,10 @@ def CheckPreprocess(post):
     if danbooru_resp.status_code != 200:
         return "HTTP %d: %s; Unable to query Danbooru for existing upload: %s - %s" % (danbooru_resp.status_code, danbooru_resp.reason, DANBOORU_USERNAME, post.md5)
     data = danbooru_resp.json()
-    print(data)
     return len(data)
 
 
 def PreprocessPost(post):
-    print("PreprocessPost")
     buffer = PutGetRaw(post.file_path, 'rb')
     filename = post.md5 + '.' + post.file_ext
     mimetype = MIMETYPES[post.file_ext]

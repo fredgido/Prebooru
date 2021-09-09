@@ -25,13 +25,12 @@ POOL_SEARCH_KEYS = ['has_pools', 'has_post_pools', 'has_illust_pools']
 # #### Load options
 
 SHOW_HTML_OPTIONS = (
-    selectinload(Post.illust_urls).selectinload(IllustUrl.illust).
-        options(
-            selectinload(Illust.tags),
-            selectinload(Illust.commentaries),
-            selectinload(Illust.artist).selectinload(Artist.boorus),
-            selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'),  # Eager load all posts underneath the same illust(s)
-        ),
+    selectinload(Post.illust_urls).selectinload(IllustUrl.illust).options(
+        selectinload(Illust.tags),
+        selectinload(Illust.commentaries),
+        selectinload(Illust.artist).selectinload(Artist.boorus),
+        selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'),  # Eager load all posts underneath the same illust(s)
+    ),
     selectinload(Post.notations),
     selectinload(Post.errors),
     selectinload(Post._pools).selectinload(PoolPost.pool),

@@ -15,6 +15,7 @@ bp = Blueprint("static", __name__)
 def site_map_html():
     return render_template("static/site_map.html")
 
+
 @bp.route('/static/bookmarklet_info', methods=['GET'])
 def bookmarklet_info_html():
     return render_template("static/bookmarklet_info.html")

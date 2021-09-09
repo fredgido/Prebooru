@@ -27,7 +27,6 @@ def FormatTimestamp(timeval):
 def FormatTimestamps(item):
     text = FormatTimestamp(item.created)
     delta = item.updated - item.created
-    print(delta)
     if delta.days > 0 or delta.seconds > 3600:
         text += " ( %s )" % TimeAgo(item.updated)
     return text
@@ -153,7 +152,6 @@ def PageNavigation(paginate):
     pages += list(range(left, right + 1))
     pages += ['...'] if right != penultimate_page else []
     pages += [last_page] if last_page > 1 else []
-    print(previous_page, current_page, next_page, pages)
     return previous_page, current_page, next_page, pages
 
 

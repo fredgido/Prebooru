@@ -3,7 +3,7 @@
 # ## PYTHON IMPORTS
 from flask import Blueprint, request, render_template, redirect, url_for, flash
 from sqlalchemy import not_, or_
-from sqlalchemy.orm import selectinload, lazyload, selectin_polymorphic
+from sqlalchemy.orm import selectinload, selectin_polymorphic
 from wtforms import TextAreaField, IntegerField, BooleanField, SelectField, StringField
 from wtforms.validators import DataRequired
 
@@ -148,8 +148,6 @@ def index():
     search = GetParamsValue(params, 'search', True)
     negative_search = GetParamsValue(params, 'not', True)
     q = Illust.query
-    #q = q.options(selectinload(Illust.site_data), selectinload(Illust.urls).selectinload(IllustUrl.post).lazyload('*'), lazyload('*'))
-    #q = q.options(selectinload(Illust.site_data))
     q = SearchFilter(q, search, negative_search)
     q = PoolFilter(q, search)
     if 'has_illust_urls2' in search:

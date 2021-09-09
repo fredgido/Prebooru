@@ -351,7 +351,6 @@ def Prework(site_illust_id):
 # ###### ILLUST
 
 def GetIllustTags(artwork):
-    print("GetIllustTags")
     tags = set(tag_data['tag'] for tag_data in (SafeGet(artwork, 'tags', 'tags') or []))
     if artwork['isOriginal']:
         tags.add('original')
@@ -359,7 +358,6 @@ def GetIllustTags(artwork):
 
 
 def GetIllustUrlsFromArtwork(artwork):
-    print("GetIllustUrlsFromArtwork")
     original_url = artwork['urls']['original']
     parse = urllib.parse.urlparse(original_url)
     site_id = GetSiteId(parse.netloc)
@@ -377,7 +375,6 @@ def GetIllustUrlsFromArtwork(artwork):
 
 
 def GetIllustUrlsFromPage(page_data):
-    print("GetIllustUrlsFromPage")
     image_urls = []
     for i in range(len(page_data['pages'])):
         image = page_data['pages'][i]
@@ -398,7 +395,6 @@ def GetIllustUrlsFromPage(page_data):
 
 
 def GetIllustParametersFromArtwork(artwork, page_data):
-    print("GetIllustParametersFromArtwork")
     site_illust_id = int(artwork['illustId'])
     illust_urls = GetIllustUrlsFromPage(page_data) if page_data is not None else GetIllustUrlsFromArtwork(artwork)
     sub_data = artwork['userIllusts'][str(site_illust_id)]
@@ -452,7 +448,6 @@ def GetArtistParametersFromPxuser(pxuser, artwork):
 # Data lookup functions
 
 def GetPageData(site_illust_id):
-    print("GetPageData")
     page_data = GetApiData([site_illust_id], SITE_ID, 'page')
     if len(page_data) == 0:
         page_data = GetPixivPageData(site_illust_id)
@@ -465,7 +460,6 @@ def GetPageData(site_illust_id):
 
 
 def GetProfileData(site_artist_id):
-    print("GetProfileData")
     profile_data = GetApiData([site_artist_id], SITE_ID, 'profile')
     if len(profile_data) == 0:
         profile_data = GetPixivProfileData(site_artist_id)
@@ -506,7 +500,6 @@ def GetArtistData(site_artist_id):
 
 
 def GetIllustApiData(site_illust_id):
-    print("GetIllustApiData")
     artwork = GetApiIllust(site_illust_id, SITE_ID)
     if artwork is None:
         artwork = GetPixivIllust(site_illust_id)
@@ -518,7 +511,6 @@ def GetIllustApiData(site_illust_id):
 
 
 def GetIllustData(site_illust_id):
-    print("GetIllustData")
     artwork = GetIllustApiData(site_illust_id)
     if artwork is None:
         return {'active': False, 'requery': None}

@@ -5,8 +5,6 @@ import datetime
 from typing import List
 from dataclasses import dataclass
 from sqlalchemy.util import memoized_property
-from sqlalchemy.ext.associationproxy import association_proxy
-from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import DB
@@ -120,10 +118,6 @@ class Artist(JsonModel):
     @property
     def booru_search_url(self):
         return self._source.ArtistBooruSearchUrl(self)
-
-    @property
-    def illust_search(self):
-        return url_for('illust.index_html', **{'search[artist_id]': self.id})
 
     # ###### Private
 

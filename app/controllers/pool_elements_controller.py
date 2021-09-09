@@ -6,7 +6,7 @@ from flask import Blueprint, request, url_for, flash, redirect
 # ## LOCAL IMPORTS
 from ..models import Pool, PoolElement
 from ..database.pool_element_db import CreatePoolElementFromParameters, DeletePoolElement
-from .base_controller import GetDataParams, ReferrerCheck, GetOrAbort, GetOrError, CheckParamRequirements, SetError, IndexJson, ShowJson,\
+from .base_controller import GetDataParams, GetOrAbort, GetOrError, CheckParamRequirements, SetError, IndexJson, ShowJson,\
     ProcessRequestValues, GetParamsValue, SearchFilter, DefaultOrder, ParseType
 
 

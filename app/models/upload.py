@@ -6,7 +6,6 @@ from typing import List
 from dataclasses import dataclass
 from sqlalchemy.util import memoized_property
 from sqlalchemy.ext.associationproxy import association_proxy
-from flask import url_for
 
 # ##LOCAL IMPORTS
 from .. import DB

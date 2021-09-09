@@ -58,7 +58,7 @@ def StartServer(args):
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
     if args.public:
-        PREBOORU_APP.run(threaded=True, port=IMAGE_PORT, host="0.0.0.0")
+        IMAGES_APP.run(threaded=True, port=IMAGE_PORT, host="0.0.0.0")
     else:
         IMAGES_APP.run(threaded=True, port=IMAGE_PORT)
 

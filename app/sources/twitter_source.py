@@ -456,15 +456,12 @@ def ConvertText(twitter_data, key, *subkeys):
 #   Database
 
 def Prework(site_illust_id):
-    print("Prework")
     illust = GetSiteIllust(site_illust_id, SITE_ID)
     if illust is not None:
         return
     twitter_data = GetTwitterIllustTimeline(site_illust_id)
     if IsError(twitter_data):
-        print("Found error!")
         return twitter_data
-    print("Getting tweet,user!")
     tweets = []
     tweet_ids = set()
     for i in range(len(twitter_data)):
@@ -474,7 +471,6 @@ def Prework(site_illust_id):
         tweets.append(tweet)
         tweet_ids.add(tweet['id_str'])
     SaveApiData(tweets, 'id_str', SITE_ID, 'illust')
-    print("Saving tweets:", tweet_ids)
     twusers = []
     user_ids = set()
     for i in range(len(twitter_data)):
@@ -486,7 +482,6 @@ def Prework(site_illust_id):
         twusers.append(user)
         user_ids.add(id_str)
     SaveApiData(twusers, 'id_str', SITE_ID, 'artist')
-    print("Saving twusers:", user_ids)
 
 
 # #### Token functions
@@ -496,7 +491,6 @@ def LoadGuestToken():
     try:
         TOKEN_TIMESTAMP = os.path.getmtime(TOKEN_FILE) if os.path.exists(TOKEN_FILE) else None
         data = LoadDefault(TOKEN_FILE, {"token": None})
-        print(data, type(data), type(data['token']))
         return str(data['token']) if data['token'] is not None else None
     except Exception:
         return None
@@ -517,7 +511,6 @@ def CheckTokenFile():
 
 def CheckGuestAuth(func):
     def wrapper(*args, **kwargs):
-        print("CheckGuestAuth:", TWITTER_HEADERS is None, not CheckTokenFile())
         if TWITTER_HEADERS is None or not CheckTokenFile():
             AuthenticateGuest()
         return func(*args, **kwargs)
@@ -530,7 +523,6 @@ def AuthenticateGuest(override=False):
         'authorization': 'Bearer %s' % TWITTER_GUEST_AUTH
     }
     guest_token = LoadGuestToken() if not override else None
-    print("AuthenticateGuest", guest_token, type(guest_token), guest_token is None)
     if guest_token is None:
         print("Authenticating as guest...")
         data = TwitterRequest('https://api.twitter.com/1.1/guest/activate.json', 'POST')
@@ -550,7 +542,6 @@ def ReauthenticationCheck(response):
         resp_json = response.json()
     except Exception:
         return False
-    print("Error JSON:", resp_json, resp_json.keys())
     if 'errors' not in resp_json:
         return False
     if type(resp_json['errors']) is list:
@@ -614,11 +605,9 @@ def GetTwitterIllustTimeline(illust_id):
         return CreateError('sources.twitter.GetTwitterTimelineIllust', data['message'])
     found_tweets = GetGraphQLTimelineEntries(data['body'], [])
     if len(found_tweets) == 0:
-        print("No tweets found!")
         return CreateError('sources.twitter.GetTwitterTimelineIllust', "No tweets found in data.")
     tweet_ids = [SafeGet(tweet_entry, 'result', 'rest_id') for tweet_entry in found_tweets]
     if illust_id_str not in tweet_ids:
-        print("Tweet ID not found:", illust_id, tweet_ids)
         return CreateError('sources.twitter.GetTwitterTimelineIllust', "Tweet not found: %d" % illust_id)
     return found_tweets
 
@@ -804,19 +793,16 @@ def GetArtistParametersFromTwuser(twuser):
 # #### Data lookup functions
 
 def GetArtistApiData(site_artist_id):
-    print("GetArtistApiData", site_artist_id)
     twuser = GetApiArtist(site_artist_id, SITE_ID)
     if twuser is None:
         twuser = GetTwitterArtist(site_artist_id)
         if IsError(twuser):
-            print("Error getting artist data!")
             return
         SaveApiData([twuser], 'id_str', SITE_ID, 'artist')
     return twuser
 
 
 def GetArtistData(site_artist_id):
-    print("GetArtistData", site_artist_id)
     twuser = GetArtistApiData(site_artist_id)
     if twuser is None:
         return {'active': False, 'requery': None}
@@ -828,7 +814,6 @@ def GetIllustApiData(site_illust_id):
     if tweet is None:
         tweet = GetTwitterIllust(site_illust_id)
         if IsError(tweet):
-            print("Error getting illust data!")
             return
         SaveApiData([tweet], 'id_str', SITE_ID, 'illust')
     return tweet
