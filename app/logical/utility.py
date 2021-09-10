@@ -88,8 +88,24 @@ def DaysFromNow(days):
     return GetCurrentTime() + datetime.timedelta(days=days)
 
 
+def HoursFromNow(hours):
+    return GetCurrentTime() + datetime.timedelta(hours=hours)
+
+
+def HoursAgo(hours):
+    return GetCurrentTime() - datetime.timedelta(hours=hours)
+
+
+def MinutesFromNow(minutes):
+    return GetCurrentTime() + datetime.timedelta(minutes=minutes)
+
+
 def MinutesAgo(minutes):
     return GetCurrentTime() - datetime.timedelta(minutes=minutes)
+
+
+def SecondsFromNowLocal(seconds):
+    return datetime.datetime.now() + datetime.timedelta(seconds=seconds)
 
 
 def SafeGet(input_dict, *keys):

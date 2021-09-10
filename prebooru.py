@@ -11,7 +11,7 @@ from app import PREBOORU_APP
 from app import controllers
 from app import helpers
 from app.logical.file import LoadDefault, PutGetJSON
-from app.config import WORKING_DIRECTORY, DATA_FILEPATH
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH, DEBUG_MODE, VERSION
 
 # ## GLOBAL VARIABLES
 
@@ -38,7 +38,8 @@ def Main(args):
         Flaskwork(PREBOORU_APP)
     if args.title:
         os.system('title Prebooru Server')
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    if not DEBUG_MODE or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        print("\n========== Starting server - Prebooru-%s ==========" % VERSION)
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
     PREBOORU_APP.name = 'prebooru'

@@ -9,7 +9,7 @@ from flask import Flask, request, send_from_directory
 # ## LOCAL IMPORTS
 from app.logical.file import LoadDefault, PutGetJSON
 from app.storage import IMAGE_DIRECTORY
-from app.config import WORKING_DIRECTORY, DATA_FILEPATH, IMAGE_PORT
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH, IMAGE_PORT, DEBUG_MODE, VERSION
 
 
 # ## GLOBAL VARIABLES
@@ -46,7 +46,8 @@ def StartServer(args):
     if args.title:
         os.system('title Image Server')
     global SERVER_PID
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    if not DEBUG_MODE or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        print("\n========== Starting server - Images-%s ==========" % VERSION)
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
     IMAGES_APP.run(threaded=True, port=2345) # IMAGE_PORT

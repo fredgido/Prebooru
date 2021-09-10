@@ -8,10 +8,11 @@ from sqlalchemy import event, MetaData
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.wsgi import get_input_stream
+from werkzeug.formparser import parse_form_data
 
 # ## LOCAL IMPORTS
 from .logical import query_extensions
-from .config import DB_PATH, CACHE_PATH, SIMILARITY_PATH
+from .config import DB_PATH, CACHE_PATH, SIMILARITY_PATH, DEBUG_MODE
 
 
 # ## GLOBAL VARIABLES
@@ -62,7 +63,8 @@ class MethodRewriteMiddleware(object):
         print("Server addr:", SERVER_INFO.addr)
         if environ['REQUEST_METHOD'] == 'POST':
             environ['wsgi.input'] = stream = BytesIO(get_input_stream(environ).read())
-            form_method = environ['werkzeug.request'].values.get(self.input_name, default='').upper()
+            _, form, _ = parse_form_data(environ)
+            form_method = form.get(self.input_name, default='').upper()
             if form_method in self.allowed_methods:
                 environ['REQUEST_METHOD'] = form_method
             if form_method in self.bodyless_methods:
@@ -83,9 +85,9 @@ PREBOORU_APP.config.from_mapping(
     JSON_SORT_KEYS=False,
     SQLALCHEMY_ECHO=False,
     SECRET_KEY='\xfb\x12\xdf\xa1@i\xd6>V\xc0\xbb\x8fp\x16#Z\x0b\x81\xeb\x16',
-    DEBUG=True,
+    DEBUG=DEBUG_MODE,
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
-    EXPLAIN_TEMPLATE_LOADING=True
+    EXPLAIN_TEMPLATE_LOADING=False,
 )
 
 METADATA = MetaData(naming_convention=NAMING_CONVENTION)
