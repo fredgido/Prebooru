@@ -26,12 +26,12 @@ from app.database.error_db import AppendError, CreateAndAppendError
 from app.sources.base_source import GetPostSource, GetSourceById
 from app.sources.local_source import SimilarityCheckPosts
 from app.sources.danbooru_source import GetArtistsByMultipleUrls
-from app.logical.utility import MinutesAgo, GetCurrentTime
+from app.logical.utility import MinutesAgo, GetCurrentTime, SecondsFromNowLocal
 from app.logical.file import LoadDefault, PutGetJSON
 from app.logical.logger import LogError
 from app.downloader.network_downloader import ConvertNetworkUpload
 from app.downloader.file_downloader import ConvertFileUpload
-from app.config import WORKING_DIRECTORY, DATA_FILEPATH, WORKER_PORT
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH, WORKER_PORT, DEBUG_MODE, VERSION
 
 
 # ## GLOBAL VARIABLES
@@ -288,16 +288,15 @@ def Main(args):
         logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
     if args.title:
         os.system('title Worker Server')
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    if not DEBUG_MODE or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        print("\n========== Starting server - Worker-%s ==========" % VERSION)
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
-        ExpungeCacheRecords()
         SCHED = BackgroundScheduler(daemon=True)
-        SCHED.add_job(CheckPendingUploads, 'interval', minutes=5)
+        SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1, next_run_time=SecondsFromNowLocal(5))
+        SCHED.add_job(CheckPendingUploads, 'interval', minutes=5, next_run_time=SecondsFromNowLocal(15))
         SCHED.add_job(CheckForNewArtistBoorus, 'interval', minutes=5)
         SCHED.add_job(ExpireUploads, 'interval', minutes=1)
-        SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1)
-        SCHED.add_job(CheckPendingUploads)
         SCHED.start()
     PREBOORU_APP.name = 'worker'
     PREBOORU_APP.run(threaded=True, port=WORKER_PORT)

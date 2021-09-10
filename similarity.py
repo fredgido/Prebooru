@@ -25,13 +25,13 @@ from app.similarity.similarity_data import SimilarityData, HASH_SIZE
 from app.similarity.similarity_pool import SimilarityPool
 from app.similarity.similarity_pool_element import SimilarityPoolElement
 from app.logical.file import PutGetRaw, CreateDirectory
-from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow, SetError
+from app.logical.utility import GetCurrentTime, GetBufferChecksum, DaysFromNow, SetError, SecondsFromNowLocal
 from app.logical.network import GetHTTPFile
 from app.logical.file import LoadDefault, PutGetJSON
 from app.sources.base_source import GetImageSource, NoSource
 from app.database.similarity_pool_element_db import BatchDeleteSimilarityPoolElement
 from app.storage import CACHE_DATA_DIRECTORY
-from app.config import WORKING_DIRECTORY, DATA_FILEPATH, SIMILARITY_PORT
+from app.config import WORKING_DIRECTORY, DATA_FILEPATH, SIMILARITY_PORT, DEBUG_MODE, VERSION
 
 
 # ## GLOBAL VARIABLES
@@ -369,7 +369,7 @@ def ComparePostSimilarity(args):
 
 
 def ComparePosts(args):
-    page = Post.query.filter(Post.id > 43375).order_by(Post.id.asc()).paginate(per_page=100)
+    page = Post.query.order_by(Post.id.asc()).paginate(per_page=100)
     while True:
         print("\n%d/%d" % (page.page, page.pages))
         for post in page.items:
@@ -411,11 +411,12 @@ def StartServer(args):
     if args.title:
         os.system('title Similarity Server')
     global SCHED, SERVER_PID
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+    if not DEBUG_MODE or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        print("\n========== Starting server - Similarity-%s ==========" % VERSION)
         SERVER_PID = os.getpid()
         PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
         SCHED = BackgroundScheduler(daemon=True)
-        SCHED.add_job(ProcessSimilarity)
+        SCHED.add_job(ProcessSimilarity, next_run_time=SecondsFromNowLocal(5))
         SCHED.start()
     PREBOORU_APP.name = 'similarity'
     PREBOORU_APP.run(threaded=True, port=SIMILARITY_PORT)

@@ -18,7 +18,7 @@ class CountPaginate():
         self.offset = (page - 1) * per_page
         self.items = self._GetItems()
         self.count = self._GetCount()
-        self.pages = (self.count // per_page) + 1
+        self.pages = ((self.count - 1) // per_page) + 1
 
     @property
     def has_next(self):
