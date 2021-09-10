@@ -48,6 +48,85 @@ TOTAL_BITS = HASH_SIZE * HASH_SIZE
 
 # ## FUNCTIONS
 
+# #### Route functions
+
+@PREBOORU_APP.route('/check_similarity.json', methods=['GET'])
+def check_similarity():
+    request_urls = request.args.getlist('urls[]')
+    request_score = request.args.get('score', type=float, default=90.0)
+    use_original = request.args.get('use_original', type=bool, default=False)
+    include_posts = request.args.get('include_posts', type=bool, default=False)
+    retdata = {'error': False}
+    if request_urls is None:
+        return SetError(retdata, "Must include url.")
+    similar_results = []
+    for image_url in request_urls:
+        source = GetImageSource(image_url) or NoSource()
+        download_url = source.SmallImageUrl(image_url) if source is not None and not use_original else image_url
+        media = MediaFile.query.filter_by(media_url=download_url).first()
+        if media is None:
+            media, image = CreateNewMedia(download_url, source)
+            if type(image) is str:
+                return SetError(retdata, image)
+        else:
+            image = Image.open(media.file_path)
+        image = image.copy().convert("RGB")
+        image_hash = str(imagehash.whash(image, hash_size=HASH_SIZE))
+        ratio = round(image.width / image.height, 4)
+        smatches = SimilarityData.query.filter(SimilarityData.ratio_clause(ratio), SimilarityData.cross_similarity_clause2(image_hash)).all()
+        score_results = CheckSimilarMatchScores(smatches, image_hash, request_score)
+        all_post_ids = set(result['post_id'] for result in score_results)
+        final_results = []
+        for post_id in all_post_ids:
+            post_results = [result for result in score_results if result['post_id'] == post_id]
+            if len(post_results) > 1:
+                post_results = sorted(post_results, key=lambda x: x['score'], reverse=True)
+            final_results.append(post_results[0])
+        final_results = sorted(final_results, key=lambda x: x['score'], reverse=True)
+        if include_posts:
+            post_ids = [result['post_id'] for result in final_results]
+            posts = app.models.Post.query.filter(app.models.Post.id.in_(post_ids)).all()
+            for result in final_results:
+                post = next(filter(lambda x: x.id == result['post_id'], posts), None)
+                result['post'] = post.to_json() if post is not None else post
+        normalized_url = source.NormalizedImageUrl(image_url) if not use_original else image_url
+        similar_results.append({'image_url': normalized_url, 'post_results': final_results, 'cache': media.file_url})
+    retdata['similar_results'] = similar_results
+    return retdata
+
+
+@PREBOORU_APP.route('/generate_similarity.json', methods=['POST'])
+def generate_similarity():
+    data = request.get_json()
+    if 'post_ids' not in data or len(data['post_ids']) == 0:
+        return {'error': True, 'message': "Must include post_ids."}
+    GENERATE_SEM.acquire()
+    print("\n<generate semaphore acquire>\n")
+    try:
+        posts = Post.query.filter(Post.id.in_(data['post_ids'])).all()
+        for post in posts:
+            print("Regenerating post #", post.id)
+            SimilarityData.query.filter_by(post_id=post.id).delete()
+            SESSION.commit()
+            GeneratePostSimilarity(post)
+            pool = SimilarityPool.query.filter_by(post_id=post.id).first()
+            if pool is not None and len(pool.elements) > 0:
+                print("Deleting similarity pool elements:", len(pool.elements))
+                BatchDeleteSimilarityPoolElement(pool.elements)
+            sdata_items = SimilarityData.query.filter_by(post_id=post.id).all()
+            PopulateSimilarityPools(sdata_items)
+    finally:
+        GENERATE_SEM.release()
+        print("\n<generate semaphore release>\n")
+    return {'error': False}
+
+
+@PREBOORU_APP.route('/check_posts', methods=['GET'])
+def check_posts():
+    SCHED.add_job(ProcessSimilarity)
+    return jsonify(SIMILARITY_SEM._value > 0)
+
+
 # #### Helper functions
 
 def HexToBinary(inhex):
@@ -99,7 +178,6 @@ def CheckSimilarMatchScores(similarity_results, image_hash, min_score):
                 'score': score,
             }
             found_results.append(data)
-    print("Hamming time:", hamming_time)
     return sorted(found_results, key=lambda x: x['score'], reverse=True)
 
 
@@ -132,9 +210,8 @@ def CreateNewMedia(download_url, source):
 
 
 def ProcessSimilarity():
-    print("{ProcessSimilarity}")
     SIMILARITY_SEM.acquire()
-    print("<similarity semaphore acquire>")
+    print("\n<similarity semaphore acquire>\n")
     try:
         while True:
             if not ProcessSimilaritySet():
@@ -144,7 +221,7 @@ def ProcessSimilarity():
                 break
     finally:
         SIMILARITY_SEM.release()
-        print("\n<similarity semaphore release>")
+        print("\n<similarity semaphore release>\n")
 
 
 # #### Similarity data functions
@@ -157,11 +234,11 @@ def RegeneratePostSimilarity(result, post):
 
 
 def GeneratePostSimilarity(post):
-    print("GeneratePostSimilarity")
     ratio = round(post.width / post.height, 4)
     preview_image = Image.open(post.preview_path)
     preview_image = preview_image.convert("RGB")
     preview_image_hash = str(imagehash.whash(preview_image, hash_size=HASH_SIZE))
+    print("PREVIEW SIZE ADD")
     simresult = SimilarityData(post_id=post.id, image_hash=preview_image_hash, ratio=ratio)
     SESSION.add(simresult)
     SESSION.commit()
@@ -190,13 +267,13 @@ def GeneratePostSimilarity(post):
 
 
 def ProcessSimilaritySet():
-    print("ProcessSimilaritySet")
     max_post_id = SESSION.query(func.max(SimilarityData.post_id)).scalar() or 0
     page = Post.query.filter(Post.id > max_post_id).paginate(per_page=100)
     if len(page.items) == 0:
+        print("ProcessSimilaritySet: no posts to process")
         return False
+    print("Generating post similarity data.")
     while True:
-        print("\n%d/%d" % (page.page, page.pages))
         for post in page.items:
             GeneratePostSimilarity(post)
         if not page.has_next:
@@ -207,7 +284,7 @@ def ProcessSimilaritySet():
 # #### Similarity pool functions
 
 def PopulateSimilarityPools(sdata_items):
-    print("PopulateSimilarityPools")
+    print("Generating post similarity pool.")
     total_matches = []
     score_results = []
     for sdata in sdata_items:
@@ -235,11 +312,9 @@ def CreateSimilarityPools(post_id, score_results, sibling_pools):
     main_pool.updated = current_time
     SESSION.commit()
     if len(score_results) == 0:
-        print("No results found for post #%d." % post_id)
         return main_pool, None
     sibling_post_ids = [spool.post_id for spool in sibling_pools]
     INDEX_POOL_BY_POST_ID = {pool.post_id: pool for pool in sibling_pools}
-    print("Indexing pool...")
     add_pools = []
     for post_id in sibling_post_ids:
         if post_id not in INDEX_POOL_BY_POST_ID:
@@ -278,22 +353,20 @@ def CreateSimilarityPairings(post_id, score_results, main_pool, sibling_pools, i
             SESSION.commit()
             sibling_pool.element_count = sibling_pool._get_element_count()
             SESSION.commit()
+        print("Sibling pair:", spe1.id, '<->', spe2.id)
         spe1.sibling_id = spe2.id
         spe2.sibling_id = spe1.id
         SESSION.commit()
 
 
 def ProcessSimilarityPool():
-    print("ProcessSimilarityPool")
     max_post_id = SESSION.query(func.max(SimilarityPool.post_id)).scalar() or 0
     page = Post.query.filter(Post.id > max_post_id).with_entities(Post.id).paginate(per_page=100)
     while True:
-        print("\n%d/%d" % (page.page, page.pages))
         all_post_ids = [x[0] for x in page.items]
         all_sdata_items = SimilarityData.query.filter(SimilarityData.post_id.in_(all_post_ids)).all()
         for post_id in all_post_ids:
             sdata_items = [sdata for sdata in all_sdata_items if sdata.post_id == post_id]
-            print("Pool SDATA items:", sdata_items)
             PopulateSimilarityPools(sdata_items)
         if not page.has_next:
             break
@@ -405,6 +478,7 @@ def ComparePosts(args):
         if not page.has_next:
             break
         page = page.next()
+    print("Done!")
 
 
 def StartServer(args):
@@ -422,86 +496,9 @@ def StartServer(args):
     PREBOORU_APP.run(threaded=True, port=SIMILARITY_PORT)
 
 
-# #### Route functions
-
-@PREBOORU_APP.route('/check_similarity.json', methods=['GET'])
-def check_similarity():
-    request_urls = request.args.getlist('urls[]')
-    request_score = request.args.get('score', type=float, default=90.0)
-    use_original = request.args.get('use_original', type=bool, default=False)
-    include_posts = request.args.get('include_posts', type=bool, default=False)
-    retdata = {'error': False}
-    if request_urls is None:
-        return SetError(retdata, "Must include url.")
-    similar_results = []
-    for image_url in request_urls:
-        source = GetImageSource(image_url) or NoSource()
-        download_url = source.SmallImageUrl(image_url) if source is not None and not use_original else image_url
-        media = MediaFile.query.filter_by(media_url=download_url).first()
-        if media is None:
-            media, image = CreateNewMedia(download_url, source)
-            if type(image) is str:
-                return SetError(retdata, image)
-        else:
-            image = Image.open(media.file_path)
-        image = image.copy().convert("RGB")
-        image_hash = str(imagehash.whash(image, hash_size=HASH_SIZE))
-        ratio = round(image.width / image.height, 4)
-        smatches = SimilarityData.query.filter(SimilarityData.ratio_clause(ratio), SimilarityData.cross_similarity_clause2(image_hash)).all()
-        score_results = CheckSimilarMatchScores(smatches, image_hash, request_score)
-        all_post_ids = set(result['post_id'] for result in score_results)
-        final_results = []
-        for post_id in all_post_ids:
-            post_results = [result for result in score_results if result['post_id'] == post_id]
-            if len(post_results) > 1:
-                post_results = sorted(post_results, key=lambda x: x['score'], reverse=True)
-            final_results.append(post_results[0])
-        final_results = sorted(final_results, key=lambda x: x['score'], reverse=True)
-        if include_posts:
-            post_ids = [result['post_id'] for result in final_results]
-            posts = app.models.Post.query.filter(app.models.Post.id.in_(post_ids)).all()
-            for result in final_results:
-                post = next(filter(lambda x: x.id == result['post_id'], posts), None)
-                result['post'] = post.to_json() if post is not None else post
-        normalized_url = source.NormalizedImageUrl(image_url) if not use_original else image_url
-        similar_results.append({'image_url': normalized_url, 'post_results': final_results, 'cache': media.file_url})
-    retdata['similar_results'] = similar_results
-    return retdata
-
-
-@PREBOORU_APP.route('/generate_similarity.json', methods=['POST'])
-def generate_similarity():
-    data = request.get_json()
-    if 'post_ids' not in data or len(data['post_ids']) == 0:
-        return {'error': True, 'message': "Must include post_ids."}
-    GENERATE_SEM.acquire()
-    print("<generate semaphore acquire>")
-    try:
-        posts = Post.query.filter(Post.id.in_(data['post_ids'])).all()
-        for post in posts:
-            print("Regenerating post #", post.id)
-            SimilarityData.query.filter_by(post_id=post.id).delete()
-            SESSION.commit()
-            GeneratePostSimilarity(post)
-            pool = SimilarityPool.query.filter_by(post_id=post.id).first()
-            if pool is not None and len(pool.elements) > 0:
-                print("Deleting existing pool elements.")
-                BatchDeleteSimilarityPoolElement(pool.elements)
-            sdata_items = SimilarityData.query.filter_by(post_id=post.id).all()
-            PopulateSimilarityPools(sdata_items)
-    finally:
-        GENERATE_SEM.release()
-        print("<generate semaphore release>")
-    return {'error': False}
-
-
-@PREBOORU_APP.route('/check_posts', methods=['GET'])
-def check_posts():
-    SCHED.add_job(ProcessSimilarity)
-    return jsonify(SIMILARITY_SEM._value > 0)
-
-
 # #### Initialization
+
+os.environ['FLASK_ENV'] = 'development' if DEBUG_MODE else 'production'
 
 @atexit.register
 def Cleanup():
@@ -521,10 +518,6 @@ def Main(args):
         'compareposts': ComparePosts,
         'server': StartServer,
     }
-    if args.logging:
-        import logging
-        logging.basicConfig()
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
     switcher[args.type](args)
 
 
@@ -533,7 +526,6 @@ def Main(args):
 if __name__ == '__main__':
     parser = ArgumentParser(description="Worker to process uploads.")
     parser.add_argument('type', choices=['generate', 'pools', 'compare', 'compareposts', 'server'])
-    parser.add_argument('--logging', required=False, default=False, action="store_true", help="Display the SQL commands.")
     parser.add_argument('--expunge', required=False, default=False, action="store_true", help="Expunge all similarity records.")
     parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")
     parser.add_argument('--lastid', required=False, type=int, help="Sets the last post ID to use.")

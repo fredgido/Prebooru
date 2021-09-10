@@ -103,6 +103,8 @@ def Main(args):
 
 # ### INITIALIZATION
 
+os.environ['FLASK_ENV'] = 'development' if DEBUG_MODE else 'production'
+
 colorama.init(autoreset=True)
 
 PREBOORU_APP.register_blueprint(controllers.illust.bp)

@@ -27,9 +27,8 @@ SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
 
 IMAGES_APP = Flask(__name__)
 IMAGES_APP.config.from_mapping(
-    DEBUG=True,
+    DEBUG=DEBUG_MODE,
 )
-
 
 # ## FUNCTIONS
 
@@ -40,7 +39,9 @@ def send_file(path):
     return send_from_directory(IMAGE_DIRECTORY, path)
 
 
-# #### Initialization functions
+# #### Initialization
+
+os.environ['FLASK_ENV'] = 'development' if DEBUG_MODE else 'production'
 
 @atexit.register
 def Cleanup():
@@ -51,9 +52,13 @@ def Cleanup():
 # #### Main execution functions
 
 def StartServer(args):
+    global SERVER_PID
+    if SERVER_PID is not None:
+        print("\nServer process already running: %d" % SERVER_PID)
+        input()
+        exit(-1)
     if args.title:
         os.system('title Image Server')
-    global SERVER_PID
     if not DEBUG_MODE or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         print("\n========== Starting server - Images-%s ==========" % VERSION)
         SERVER_PID = os.getpid()

@@ -51,6 +51,14 @@ READ_ENGINE = DB.engine.execution_options(isolation_level="READ UNCOMMITTED")
 
 # ### FUNCTIONS
 
+# #### Route functions
+
+@PREBOORU_APP.route('/check_uploads')
+def check_uploads():
+    SCHED.add_job(CheckPendingUploads)
+    return jsonify(UPLOAD_SEM._value > 0)
+
+
 # #### Helper functions
 
 def CheckRequery(instance):
@@ -163,9 +171,8 @@ def AddDanbooruArtists(url, danbooru_artists, db_boorus, db_artists):
 # #### Scheduled functions
 
 def CheckPendingUploads():
-    print("{CheckPendingUploads}")
     UPLOAD_SEM.acquire()
-    print("<upload semaphore acquire>")
+    print("\n<upload semaphore acquire>\n")
     post_ids = []
     try:
         while True:
@@ -188,18 +195,18 @@ def CheckPendingUploads():
             SCHED.add_job(ContactSimilarityServer)
             SCHED.add_job(CheckForNewArtistBoorus)
         UPLOAD_SEM.release()
-        print("<upload semaphore release>")
+        print("\n<upload semaphore release>\n")
 
 
 def ContactSimilarityServer():
     results = SimilarityCheckPosts()
     if results['error']:
-        print(results['message'])
+        print("Similarity error:", results['message'])
 
 
 def CheckForNewArtistBoorus():
     BOORU_SEM.acquire()
-    print("<booru semaphore acquire>")
+    print("<\nbooru semaphore acquire>\n")
     try:
         LoadBooruArtistData()
         page = Artist.query.filter(Artist.id > BOORU_ARTISTS_DATA['last_checked_artist_id'], not_(Artist.boorus.any())).paginate(per_page=100)
@@ -210,7 +217,7 @@ def CheckForNewArtistBoorus():
             query_urls = [artist.booru_search_url for artist in page.items]
             results = GetArtistsByMultipleUrls(query_urls)
             if results['error']:
-                print("Error:", results)
+                print("Danbooru error:", results)
                 break
             booru_artist_ids = set(artist['id'] for artist in itertools.chain(*[results['data'][url] for url in results['data']]))
             boorus = Booru.query.filter(Booru.danbooru_id.in_(booru_artist_ids)).all()
@@ -223,12 +230,12 @@ def CheckForNewArtistBoorus():
             page = page.next()
     finally:
         BOORU_SEM.release()
-        print("<booru semaphore release>")
+        print("\n<booru semaphore release>\n")
 
 
 def ExpireUploads():
     time.sleep(random.random() * 5)
-    print("ExpireUploads")
+    print("\nExpireUploads")
     expired_uploads = Upload.query.filter(Upload.created < MinutesAgo(5)).filter_by(status="processing").all()
     if len(expired_uploads):
         print("Found %d uploads to expire!" % len(expired_uploads))
@@ -238,7 +245,7 @@ def ExpireUploads():
 
 
 def ExpungeCacheRecords():
-    print("ExpungeCacheRecords")
+    print("\nExpungeCacheRecords")
     api_delete_count = ApiData.query.filter(ApiData.expires < GetCurrentTime()).count()
     print("Records to delete:", api_delete_count)
     if api_delete_count > 0:
@@ -256,15 +263,9 @@ def ExpungeCacheRecords():
         SESSION.commit()
 
 
-# #### Route functions
-
-@PREBOORU_APP.route('/check_uploads')
-def check_uploads():
-    SCHED.add_job(CheckPendingUploads)
-    return jsonify(UPLOAD_SEM._value > 0)
-
-
 # #### Initialization
+
+os.environ['FLASK_ENV'] = 'development' if DEBUG_MODE else 'production'
 
 @atexit.register
 def Cleanup():
@@ -279,7 +280,7 @@ def Cleanup():
 def Main(args):
     global SERVER_PID, SCHED
     if SERVER_PID is not None:
-        print("Server process already running: %d" % SERVER_PID)
+        print("\nServer process already running: %d" % SERVER_PID)
         input()
         exit(-1)
     if args.logging:
