@@ -119,6 +119,13 @@ Additionally, there is also a `nginx.bat` batch file there which can be modified
 
 ## Userscript
 
+### PrebooruFileUpload
+
+A userscript for uploading illusts with dead sources to danbooru.
+
+- **Page:** https://gist.github.com/BrokenEagle/35f46ecfb4f9c13bc97efc968bcf396e
+- **Download:** https://gist.github.com/BrokenEagle/35f46ecfb4f9c13bc97efc968bcf396e/raw/PrebooruFileUpload.user.js
+
 ### NTISAS
 
 A userscript which shows Tweets already uploaded to Danbooru as well as provides other additional functionality.
@@ -128,7 +135,7 @@ A userscript which shows Tweets already uploaded to Danbooru as well as provides
 
 There is a branch of NTISAS under development which adds support for uploading and querying data from Prebooru.
 
-https://raw.githubusercontent.com/BrokenEagle/JavaScripts/ntisas-prebooru/New_Twitter_Image_Searches_and_Stuff.user.js
+- **Download:** https://raw.githubusercontent.com/BrokenEagle/JavaScripts/ntisas-prebooru/New_Twitter_Image_Searches_and_Stuff.user.js
 
 ### NPISAS
 

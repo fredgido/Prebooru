@@ -4,7 +4,7 @@
 from flask import Markup, url_for
 
 # ##LOCAL IMPORTS
-from .base_helper import SearchUrlFor
+from .base_helper import SearchUrlFor, GeneralLink
 
 
 # ## FUNCTIONS
@@ -15,3 +15,7 @@ def FormTitleApellation(illust_url):
 
 def PostSearch(upload):
     return SearchUrlFor('post.index_html', uploads={'id': upload.id})
+
+
+def CheckPendingLink():
+    return GeneralLink('pending', url_for('upload.upload_check_html'))

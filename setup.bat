@@ -21,6 +21,4 @@ echo.
 pip install -r requirements.txt
 echo.
 
-call initialize.bat
-
 echo Done!
