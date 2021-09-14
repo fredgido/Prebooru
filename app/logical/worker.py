@@ -1,58 +1,31 @@
-# WORKER.PY
-
-# ## PYTHON IMPORTS
+import itertools
 import os
 import time
-from flask import jsonify
-from sqlalchemy.orm import Session
-import atexit
-import threading
-import itertools
-from apscheduler.schedulers.background import BackgroundScheduler
-from argparse import ArgumentParser
 
-# ## LOCAL IMPORTS
-from app import database
-from app import DB, SESSION, PREBOORU_APP
-from app.cache import ApiData, MediaFile
-from app.models import Upload, Illust, Post
+from sqlalchemy import not_
+from sqlalchemy.orm import Session
+
+from app import SESSION, database, DB
 from app.database.artist_db import UpdateArtistFromSource
 from app.database.booru_db import CreateBooruFromParameters, BooruAppendArtist
-from app.database.illust_db import CreateIllustFromSource, UpdateIllustFromSource
-from app.database.upload_db import IsDuplicate, SetUploadStatus
 from app.database.error_db import AppendError, CreateAndAppendError
-from app.sources.base_source import GetPostSource, GetSourceById
-from app.sources.local_source import SimilarityCheckPosts
-from app.logical.check_booru_posts import CheckAllPostsForDanbooruID, CheckPostsForDanbooruID
-from app.logical.check_booru_artists import CheckAllArtistsForBoorus, CheckArtistsForBoorus
-from app.logical.utility import MinutesAgo, GetCurrentTime, SecondsFromNowLocal, UniqueObjects
-from app.logical.file import LoadDefault, PutGetJSON
-from app.logical.logger import LogError
-from app.downloader.network_downloader import ConvertNetworkUpload
+from app.database.illust_db import CreateIllustFromSource, UpdateIllustFromSource
+from app.database.upload_db import SetUploadStatus, IsDuplicate
 from app.downloader.file_downloader import ConvertFileUpload
+from app.downloader.network_downloader import ConvertNetworkUpload
+from app.logical.check_booru_posts import CheckPostsForDanbooruID
+from app.logical.file import PutGetJSON
+from app.logical.logger import LogError
+from app.logical.utility import GetCurrentTime, MinutesAgo
+from app.models import Upload, Illust, Artist, Booru, ApiData, MediaFile
+from app.sources.base_source import GetPostSource, GetSourceById
+from app.sources.danbooru_source import GetArtistsByMultipleUrls
 from app.config import WORKING_DIRECTORY, DATA_FILEPATH, WORKER_PORT, DEBUG_MODE, VERSION
-
-
-# ## GLOBAL VARIABLES
-
-SERVER_PID_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'worker-server-pid.json'
-SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
-
-SCHED = None
-UPLOAD_SEM = threading.Semaphore()
 
 READ_ENGINE = DB.engine.execution_options(isolation_level="READ UNCOMMITTED")
 
 
-# ### FUNCTIONS
-
-# #### Route functions
-
-@PREBOORU_APP.route('/check_uploads')
-def check_uploads():
-    SCHED.add_job(CheckPendingUploads)
-    return jsonify(UPLOAD_SEM._value > 0)
-
+BOORU_ARTISTS_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'booru_artists_file.json'
 
 # #### Helper functions
 
@@ -73,6 +46,19 @@ def GetUploadWait(upload_id):
         if upload is not None:
             return upload
         time.sleep(0.5)
+
+
+def SaveLastCheckArtistId(max_artist_id):
+    BOORU_ARTISTS_DATA['last_checked_artist_id'] = max_artist_id
+    PutGetJSON(BOORU_ARTISTS_FILE, 'w', BOORU_ARTISTS_DATA)
+
+
+def LoadBooruArtistData():
+    global BOORU_ARTISTS_DATA
+    if BOORU_ARTISTS_DATA is None:
+        BOORU_ARTISTS_DATA = PutGetJSON(BOORU_ARTISTS_FILE, 'r')
+        BOORU_ARTISTS_DATA = BOORU_ARTISTS_DATA if type(BOORU_ARTISTS_DATA) is dict else {}
+        BOORU_ARTISTS_DATA['last_checked_artist_id'] = BOORU_ARTISTS_DATA['last_checked_artist_id'] if ('last_checked_artist_id' in BOORU_ARTISTS_DATA) and (type(BOORU_ARTISTS_DATA['last_checked_artist_id']) is int) else 0
 
 
 # #### Upload functions
@@ -111,7 +97,8 @@ def ProcessNetworkUpload(upload):
         illust = CreateIllustFromSource(site_illust_id, source)
         if illust is None:
             SetUploadStatus(upload, 'error')
-            CreateAndAppendError('worker.ProcessNetworkUpload', "Unable to create illust: %s" % (source.ILLUST_SHORTLINK % site_illust_id), upload)
+            CreateAndAppendError('worker.ProcessNetworkUpload',
+                                 "Unable to create illust: %s" % (source.ILLUST_SHORTLINK % site_illust_id), upload)
             return
     elif CheckRequery(illust):
         UpdateIllustFromSource(illust, source)
@@ -146,14 +133,15 @@ def AddDanbooruArtists(url, danbooru_artists, db_boorus, db_artists):
     for danbooru_artist in danbooru_artists:
         booru = next(filter(lambda x: x.danbooru_id == danbooru_artist['id'], db_boorus), None)
         if booru is None:
-            booru = CreateBooruFromParameters({'danbooru_id': danbooru_artist['id'], 'current_name': danbooru_artist['name']})
+            booru = CreateBooruFromParameters(
+                {'danbooru_id': danbooru_artist['id'], 'current_name': danbooru_artist['name']})
         BooruAppendArtist(booru, artist)
 
 
 # #### Scheduled functions
 
 def CheckPendingUploads():
-    UPLOAD_SEM.acquire()
+    # UPLOAD_SEM.acquire()
     print("\n<upload semaphore acquire>\n")
     posts = []
     try:
@@ -174,34 +162,37 @@ def CheckPendingUploads():
             time.sleep(5)
     finally:
         if len(posts) > 0:
-            SCHED.add_job(ContactSimilarityServer)
-            post_ids = [post.id for post in posts]
-            SCHED.add_job(CheckForMatchingDanbooruPosts, args=(post_ids,))
-            SCHED.add_job(CheckForNewArtistBoorus, args=(post_ids,))
-        UPLOAD_SEM.release()
+            scheduler.add_job(ProcessSimilarity)
+            scheduler.add_job(CheckForNewArtistBoorus)
+            # SCHED.add_job(CheckPostsForDanbooruID, args=(posts,))
+            pass
+        #  UPLOAD_SEM.release()
         print("\n<upload semaphore release>\n")
 
 
-def ContactSimilarityServer():
-    results = SimilarityCheckPosts()
-    if results['error']:
-        print("Similarity error:", results['message'])
-
-
-def CheckForMatchingDanbooruPosts(post_ids):
-    print("Posts to check:", len(post_ids))
-    posts = Post.query.filter(Post.id.in_(post_ids)).all()
-    CheckPostsForDanbooruID(posts)
-    print('\n')
-
-
-def CheckForNewArtistBoorus(post_ids):
-    posts = Post.query.filter(Post.id.in_(post_ids)).all()
-    all_artists = UniqueObjects([*itertools.chain(*[post.artists for post in posts])])
-    check_artists = [artist for artist in all_artists if artist.created > MinutesAgo(1)]
-    if len(check_artists):
-        print("Artists to check:", len(check_artists))
-        CheckArtistsForBoorus(check_artists)
+def CheckForNewArtistBoorus():
+    LoadBooruArtistData()
+    page = Artist.query.filter(Artist.id > BOORU_ARTISTS_DATA['last_checked_artist_id'],
+                               not_(Artist.boorus.any())).paginate(per_page=100)
+    max_artist_id = 0
+    while True:
+        if len(page.items) == 0:
+            break
+        query_urls = [artist.booru_search_url for artist in page.items]
+        results = GetArtistsByMultipleUrls(query_urls)
+        if results['error']:
+            print("Danbooru error:", results)
+            break
+        booru_artist_ids = set(
+            artist['id'] for artist in itertools.chain(*[results['data'][url] for url in results['data']]))
+        boorus = Booru.query.filter(Booru.danbooru_id.in_(booru_artist_ids)).all()
+        for url in results['data']:
+            AddDanbooruArtists(url, results['data'][url], boorus, page.items)
+        max_artist_id = max(max_artist_id, *[artist.id for artist in page.items])
+        SaveLastCheckArtistId(max_artist_id)
+        if not page.has_next:
+            break
+        page = page.next()
 
 
 def ExpireUploads():
@@ -214,7 +205,7 @@ def ExpireUploads():
 
 def ExpungeCacheRecords():
     api_delete_count = ApiData.query.filter(ApiData.expires < GetCurrentTime()).count()
-    print("\nRecords to delete:", api_delete_count)
+    print("Records to delete:", api_delete_count)
     if api_delete_count > 0:
         ApiData.query.filter(ApiData.expires < GetCurrentTime()).delete()
         SESSION.commit()
@@ -228,55 +219,3 @@ def ExpungeCacheRecords():
                 time.sleep(0.2)
             SESSION.delete(media)
         SESSION.commit()
-
-
-# #### Initialization
-
-os.environ['FLASK_ENV'] = 'development' if DEBUG_MODE else 'production'
-
-
-@atexit.register
-def Cleanup():
-    if SERVER_PID is not None:
-        PutGetJSON(SERVER_PID_FILE, 'w', [])
-    if SCHED is not None and SCHED.running:
-        SCHED.shutdown()
-
-
-# #### Main function
-
-def Main(args):
-    global SERVER_PID, SCHED
-    if SERVER_PID is not None:
-        print("\nServer process already running: %d" % SERVER_PID)
-        input()
-        exit(-1)
-    if args.logging:
-        import logging
-        logging.basicConfig()
-        logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
-    if args.title:
-        os.system('title Worker Server')
-    if not DEBUG_MODE or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-        print("\n========== Starting server - Worker-%s ==========" % VERSION)
-        SERVER_PID = os.getpid()
-        PutGetJSON(SERVER_PID_FILE, 'w', [SERVER_PID])
-        SCHED = BackgroundScheduler(daemon=True)
-        SCHED.add_job(ExpungeCacheRecords, 'interval', hours=1, next_run_time=SecondsFromNowLocal(5), jitter=300)
-        SCHED.add_job(CheckPendingUploads, 'interval', minutes=5, next_run_time=SecondsFromNowLocal(15), jitter=60)
-        SCHED.add_job(CheckAllArtistsForBoorus, 'interval', days=1, jitter=3600)
-        SCHED.add_job(CheckAllPostsForDanbooruID, 'interval', days=1, jitter=3600)
-        SCHED.add_job(ExpireUploads, 'interval', minutes=1, jitter=5)
-        SCHED.start()
-    PREBOORU_APP.name = 'worker'
-    PREBOORU_APP.run(threaded=True, port=WORKER_PORT)
-
-
-# ##EXECUTION START
-
-if __name__ == '__main__':
-    parser = ArgumentParser(description="Worker to process uploads.")
-    parser.add_argument('--logging', required=False, default=False, action="store_true", help="Display the SQL commands.")
-    parser.add_argument('--title', required=False, default=False, action="store_true", help="Adds server title to console window.")
-    args = parser.parse_args()
-    Main(args)

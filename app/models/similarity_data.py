@@ -1,7 +1,7 @@
 # APP/SIMILARITY/SIMILARITY_DATA.PY
 
 # ##LOCAL IMPORTS
-from .. import DB
+from app import DB
 
 # ##GLOBAL VARIABLES
 
@@ -14,6 +14,7 @@ BITS_PER_NIBBLE = 4
 
 HASH_SIZE = 16  # Must be a power of 2
 CHARACTERS_PER_CHUNK = 2  # Must be a power of 2
+TOTAL_BITS = HASH_SIZE * HASH_SIZE
 
 
 # ###Calculated####
@@ -43,7 +44,6 @@ class SimilarityData(DB.Model):
     # ## Declarations
 
     # #### SqlAlchemy
-    __bind_key__ = 'similarity'
 
     # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)

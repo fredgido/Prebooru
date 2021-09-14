@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from sqlalchemy.orm import selectinload, lazyload
 
 # ##LOCAL IMPORTS
-from .. import DB
-from ..base_model import JsonModel
+from app import DB
+from app.base_model import JsonModel
 from .similarity_pool_element import SimilarityPoolElement
 
 
@@ -19,7 +19,6 @@ class SimilarityPool(JsonModel):
     # ## Declarations
 
     # #### SqlAlchemy
-    __bind_key__ = 'similarity'
 
     # #### JSON format
     id: int

@@ -3,18 +3,32 @@
 # ## PYTHON IMPORTS
 import os
 import atexit
+import time
+from io import BytesIO
+
+from sqlalchemy import func
+from flask_apscheduler import APScheduler
+import distance
+import imagehash
+from PIL import Image
 import colorama
 from flask_migrate import Migrate
 from argparse import ArgumentParser
 
 # ## LOCAL IMPORTS
-from app import PREBOORU_APP, DB
+
+from app import PREBOORU_APP, DB, SESSION
 from app import controllers
 from app import helpers
 from app.logical.file import LoadDefault, PutGetJSON
 from app.config import WORKING_DIRECTORY, DATA_FILEPATH, PREBOORU_PORT, DEBUG_MODE, VERSION, HAS_EXTERNAL_IMAGE_SERVER
 
 # ## GLOBAL VARIABLES
+from app.logical.network import GetHTTPFile
+from app.logical.similarity import CheckSimilarMatchScores, ChooseSimilarityResult, PopulateSimilarityPools, \
+    HexToBinary, GeneratePostSimilarity
+from app.models import Post, SimilarityData, SimilarityPoolElement, SimilarityPool
+from app.models.similarity_data import HASH_SIZE, TOTAL_BITS
 
 SERVER_PID_FILE = WORKING_DIRECTORY + DATA_FILEPATH + 'prebooru-server-pid.json'
 SERVER_PID = next(iter(LoadDefault(SERVER_PID_FILE, [])), None)
@@ -93,10 +107,121 @@ def InitDB(args):
         stamp()
 
 
+def GenerateSimilarityResults(args):
+    if args.expunge:
+        SimilarityData.query.delete()
+        SESSION.commit()
+    max_post_id = SESSION.query(func.max(SimilarityData.post_id)).scalar() or 0
+    page = Post.query.filter(Post.id > max_post_id).paginate(per_page=100)
+    while True:
+        print("\n%d/%d" % (page.page, page.pages))
+        for post in page.items:
+            GeneratePostSimilarity(post)
+        if not page.has_next:
+            break
+        page = page.next()
+    print("Done!")
+
+
+def GenerateSimilarityPools(args):
+    if args.expunge:
+        SimilarityPoolElement.query.delete()  # This may not work due to the sibling relationship; may need to do a mass update first
+        SESSION.commit()
+        SimilarityPool.query.delete()
+        SESSION.commit()
+    max_post_id = SESSION.query(func.max(SimilarityPool.post_id)).scalar() or 0
+    page = Post.query.filter(Post.id > max_post_id).with_entities(Post.id).paginate(per_page=100)
+    while True:
+        print("\n%d/%d" % (page.page, page.pages))
+        all_post_ids = [x[0] for x in page.items]
+        all_sdata_items = SimilarityData.query.filter(SimilarityData.post_id.in_(all_post_ids)).all()
+        for post_id in all_post_ids:
+            sdata_items = [sdata for sdata in all_sdata_items if sdata.post_id == post_id]
+            PopulateSimilarityPools(sdata_items)
+        if not page.has_next:
+            break
+        page = page.next()
+    print("Done!")
+
+
+def ComparePostSimilarity(args):
+    sresult = ChooseSimilarityResult()
+    if sresult is None:
+        return
+    print("Result hash:", sresult.image_hash)
+    sresult_binary_string = HexToBinary(sresult.image_hash)
+    while True:
+        keyinput = input("Image URL: ")
+        if not keyinput:
+            break
+        buffer = GetHTTPFile(keyinput)
+        if type(buffer) is not bytes:
+            continue
+        try:
+            file_imgdata = BytesIO(buffer)
+            image = Image.open(file_imgdata)
+        except Exception as e:
+            print("Unable to open image:", e)
+            continue
+        image.copy().convert("RGB")
+        image_hash = str(imagehash.whash(image, hash_size=HASH_SIZE))
+        print("Image hash:", image_hash)
+        image_binary_string = HexToBinary(image_hash)
+        mismatching_bits = distance.hamming(image_binary_string, sresult_binary_string)
+        miss_ratio = mismatching_bits / TOTAL_BITS
+        score = round((1 - miss_ratio) * 100, 2)
+        print("Mismatching:", mismatching_bits, "Ratio:", miss_ratio, "Score:", score)
+
+
+def ComparePosts(args):
+    page = Post.query.order_by(Post.id.asc()).paginate(per_page=100)
+    while True:
+        print("\n%d/%d" % (page.page, page.pages))
+        for post in page.items:
+            print("Post #", post.id)
+            starttime = time.time()
+            ratio = round(post.width / post.height, 4)
+            simresults = SimilarityData.query.filter_by(post_id=post.id).all()
+            if post.file_ext != 'mp4':
+                full_image = Image.open(post.file_path)
+                full_image = full_image.convert("RGB")
+                full_image_hash = str(imagehash.whash(full_image, hash_size=HASH_SIZE))
+                print("Full convert time:", time.time() - starttime)
+                score_results = CheckSimilarMatchScores(simresults, full_image_hash, 90.0)
+                if len(score_results) == 0:
+                    print("FULL SIZE ADD")
+                    simresult = SimilarityData(post_id=post.id, image_hash=full_image_hash, ratio=ratio)
+                    SESSION.add(simresult)
+                    SESSION.commit()
+                    simresults.append(simresult)
+                if post.file_path == post.sample_path:
+                    continue
+            starttime = time.time()
+            sample_image = Image.open(post.sample_path)
+            sample_image = sample_image.convert("RGB")
+            sample_image_hash = str(imagehash.whash(sample_image, hash_size=HASH_SIZE))
+            print("Sample convert time:", time.time() - starttime)
+            score_results = CheckSimilarMatchScores(simresults, sample_image_hash, 90.0)
+            if len(score_results) == 0:
+                print("SAMPLE SIZE ADD")
+                simresult = SimilarityData(post_id=post.id, image_hash=sample_image_hash, ratio=ratio)
+                SESSION.add(simresult)
+                SESSION.commit()
+        if not page.has_next:
+            break
+        page = page.next()
+    print("Done!")
+
+
+
 def Main(args):
     switcher = {
         'server': StartServer,
         'init': InitDB,
+        'generate': GenerateSimilarityResults,
+        'pools': GenerateSimilarityPools,
+        'compare': ComparePostSimilarity,
+        'compareposts': ComparePosts,
     }
     switcher[args.type](args)
 

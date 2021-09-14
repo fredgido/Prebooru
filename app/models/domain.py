@@ -1,7 +1,7 @@
 # APP/CACHE/DOMAIN.PY
 
 # ##LOCAL IMPORTS
-from .. import DB
+from app import DB
 
 
 # ## CLASSES
@@ -10,7 +10,6 @@ class Domain(DB.Model):
     # ## Declarations
 
     # #### SqlAlchemy
-    __bind_key__ = 'cache'
 
     # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)

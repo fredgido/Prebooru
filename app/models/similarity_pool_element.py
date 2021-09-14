@@ -4,8 +4,8 @@
 from dataclasses import dataclass
 
 # ##LOCAL IMPORTS
-from .. import DB
-from ..base_model import JsonModel
+from app import DB
+from app.base_model import JsonModel
 
 
 # ##CLASSES
@@ -15,7 +15,6 @@ class SimilarityPoolElement(JsonModel):
     # ## Declarations
 
     # #### SqlAlchemy
-    __bind_key__ = 'similarity'
 
     # #### JSON format
     id: int

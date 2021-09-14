@@ -17,7 +17,7 @@ IMAGE_HEADERS = {}
 
 # #### Classes
 
-class NoSource():
+class NoSource:
     IMAGE_HEADERS = {}
 
     @staticmethod

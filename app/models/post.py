@@ -6,6 +6,8 @@ import datetime
 from types import SimpleNamespace
 from typing import List
 from dataclasses import dataclass
+
+from flask import url_for
 from sqlalchemy.orm import selectinload
 from sqlalchemy.util import memoized_property
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -18,8 +20,8 @@ from .error import Error
 from .illust_url import IllustUrl
 from .notation import Notation
 from .pool_element import PoolPost, pool_element_delete
-from ..similarity.similarity_pool import SimilarityPool
-from ..similarity.similarity_pool_element import SimilarityPoolElement
+from app.models.similarity_pool import SimilarityPool
+from app.models.similarity_pool_element import SimilarityPoolElement
 
 # ##GLOBAL VARIABLES
 
@@ -88,15 +90,19 @@ class Post(JsonModel):
 
     @property
     def file_url(self):
-        return storage.NetworkDirectory('data', self.md5) + self.md5 + '.' + self.file_ext
+        return url_for('images.send_file', path=f'data/{self.md5[0:2]}/{self.md5[2:4]}/{self.md5}.{self.file_ext}')
 
     @property
     def sample_url(self):
-        return storage.NetworkDirectory('sample', self.md5) + self.md5 + '.jpg' if storage.HasSample(self.width, self.height) or self.file_ext not in ['jpg', 'png', 'gif'] else self.file_url
+        if storage.HasSample(self.width, self.height) or self.file_ext not in ['jpg', 'png', 'gif']:
+            return url_for('images.send_file', path=f'sample/{self.md5[0:2]}/{self.md5[2:4]}/{self.md5}.{self.file_ext}')
+        return self.file_url
 
     @property
     def preview_url(self):
-        return storage.NetworkDirectory('preview', self.md5) + self.md5 + '.jpg' if storage.HasPreview(self.width, self.height) else self.file_url
+        if storage.HasPreview(self.width, self.height):
+            return url_for('images.send_file', path=f'preview/{self.md5[0:2]}/{self.md5[2:4]}/{self.md5}.{self.file_ext}')
+        return self.file_url
 
     @property
     def file_path(self):

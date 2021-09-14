@@ -1,8 +1,9 @@
 # APP/CACHE/MEDIA_FILE.PY
 
 # ## LOCAL IMPORTS
-from .. import DB
-from ..storage import CACHE_DATA_DIRECTORY, CacheNetworkUrlpath
+import logging
+
+from app import DB
 
 
 # ## CLASSES
@@ -11,7 +12,6 @@ class MediaFile(DB.Model):
     # ## Declarations
 
     # #### SqlAlchemy
-    __bind_key__ = 'cache'
 
     # #### Columns
     id = DB.Column(DB.Integer, primary_key=True)
@@ -24,8 +24,12 @@ class MediaFile(DB.Model):
 
     @property
     def file_url(self):
-        return CacheNetworkUrlpath() + self.md5 + '.' + self.file_ext
+        logging.exception('MediaFile.file_url')
+        return ''
+        # return url_for('images.send_file', path=f'data/{self.md5[0:2]}/{self.md5[2:4]}/{self.md5}.{self.file_ext}')
+        # return CacheNetworkUrlpath() + self.md5 + '.' + self.file_ext
 
     @property
     def file_path(self):
-        return CACHE_DATA_DIRECTORY + self.md5 + '.' + self.file_ext
+        logging.exception('MediaFile.file_url')
+        return ''

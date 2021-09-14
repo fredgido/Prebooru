@@ -15,3 +15,4 @@ prebooru-install/
 /databasesave.bat
 /datasave.bat
 /datasave.log
+.env

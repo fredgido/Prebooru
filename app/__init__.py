@@ -5,6 +5,12 @@ import os
 import sys
 from io import BytesIO
 from types import SimpleNamespace
+
+from apscheduler.executors.pool import ProcessPoolExecutor, ThreadPoolExecutor
+from apscheduler.jobstores.sqlalchemy import SQLAlchemyJobStore
+from apscheduler.schedulers.background import BackgroundScheduler
+from flask_apscheduler import APScheduler
+from pytz import utc
 from sqlalchemy import event, MetaData, Table, Column, String, select
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -28,8 +34,8 @@ DATABASE_VERSION = '6a3814f17d95'
 
 # For imports outside the relative path
 PREBOORU_DB_URL = os.environ.get('PREBOORU_DB') if os.environ.get('PREBOORU_DB') is not None else 'sqlite:///%s' % DB_PATH
-PREBOORU_CACHE_URL = os.environ.get('PREBOORU_CACHE') if os.environ.get('PREBOORU_CACHE') is not None else 'sqlite:///%s' % CACHE_PATH
-PREBOORU_SIMILARITY_URL = os.environ.get('PREBOORU_SIMILARITY') if os.environ.get('PREBOORU_SIMILARITY') is not None else 'sqlite:///%s' % SIMILARITY_PATH
+# PREBOORU_CACHE_URL = os.environ.get('PREBOORU_CACHE') if os.environ.get('PREBOORU_CACHE') is not None else 'sqlite:///%s' % CACHE_PATH
+# PREBOORU_SIMILARITY_URL = os.environ.get('PREBOORU_SIMILARITY') if os.environ.get('PREBOORU_SIMILARITY') is not None else 'sqlite:///%s' % SIMILARITY_PATH
 
 NAMING_CONVENTION = {
     "ix": 'ix_%(column_0_label)s',
@@ -88,10 +94,7 @@ class MethodRewriteMiddleware(object):
 PREBOORU_APP = Flask("", template_folder=os.path.join('app', 'templates'), static_folder=os.path.join('app', 'static'))
 PREBOORU_APP.config.from_mapping(
     SQLALCHEMY_DATABASE_URI=PREBOORU_DB_URL,
-    SQLALCHEMY_BINDS={
-        'cache': PREBOORU_CACHE_URL,
-        'similarity': PREBOORU_SIMILARITY_URL,
-    },
+    SQLALCHEMY_ENGINE_OPTIONS = {'connect_args' :{"check_same_thread": False}} if 'sqlite' in PREBOORU_DB_URL else {},
     JSON_SORT_KEYS=False,
     SQLALCHEMY_ECHO=False,
     SECRET_KEY='\xfb\x12\xdf\xa1@i\xd6>V\xc0\xbb\x8fp\x16#Z\x0b\x81\xeb\x16',
@@ -100,13 +103,32 @@ PREBOORU_APP.config.from_mapping(
     EXPLAIN_TEMPLATE_LOADING=False,
 )
 
+
+# jobstores = {
+#     'default': SQLAlchemyJobStore(url='sqlite:///jobs.sqlite')
+# }
+# executors = {
+#     'default': ProcessPoolExecutor(5),
+#     'threadpool': ThreadPoolExecutor(10),
+# }
+# job_defaults = {
+#     'coalesce': False,
+#     'max_instances': 4
+# }
+# scheduler = BackgroundScheduler()
+
+scheduler = APScheduler()
+# scheduler.api_enabled = True
+scheduler.init_app(PREBOORU_APP)
+scheduler.start()
+
 METADATA = MetaData(naming_convention=NAMING_CONVENTION)
 DB = SQLAlchemy(PREBOORU_APP, metadata=METADATA)
 SESSION = DB.session
 
 event.listen(DB.engine, 'connect', _fk_pragma_on_connect)
-event.listen(DB.get_engine(bind='cache'), 'connect', _fk_pragma_on_connect)
-event.listen(DB.get_engine(bind='similarity'), 'connect', _fk_pragma_on_connect)
+# event.listen(DB.get_engine(bind='cache'), 'connect', _fk_pragma_on_connect)
+# event.listen(DB.get_engine(bind='similarity'), 'connect', _fk_pragma_on_connect)
 
 PREBOORU_APP.wsgi_app = MethodRewriteMiddleware(PREBOORU_APP.wsgi_app)
 

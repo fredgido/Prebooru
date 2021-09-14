@@ -26,6 +26,12 @@ from .notation import Notation  # noqa: F401
 from .pool import Pool  # noqa: F401
 from .pool_element import PoolElement, PoolPost, PoolIllust, PoolNotation  # noqa: F401
 from .subscription import Subscription  # noqa: F401
+from .api_data import ApiData  # noqa: F401
+from .domain import Domain  # noqa: F401
+from .media_file import MediaFile  # noqa: F401
+from .similarity_data import SimilarityData  # noqa: F401
+from .similarity_pool import SimilarityPool  # noqa: F401
+from .similarity_pool_element import SimilarityPoolElement  # noqa: F401
 
 
 # ## INITIALIZATION

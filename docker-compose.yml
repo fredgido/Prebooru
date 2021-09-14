@@ -1,0 +1,22 @@
+version: "3"
+
+services:
+  web:
+    build:
+      context: .
+    command: python prebooru.py server --public
+    env_file:
+      .env
+    environment:
+      - FLASK_SKIP_DOTENV=true
+    volumes:
+      - .:/project
+    ports:
+      - ${WEB_PORT:-5000}:5000
+    environment:
+      DEFAULT_CONFIG : 'True'
+      WORKING_DIRECTORY: 'temp/'
+      DATA_FILEPATH: 'production_db'
+      IMAGE_FILEPATH: 'production_admin'
+      DB_PATH: 'db/prebooru.db'
+      PREBOORU_PORT: '5000'

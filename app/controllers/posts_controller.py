@@ -6,9 +6,9 @@ from sqlalchemy import not_, or_
 from sqlalchemy.orm import lazyload, selectinload
 
 # ## LOCAL IMPORTS
+from ..logical.similarity import generate_posts_similarity
 from ..models import Post, Illust, IllustUrl, Artist, PoolPost, PoolIllust
 from ..logical.utility import EvalBoolString, IsFalsey
-from ..sources.local_source import SimilarityRegeneratePost
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate,\
     DefaultOrder, GetOrAbort, GetOrError
 
@@ -121,9 +121,5 @@ def regenerate_html(id):
     if type(post) is dict:
         flash(post['message'], 'error')
     else:
-        results = SimilarityRegeneratePost(id)
-        if results['error']:
-            flash(results['message'], 'error')
-        else:
-            flash("Similarity regenerated.")
+        generate_posts_similarity([id])  # sync?
     return redirect(url_for('post.show_html', id=id))

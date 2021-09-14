@@ -6,15 +6,15 @@ from flask import Blueprint, request, render_template, redirect, url_for, flash
 from wtforms import StringField, IntegerField, TextAreaField
 
 # ## LOCAL IMPORTS
+from .. import scheduler
 from ..logical.utility import EvalBoolString
+from ..logical.worker import CheckPendingUploads
 from ..models import Upload, Post, IllustUrl, Illust
 from ..sources.base_source import GetPostSource, GetPreviewUrl
-from ..sources.local_source import WorkerCheckUploads
 from ..database.upload_db import CreateUploadFromParameters
 from ..database.cache_db import GetMediaData
 from .base_controller import ShowJson, IndexJson, SearchFilter, ProcessRequestValues, GetParamsValue, Paginate, DefaultOrder, CustomNameForm, GetDataParams,\
     HideInput, ParseStringList, NullifyBlanks, SetDefault, SetError, GetOrAbort, ReferrerCheck
-
 
 # ## GLOBAL VARIABLES
 
@@ -236,9 +236,7 @@ def create_html():
         if ReferrerCheck('upload.upload_select_html', request):
             return redirect(url_for('upload.upload_select_html', **data))
         return redirect(url_for('upload.new_html', **results['data']))
-    worker_results = WorkerCheckUploads()
-    if worker_results['error']:
-        flash(worker_results['message'], 'error')
+    scheduler.add_job('upload_all_trigger', CheckPendingUploads)
     return redirect(url_for('upload.show_html', id=results['item']['id']))
 
 
@@ -247,7 +245,7 @@ def create_json():
     results = create()
     if results['error']:
         return results
-    results['worker'] = WorkerCheckUploads()
+    scheduler.add_job('upload_all_trigger', CheckPendingUploads)
     return results
 
 
@@ -263,9 +261,7 @@ def upload_all_html():
         flash(results['message'], 'error')
         form = GetUploadForm(**results['data'])
         return render_template("uploads/all.html", form=form, upload=Upload())
-    worker_results = WorkerCheckUploads()
-    if worker_results['error']:
-        flash(worker_results['message'], 'error')
+    scheduler.add_job('upload_all_trigger', CheckPendingUploads)
     return redirect(url_for('upload.show_html', id=results['item']['id']))
 
 
@@ -284,7 +280,5 @@ def upload_select_html():
 
 @bp.route('/uploads/check', methods=['GET'])
 def upload_check_html():
-    results = WorkerCheckUploads()
-    if results['error']:
-        flash(results['message'], 'error')
+    scheduler.add_job('upload_all_trigger', CheckPendingUploads)
     return redirect(request.referrer)
